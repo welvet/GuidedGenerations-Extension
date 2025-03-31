@@ -8,6 +8,9 @@ import { extension_settings } from '../../../extensions.js'; // Access to extens
 const EXTENSION_NAME = "Guided Generations";
 const EXTENSION_ID = "guided-generations"; // Used for CSS IDs etc.
 
+// State variable for Input Recovery
+let storedInput = null;
+
 // Initial settings (can be expanded later)
 const defaultSettings = {
     isEnabled: true, // Default to enabled
@@ -16,44 +19,95 @@ const defaultSettings = {
 // Hold the current settings
 let settings = { ...defaultSettings };
 
-// Function to add the placeholder button
-function addPlaceholderButton() {
+// Function to add the Input Recovery button
+function addRecoveryButton() {
     // Find the actual send button and its container
     const sendButton = document.getElementById('send_but');
     const targetContainer = sendButton?.parentElement; // Should be #rightSendForm
 
     if (!targetContainer) {
-        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add placeholder button.`);
+        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add recovery button.`);
         return;
     }
 
     // Check if our button already exists
-    if (document.getElementById(`${EXTENSION_ID}-placeholder-button`)) {
+    const buttonId = `${EXTENSION_ID}-recover-button`;
+    if (document.getElementById(buttonId)) {
         return; // Already added
     }
 
+    // Find the main text input area
+    const textInput = document.getElementById('send_textarea');
+    if (!textInput) {
+        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
+        // We could potentially still add the button, but it wouldn't function.
+        // For now, let's prevent adding it if the input isn't found.
+        return;
+    }
+
     // Create the button
-    const placeholderButton = document.createElement('button');
-    placeholderButton.id = `${EXTENSION_ID}-placeholder-button`;
-    placeholderButton.textContent = '🤔'; // Placeholder icon/text
-    placeholderButton.classList.add('fa-solid'); // Use Font Awesome class if available in ST
-    placeholderButton.classList.add('stui_button'); // Basic SillyTavern button styling
-    placeholderButton.title = `${EXTENSION_NAME} Placeholder`; // Tooltip
+    const recoveryButton = document.createElement('button');
+    recoveryButton.id = buttonId;
+    recoveryButton.textContent = '🛟'; // Input Recovery icon
+    recoveryButton.classList.add('fa-solid'); // Use Font Awesome class if available in ST
+    recoveryButton.classList.add('stui_button'); // Basic SillyTavern button styling
+    recoveryButton.title = 'Recover previous input'; // Tooltip
 
     // Add basic styling (can be moved to style.css later)
-    placeholderButton.style.marginLeft = '5px'; // Space it from the element before it
+    recoveryButton.style.marginLeft = '5px'; // Space it from the element before it
 
-    // Add click listener (does nothing yet)
-    placeholderButton.addEventListener('click', (event) => {
+    // Add click listener for recovery logic
+    recoveryButton.addEventListener('click', (event) => {
         event.preventDefault(); // Prevent form submission if inside a form
-        console.log(`${EXTENSION_NAME}: Placeholder button clicked!`);
-        // Add actual functionality later
+
+        if (storedInput !== null) {
+            console.log(`${EXTENSION_NAME}: Recovering input...`);
+            textInput.value = storedInput; // Put the stored text back
+            storedInput = null; // Clear the stored value after recovery
+            // Optional: Give user feedback (e.g., briefly change button style)
+            recoveryButton.style.opacity = 0.5; // Dim button briefly
+            setTimeout(() => { recoveryButton.style.opacity = 1; }, 500);
+
+            // Dispatch an input event to ensure any listeners on the textarea update
+            textInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+
+        } else {
+            console.log(`${EXTENSION_NAME}: No input stored for recovery.`);
+            // Optional: Feedback if nothing is stored (e.g., shake button?)
+        }
     });
 
     // Insert the button before the send button
-    targetContainer.insertBefore(placeholderButton, sendButton);
+    targetContainer.insertBefore(recoveryButton, sendButton);
 
-    console.log(`${EXTENSION_NAME}: Placeholder button added.`);
+    console.log(`${EXTENSION_NAME}: Input Recovery button added.`);
+}
+
+// Function to apply a guide, saving the current input first
+function applyGuide(guideText) {
+    const textInput = document.getElementById('send_textarea');
+    if (!textInput) {
+        console.warn(`${EXTENSION_NAME}: Cannot apply guide, text input #send_textarea not found.`);
+        return;
+    }
+
+    // Store the current input before overwriting
+    const currentInput = textInput.value;
+    if (currentInput && currentInput.trim() !== '') { // Only store non-empty input
+        storedInput = currentInput;
+        console.log(`${EXTENSION_NAME}: Stored input for recovery: "${storedInput}"`);
+    } else {
+        // If the input area was empty, ensure storedInput is null
+        // so the recovery button doesn't restore empty space.
+        storedInput = null;
+        console.log(`${EXTENSION_NAME}: Input area empty, nothing to store for recovery.`);
+    }
+
+    // TODO: Replace textInput.value with guideText
+    console.log(`${EXTENSION_NAME}: Applying guide (not yet implemented): "${guideText}"`);
+    // Example of what will happen later:
+    // textInput.value = guideText;
+    // textInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
 }
 
 // Function to load settings (placeholder for now)
@@ -69,7 +123,7 @@ function init() {
 
     // Add the UI elements if enabled
     if (settings.isEnabled) {
-        addPlaceholderButton();
+        addRecoveryButton(); // Call the renamed function
     }
 
     console.log(`${EXTENSION_NAME}: Initialization complete.`);
