@@ -1,1 +1,16 @@
+/* Basic styles for extension buttons */
+.stui_button[id^="guided-generations-"] { /* Target buttons by ID prefix */
+    background: none;
+    border: none;
+    color: var(--primary-text);
+    font-size: 1.2em; /* Adjust size as needed */
+    padding: 0 5px;
+    cursor: pointer;
+    vertical-align: middle; /* Align button vertically with textarea/send button */
+    margin-left: 5px; /* Default spacing */
+}
 
+/* Optional: Add hover effect for all extension buttons */
+.stui_button[id^="guided-generations-"]:hover {
+    color: var(--primary-color); /* Or any other highlight color */
+}

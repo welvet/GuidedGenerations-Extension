@@ -49,8 +49,8 @@ function addRecoveryButton() {
     const recoveryButton = document.createElement('button');
     recoveryButton.id = buttonId;
     recoveryButton.textContent = '🛟'; // Input Recovery icon
-    recoveryButton.classList.add('fa-solid'); // Use Font Awesome class if available in ST
-    recoveryButton.classList.add('stui_button'); // Basic SillyTavern button styling
+    recoveryButton.classList.add('fa-solid');
+    recoveryButton.classList.add('stui_button');
     recoveryButton.title = 'Recover previous input'; // Tooltip
 
     // Add basic styling (can be moved to style.css later)
@@ -102,6 +102,120 @@ function saveInput() {
 // Expose saveInput globally for testing
 window.saveInput = saveInput;
 
+// Function to add the Simple Send button
+function addSimpleSendButton() {
+    // Find the actual send button and its container
+    const sendButton = document.getElementById('send_but');
+    const targetContainer = sendButton?.parentElement;
+
+    if (!targetContainer) {
+        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add simple send button.`);
+        return;
+    }
+
+    const buttonId = `${EXTENSION_ID}-simple-send-button`;
+    if (document.getElementById(buttonId)) {
+        return;
+    }
+
+    const textInput = document.getElementById('send_textarea');
+    if (!textInput) {
+        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
+        return;
+    }
+
+    const simpleSendButton = document.createElement('button');
+    simpleSendButton.id = buttonId;
+    simpleSendButton.textContent = '➕';
+    simpleSendButton.classList.add('fa-solid');
+    simpleSendButton.classList.add('stui_button');
+    simpleSendButton.title = 'Simple Send (no AI reply)';
+
+    simpleSendButton.style.marginLeft = '5px';
+
+    simpleSendButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        console.log(`${EXTENSION_NAME}: Simple Send button clicked.`);
+        const textToSend = textInput.value;
+        if (textToSend && textToSend.trim() !== '') {
+            const context = SillyTavern.getContext();
+            if (context && context.executeSlashCommandsWithOptions) {
+                // Corrected STscript command with space after pipe
+                const correctedCommand = '/send {{input}}| /setinput';
+                console.log(`${EXTENSION_NAME}: Executing STscript command: ${correctedCommand}`);
+                context.executeSlashCommandsWithOptions(correctedCommand);
+            } else {
+                console.error(`${EXTENSION_NAME}: SillyTavern.getContext() or executeSlashCommandsWithOptions is not available.`);
+                alert(`${EXTENSION_NAME}: Error sending message. See console for details.`);
+            }
+        } else {
+            console.log(`${EXTENSION_NAME}: No text to send.`);
+        }
+    });
+
+    targetContainer.insertBefore(simpleSendButton, sendButton);
+
+    console.log(`${EXTENSION_NAME}: Simple Send button added.`);
+}
+
+// Function to add the Guided Response button
+function addGuidedResponseButton() {
+    // Find the actual send button and its container
+    const sendButton = document.getElementById('send_but');
+    const targetContainer = sendButton?.parentElement; // Should be #rightSendForm
+
+    if (!targetContainer) {
+        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add guided response button.`);
+        return;
+    }
+
+    // Check if our button already exists
+    const buttonId = `${EXTENSION_ID}-guided-response-button`;
+    if (document.getElementById(buttonId)) {
+        return; // Already added
+    }
+
+    // Find the main text input area
+    const textInput = document.getElementById('send_textarea');
+    if (!textInput) {
+        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
+        return;
+    }
+
+    // Create the button
+    const guidedResponseButton = document.createElement('button');
+    guidedResponseButton.id = buttonId;
+    guidedResponseButton.textContent = '🦮'; // Guided Response icon
+    guidedResponseButton.classList.add('fa-solid'); // Use Font Awesome class if available in ST
+    guidedResponseButton.classList.add('stui_button'); // Basic SillyTavern button styling
+    guidedResponseButton.title = 'Guided Response'; // Tooltip
+
+    // Add basic styling (can be moved to style.css later)
+    guidedResponseButton.style.marginLeft = '5px'; // Space it from the element before it
+
+    // Add click listener for guided response logic (to be implemented)
+    guidedResponseButton.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent form submission if inside a form
+        // TODO: Implement Guided Response logic here
+        console.log(`${EXTENSION_NAME}: Guided Response button clicked.`);
+        const guidanceText = textInput.value; // For now, guidance is the input text itself
+        if (guidanceText && guidanceText.trim() !== '') {
+            // Need to use context.executeSlashCommandsWithOptions() here for guided response
+            console.log(`${EXTENSION_NAME}: Guidance provided: "${guidanceText}" (Guided Response not yet implemented)`);
+            // Placeholder for STscript command execution
+            // context.executeSlashCommandsWithOptions(...)
+        } else {
+            console.log(`${EXTENSION_NAME}: No guidance text provided.`);
+        }
+    });
+
+    // Insert the button before the send button
+    targetContainer.insertBefore(guidedResponseButton, sendButton);
+
+    console.log(`${EXTENSION_NAME}: Guided Response button added.`);
+}
+
+
 // Function to load settings (placeholder for now)
 function loadSettings() {
     // In the future, load settings from extension_settings['Guided Generations']
@@ -115,7 +229,9 @@ function init() {
 
     // Add the UI elements if enabled
     if (settings.isEnabled) {
-        addRecoveryButton(); // Call the renamed function
+        addRecoveryButton();
+        addSimpleSendButton();
+        addGuidedResponseButton();
     }
 
     console.log(`${EXTENSION_NAME}: Initialization complete.`);
