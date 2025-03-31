@@ -83,32 +83,24 @@ function addRecoveryButton() {
     console.log(`${EXTENSION_NAME}: Input Recovery button added.`);
 }
 
-// Function to apply a guide, saving the current input first
-function applyGuide(guideText) {
-    const textInput = document.getElementById('send_textarea');
-    if (!textInput) {
-        console.warn(`${EXTENSION_NAME}: Cannot apply guide, text input #send_textarea not found.`);
-        return;
-    }
+// Function to save the current user input from the textarea
+function saveInput() {
+    // Read the current input directly from the textarea
+    const currentInput = String($('#send_textarea').val());
 
-    // Store the current input before overwriting
-    const currentInput = textInput.value;
     if (currentInput && currentInput.trim() !== '') { // Only store non-empty input
         storedInput = currentInput;
         console.log(`${EXTENSION_NAME}: Stored input for recovery: "${storedInput}"`);
     } else {
         // If the input area was empty, ensure storedInput is null
-        // so the recovery button doesn't restore empty space.
+        // so the recovery button doesn't restore nothing.
         storedInput = null;
         console.log(`${EXTENSION_NAME}: Input area empty, nothing to store for recovery.`);
     }
-
-    // TODO: Replace textInput.value with guideText
-    console.log(`${EXTENSION_NAME}: Applying guide (not yet implemented): "${guideText}"`);
-    // Example of what will happen later:
-    // textInput.value = guideText;
-    // textInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
 }
+
+// Expose saveInput globally for testing
+window.saveInput = saveInput;
 
 // Function to load settings (placeholder for now)
 function loadSettings() {
