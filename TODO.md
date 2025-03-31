@@ -4,23 +4,23 @@ This list outlines the steps to develop the Guided Generations extension based o
 
 **Phase 1: Project Setup & Foundation**
 
-1.  [ ] **Understand SillyTavern Extension Structure:**
-    *   [ ] Analyze existing extensions in `References/SillyTavern` (look for patterns: `public/extensions/`, `script.js`, `style.css`, manifests).
-    *   [ ] Identify extension registration, UI element addition, and core API interaction methods.
-2.  [ ] **Create Basic Extension Files:**
-    *   [ ] `script.js` (Main logic)
-    *   [ ] `style.css` (Styling)
-    *   [ ] `config.json` / `manifest.json` (If needed)
-    *   [ ] `README.md` (Initial description)
-3.  [ ] **Basic UI Integration:**
-    *   [ ] Register the extension with SillyTavern.
-    *   [ ] Add a primary UI entry point (e.g., button/menu).
+1.  [x] **Understand SillyTavern Extension Structure:**
+    *   [x] Analyze existing extensions in `References/SillyTavern` (look for patterns: `public/extensions/`, `script.js`, `style.css`, manifests).
+    *   [x] Identify extension registration, UI element addition, and core API interaction methods.
+2.  [x] **Create Basic Extension Files:**
+    *   [x] `script.js` (Main logic)
+    *   [x] `style.css` (Styling)
+    *   [x] `config.json` / `manifest.json` (If needed)
+    *   [x] `README.md` (Initial description)
+3.  [x] **Basic UI Integration:**
+    *   [x] Register the extension with SillyTavern.
+    *   [x] Add a primary UI entry point (e.g., button/menu).
 
 **Phase 2: Core Feature Implementation (Simpler Features)**
 
-4.  [ ] **Input Recovery (🛟):**
-    *   [ ] Implement temporary `old_input` storage.
-    *   [ ] Add UI element to restore `old_input`.
+4.  [x] **Input Recovery (🛟):**
+    *   [x] Implement temporary `old_input` storage.
+    *   [x] Add UI element to restore `old_input`.
 5.  [ ] **Simple Send (➕):**
     *   [ ] Add UI element.
     *   [ ] Use SillyTavern API to send message without AI reply.
