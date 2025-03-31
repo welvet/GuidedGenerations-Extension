@@ -1,8 +1,8 @@
 // Import SillyTavern core functions and context
-// Adjust the paths based on where the extension will be placed in SillyTavern's structure
-// Assuming standard placement: public/scripts/extensions/your-extension-name/
-import { eventSource } from '../../../script.js'; // For event handling (will use later)
-import { extension_settings } from '../../extensions.js'; // Access to extension settings
+// Assuming placement in data/default-user/extensions/your-extension-name/
+// Using paths based on provided third-party example
+import { eventSource } from '../../../../script.js'; // For event handling (will use later)
+import { extension_settings } from '../../../extensions.js'; // Access to extension settings
 
 // Constants
 const EXTENSION_NAME = "Guided Generations";
