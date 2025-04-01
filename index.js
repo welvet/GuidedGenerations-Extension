@@ -32,14 +32,15 @@ const simpleSend = () => {
     // Check if SillyTavern and getContext exist globally
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
-        const messageText = String($("#send_textarea").val());
+        // const messageText = String($("#send_textarea").val()); // No longer needed
 
-        if (!messageText.trim()) {
-            console.log("GG Simple Send: Input is empty.");
-            return;
-        }
+        // if (!messageText.trim()) { // Check is implicitly handled by {{input}} if empty?
+        //     console.log("GG Simple Send: Input is empty.");
+        //     return;
+        // }
 
-        const command = `/send ${messageText}|\n/setinput`;
+        // Use {{input}} macro directly in the stscript
+        const command = `/send {{input}} | /setinput`;
 
         console.log("GG Simple Send Executing:", command);
         try {
@@ -234,6 +235,37 @@ function loadSettings() {
     console.log(`${EXTENSION_NAME}: Settings loaded (using defaults).`);
 }
 
+// Function to handle Guided Response
+async function guidedResponse() {
+    console.log('Guided Response button clicked');
+
+    // The stscript command string directly from V8 JSON
+    // It uses {{input}} macro to get the current input automatically.
+    // It saves the input, injects it, triggers generation, and then restores the input.
+    const stscriptCommand = 
+        `/setglobalvar key=gg_old_input {{input}} | ` +
+        `/inject id=gg_instruct position=chat ephemeral=true depth=0 [Take the following into special concideration for your next message: {{getglobalvar::gg_old_input}}] | ` +
+        `/trigger await=true | ` +
+        `/setinput {{getglobalvar::gg_old_input}}`; // Restore input after trigger
+
+    console.log(`Executing stscript: ${stscriptCommand}`);
+
+    // Use the context executeSlashCommandsWithOptions method
+    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+        const context = SillyTavern.getContext();
+        try {
+            // Send the combined script via context
+            await context.executeSlashCommandsWithOptions(stscriptCommand);
+            console.log('Guided Response stscript executed.');
+            // No need to manually handle input field here, stscript handles it.
+        } catch (error) {
+            console.error(`Error executing Guided Response stscript: ${error}`);
+        } 
+    } else {
+        console.error('SillyTavern.getContext function not found.');
+    }
+}
+
 // Main initialization function
 function init() {
     console.log(`${EXTENSION_NAME}: Initializing...`);
@@ -274,4 +306,52 @@ $(document).ready(function () {
     console.log(`${EXTENSION_NAME}: Document ready. Starting setup check.`);
     // Initial check
     checkElementAndSetup();
+    addExtensionButtons();
 });
+
+function addExtensionButtons() {
+    // Simple Send Button (in Tools Menu)
+    const toolsMenu = document.getElementById('extensions_menu');
+    if (toolsMenu) {
+        const simpleSendButton = document.createElement('div');
+        simpleSendButton.id = 'gg_simple_send_button';
+        simpleSendButton.classList.add('menu_button');
+        simpleSendButton.innerHTML = '<span class=\"fa-solid fa-plus gg-icon-spacing\"></span>Simple Send';
+        simpleSendButton.title = 'Send the current input without generating a reply.';
+        simpleSendButton.addEventListener('click', simpleSend);
+        toolsMenu.appendChild(simpleSendButton);
+    } else {
+        console.error('Could not find extensions menu element.');
+    }
+
+    // Input Recovery Button (in Tools Menu)
+    if (toolsMenu) {
+        const inputRecoveryButton = document.createElement('div');
+        inputRecoveryButton.id = 'gg_input_recovery_button';
+        inputRecoveryButton.classList.add('menu_button');
+        inputRecoveryButton.innerHTML = '<span class=\"fa-solid fa-recycle gg-icon-spacing\"></span>Recover Input'; // Using recycle icon
+        inputRecoveryButton.title = 'Recover the previous input after an accidental generation or send.';
+        inputRecoveryButton.addEventListener('click', recoverInput);
+        toolsMenu.appendChild(inputRecoveryButton);
+    } else {
+        console.error('Could not find extensions menu element (for recovery button).');
+    }
+
+    // Guided Response Button (next to Send)
+    const rightSendForm = document.getElementById('rightSendForm');
+    const sendButton = document.getElementById('send_but'); // Assuming this is the correct ID for the send button
+    if (rightSendForm && sendButton) {
+        const guidedResponseButton = document.createElement('div');
+        guidedResponseButton.id = 'gg_guided_response_button';
+        // Using fa-dog for the guide dog icon 🦮
+        guidedResponseButton.className = 'fa-solid fa-dog interactable gg-button';
+        guidedResponseButton.title = 'Guided Response (🦮): Send input with instruct context and generate.';
+        // Attach the actual function
+        guidedResponseButton.addEventListener('click', guidedResponse);
+        rightSendForm.insertBefore(guidedResponseButton, sendButton);
+    } else {
+        console.error('Could not find rightSendForm or send_but element to add Guided Response button.');
+        if (!rightSendForm) console.error('rightSendForm not found.');
+        if (!sendButton) console.error('send_but not found.');
+    }
+}

@@ -2,6 +2,11 @@
 
 This list outlines the steps to develop the Guided Generations extension based on the `SCOPE.md`.
 
+**Placement Key:**
+*   `(Send)`: Button placed next to the main Send button.
+*   `(Menu)`: Item placed inside the left-side Tools Menu (⚙️).
+*   `(Panel)`: Item/button placed inside a dedicated modal/panel (e.g., Settings, Persistent Guides).
+
 **Phase 1: Project Setup & Foundation**
 
 1.  [x] **Understand SillyTavern Extension Structure:**
@@ -18,115 +23,84 @@ This list outlines the steps to develop the Guided Generations extension based o
 
 **Phase 2: Core Feature Implementation (Simpler Features)**
 
-4.  [x] **Input Recovery (🛟):**
+4.  [x] **Input Recovery (🛟) `(Menu)`:**
+    *   [x] UI element in Tools Menu.
     *   [x] Implement temporary `old_input` storage.
     *   [x] Add UI element to restore `old_input`.
-5.  [x] **Simple Send (➕):**
+5.  [x] **Simple Send (➕) `(Menu)`:**
+    *   [x] UI element in Tools Menu.
     *   [x] Add UI element.
     *   [x] Use SillyTavern API to send message without AI reply.
-6.  [x] **Guided Response (🦮):**
-    *   [x] Add UI element.
-    *   [x] Store `old_input`.
-    *   [x] Use API to inject context (`instruct` ID).
-    *   [x] Use API to trigger AI response.
-    *   [x] Restore `old_input`.
-    *   [x] *Later:* Add group chat selection logic.
-7.  [x] **Guided Swipe (➡️):**
-    *   [x] Add UI element.
-    *   [x] Check last message author.
-    *   [x] Store `old_input`.
-    *   [x] Use API to inject context.
-    *   [x] Use API to trigger swipe.
-    *   [x] Restore `old_input`.
-8.  [x] **Guided Impersonation (✍️, ✍️2, ✍️3):**
-    *   [x] Add UI elements (consider initial visibility).
-    *   [x] Use API for impersonation with correct perspective instructions.
-    *   [x] Implement `old_input`/`new_input` check logic.
+6.  [ ] **Guided Response (🦮) `(Send)`:**
+    *   [] Add UI element next to Send Button.
+    *   [] Store `old_input`.
+    *   [] Use API to inject context (`instruct` ID).
+    *   [ ] Use API to trigger AI response.
+    *   [ ] Restore `old_input`.
+    *   [ ] *Later:* Add group chat selection logic.
+7.  [ ] **Guided Swipe (➡️) `(Send)`:**
+    *   [ ] Add UI element next to Send Button.
+    *   [ ] Check last message author.
+    *   [ ] Store `old_input`.
+    *   [ ] Use API to inject context.
+    *   [ ] Use API to trigger swipe.
+    *   [ ] Restore `old_input`.
+8.  [ ] **Guided Impersonation (✍️, ✍️2, ✍️3) `(Send)`:**
+    *   [ ] Add UI elements (consider initial visibility) next to Send Button.
+    *   [ ] Use API for impersonation with correct perspective instructions.
+    *   [ ] Implement `old_input`/`new_input` check logic.
 
 **Phase 3: Persistent Guides Implementation (Complex)**
 
 9.  [ ] **Persistent State Management:**
     *   [ ] Choose storage mechanism for active guides.
     *   [ ] Map SillyTavern APIs for `inject`, `listinjects`, `flushinjects` to required IDs (`situation`, `thinking`, `clothes`, `state`, `rule_guide`, `Custom`).
-10. [ ] **Persistent Guides UI - Main Menu (🤔):**
+10. [ ] **Persistent Guides UI - Main Access `(Menu)`:**
+    *   [ ] Add entry point in Tools Menu to open a dedicated panel/modal.
     *   [ ] Create main UI panel/modal.
-    *   [ ] Add buttons for guide types & actions.
-11. [ ] **Show/Flush Guides:**
-    *   [ ] Implement "Show Guides" (list API -> HTML popup).
-    *   [ ] Implement "Flush Guides" (list API -> select -> remove API).
-12. [ ] **Edit/Custom Guides:**
-    *   [ ] Implement "Edit Guides" (list -> select -> display in textarea -> save with inject API).
-    *   [ ] Implement "Custom Guide" (textarea -> check existing -> save/update with inject API).
-13. [ ] **Guide Generation (using `/gen` equivalent):**
+11. [ ] **Show/Flush Guides `(Panel)`:**
+    *   [ ] Implement "Show Guides" button inside Persistent Guides panel.
+    *   [ ] Implement "Flush Guides" button inside Persistent Guides panel.
+12. [ ] **Edit/Custom Guides `(Panel)`:**
+    *   [ ] Implement "Edit Guides" button inside Persistent Guides panel.
+    *   [ ] Implement "Custom Guide" button/area inside Persistent Guides panel.
+13. [ ] **Guide Generation (using `/gen` equivalent) `(Panel)`:**
     *   [ ] Identify SillyTavern API for prompted generation.
-    *   [ ] Implement generation for: Situational, Rules, Thinking, Clothes, State guides.
+    *   [ ] Implement generation buttons/controls inside Persistent Guides panel.
     *   [ ] Handle preset switching if needed.
     *   [ ] Inject generated content with correct IDs.
 
 **Phase 4: Settings & Finalization**
 
-14. [ ] **Settings UI (⚙️):**
-    *   [ ] Create settings UI section/modal.
-    *   [ ] Add toggles for auto-triggers and impersonation visibility.
-15. [ ] **Settings Logic & Storage:**
-    *   [ ] Store settings preferences.
-    *   [ ] Apply settings (show/hide UI, implement auto-trigger logic).
-16. [ ] **Styling & Polish:**
+14. [ ] **Settings UI `(Menu)`:**
+    *   [ ] Create settings UI section/modal, accessed via Tools Menu.
+    *   [ ] Add toggles `(Panel)` for auto-triggers and impersonation visibility inside Settings panel.
+15. [ ] **Styling & Polish:**
     *   [ ] Refine UI with `style.css`.
     *   [ ] Ensure consistency.
-17. [ ] **Testing & Debugging:**
+16. [ ] **Testing & Debugging:**
     *   [ ] Test all features thoroughly.
     *   [ ] Debug issues.
-18. [ ] **Documentation:**
+17. [ ] **Documentation:**
     *   [ ] Update `README.md` with final instructions and usage.
 
 **Phase 5: Character Description Management (New Feature)**
 
-19. [ ] **Storage Design:**
+18. [ ] **Storage Design:**
     *   [ ] Determine storage for: Original (reference), Current Updated, Previous Updated descriptions (e.g., `localStorage` keyed by character ID).
-20. [ ] **API Identification:**
+19. [ ] **API Identification:**
     *   [ ] Find API to get original description.
     *   [ ] Find API to get relevant chat history.
     *   [ ] Find API/method to override description used by AI (context injection? direct data mod?).
     *   [ ] Find API for LLM generation (`/gen`).
-21. [ ] **Update Logic Implementation:**
+20. [ ] **Update Logic Implementation:**
     *   [ ] Develop LLM prompt for description update.
     *   [ ] Implement logic: Trigger LLM -> Store New (Current Updated) -> Move Old (Current Updated) to Previous Updated.
-22. [ ] **Context Override Implementation:**
+21. [ ] **Context Override Implementation:**
     *   [ ] Ensure the Current Updated description is prioritized by the AI.
-23. [ ] **Revert Logic Implementation:**
+22. [ ] **Revert Logic Implementation:**
     *   [ ] Implement function to swap Current Updated and Previous Updated descriptions.
     *   [ ] Ensure AI context uses the reverted description.
-24. [ ] **UI Elements:**
-    *   [ ] Add UI button to trigger description update.
-    *   [ ] Add UI button to revert to previous updated description (enable only if previous exists).
-
-**Current Button/Menu Structure:**
-
-## Core Features
-
-- [x] Implement Guided Generation Button (Next to Send Button)
-- [x] Implement Guided Swipe Button (Next to Send Button)
-- [x] Implement Guided Impersonation Button (Next to Send Button)
-- [x] Implement Settings/Tools Menu Button (Left side)
-    - [x] Add "Simple Send" action to menu
-    - [x] Add "Recover Input" action to menu
-
-## Enhancements & Refinements
-
-- [ ] Add settings panel (accessible via menu?):
-    - [ ] Toggle individual button visibility (Guided Gen, Swipe, Impersonate)
-    - [ ] Configure default behavior (e.g., auto-send after generation)
-- [ ] Improve UI consistency with SillyTavern themes.
-- [ ] Add localization support (i18n).
-- [ ] Consider adding icons to menu items.
-- [ ] Refactor code for better organization (e.g., separate UI setup, event handlers).
-
-## Known Issues / Bugs
-
-- [ ] Investigate potential conflicts with other extensions modifying the send form.
-
-## Future Ideas
-
-- [ ] Quick preset selection for guided prompts.
-- [ ] Integration with other extensions (e.g., QuickReplies).
+23. [ ] **UI Elements for Description Update `(Panel)`:**
+    *   [ ] Add UI button `(Panel)` to trigger description update.
+    *   [ ] Add UI button `(Panel)` to revert to previous updated description (enable only if previous exists).

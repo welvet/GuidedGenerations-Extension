@@ -8,6 +8,31 @@
     margin: 0 2px;  /* Add small margin between buttons */
 }
 
+/* General Styles for Guided Generations Buttons */
+.gg-icon-spacing {
+    margin-right: 5px; /* Add some space between icon and text */
+}
+
+/* Styles for buttons placed next to the send button */
+.gg-button {
+    margin-right: 8px; /* Space between GG buttons and the main send button */
+    cursor: pointer;
+    display: flex; /* Align icon nicely if needed */
+    align-items: center; /* Align icon nicely */
+    padding: 5px; /* Add some padding */
+    /* Optional: Match font size/color of send button if needed */
+    /* font-size: inherit; */
+    /* color: inherit; */
+}
+
+/* Ensure interactable class styles apply if not inherited */
+.gg-button.interactable {
+    opacity: 0.7; /* Example style */
+}
+.gg-button.interactable:hover {
+    opacity: 1.0; /* Example style */
+}
+
 /* Style for the recover button icon */
 #gg-recover-button i {
     color: var(--primary-color); /* Use theme color */
