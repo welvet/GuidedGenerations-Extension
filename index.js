@@ -10,6 +10,7 @@ const EXTENSION_ID = "guided-generations"; // Used for CSS IDs etc.
 
 // State variable for Input Recovery
 let storedInput = null;
+let isSending = false; // Flag to prevent double execution
 
 // Initial settings (can be expanded later)
 const defaultSettings = {
@@ -19,202 +20,213 @@ const defaultSettings = {
 // Hold the current settings
 let settings = { ...defaultSettings };
 
-// Function to add the Input Recovery button
-function addRecoveryButton() {
-    // Find the actual send button and its container
-    const sendButton = document.getElementById('send_but');
-    const targetContainer = sendButton?.parentElement; // Should be #rightSendForm
+// Function to send message without AI reply (Simple Send)
+// ASSUMING SillyTavern is globally available
+const simpleSend = () => {
+    if (isSending) {
+        console.log(`${EXTENSION_NAME}: simpleSend already in progress, skipping.`);
+        return;
+    }
+    isSending = true;
+    console.log(`${EXTENSION_NAME}: simpleSend function entered (isSending = true).`);
+    // Check if SillyTavern and getContext exist globally
+    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+        const context = SillyTavern.getContext();
+        const messageText = String($("#send_textarea").val());
 
-    if (!targetContainer) {
-        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add recovery button.`);
+        if (!messageText.trim()) {
+            console.log("GG Simple Send: Input is empty.");
+            return;
+        }
+
+        const command = `/send ${messageText}|\n/setinput`;
+
+        console.log("GG Simple Send Executing:", command);
+        try {
+            context.executeSlashCommandsWithOptions(command);
+        } catch (error) {
+            console.error("GG Simple Send Error:", error);
+        }
+    } else {
+        console.error("GG Simple Send Error: SillyTavern.getContext is not available globally.");
+        // Optionally, display an error to the user via popup or console
+    }
+    // Reset the flag after a short delay to allow completion but prevent rapid re-clicks
+    setTimeout(() => { isSending = false; }, 100); // 100ms delay
+    console.log(`${EXTENSION_NAME}: simpleSend function finished (isSending = false after delay).`);
+};
+
+// Function to create and inject UI elements
+function setupUI() {
+    console.log(`${EXTENSION_NAME}: setupUI called.`);
+    // Ensure the target exists
+    if ($('#leftSendForm').length === 0) {
+        console.warn(`${EXTENSION_NAME}: setupUI - #leftSendForm not found yet.`);
         return;
     }
 
-    // Check if our button already exists
-    const buttonId = `${EXTENSION_ID}-recover-button`;
-    if (document.getElementById(buttonId)) {
-        return; // Already added
+    // Check if BOTH button and menu already exist to prevent re-running setup logic
+    if ($('#gg-menu-button').length > 0 || $('#gg-tools-menu').length > 0) {
+        console.warn(`${EXTENSION_NAME}: setupUI - Button or menu already exists. Aborting setup.`);
+        return; // Exit if elements are already there
+    }
+    console.log(`${EXTENSION_NAME}: setupUI - Proceeding with element creation and listener attachment.`);
+
+    // Left-side container for GG Tools Button
+    const ggToolsContainer = $('<div id="gg-tools-container" style="display: flex; align-items: center; height: 100%;"></div>');
+
+    // GG Tools Menu Button (Trigger)
+    const ggMenuButton = $('<div id="gg-menu-button" class="gg-menu-button" title="Guided Generations Tools"><i class="fa-solid fa-gear"></i></div>');
+
+    // GG Tools Pop-up Menu (Initially hidden)
+    const ggToolsMenu = $('<div id="gg-tools-menu" class="gg-options-popup">');
+    const ggToolsMenuContent = $('<div class="options-content"></div>'); // Mimic #options structure
+
+    // Simple Send Button (inside menu)
+    const simpleSendMenuItem = $(
+        '<a id="gg-simple-send-action" class="interactable" tabindex="0">' +
+        '<i class="fa-lg fa-solid fa-plus"></i>' +
+        '<span> Simple Send</span>' +
+        '</a>'
+    );
+
+    // Recover Input Button (inside menu)
+    const recoverInputMenuItem = $(
+        '<a id="gg-recover-action" class="interactable" tabindex="0">' +
+        '<i class="fa-lg fa-solid fa-life-ring"></i>' + // Using life-ring (life buoy) icon
+        '<span> Recover Input</span>' +
+        '</a>'
+    );
+
+    // Append items to the menu content
+    ggToolsMenuContent.append(simpleSendMenuItem);
+    ggToolsMenuContent.append(recoverInputMenuItem);
+    ggToolsMenu.append(ggToolsMenuContent);
+
+    // Find the target form where buttons reside
+    const targetForm = $('#leftSendForm');
+
+    // Insert the button specifically after the extensions button
+    const extensionsButton = $('#extensionsMenuButton');
+    if (extensionsButton.length > 0) {
+        console.log(`${EXTENSION_NAME}: Inserting button after #extensionsMenuButton.`);
+        ggMenuButton.insertAfter(extensionsButton);
+    } else {
+        // Fallback: append if extensions button not found (shouldn't happen ideally)
+        console.warn(`${EXTENSION_NAME}: #extensionsMenuButton not found, appending instead.`);
+        targetForm.append(ggMenuButton);
     }
 
-    // Find the main text input area
-    const textInput = document.getElementById('send_textarea');
-    if (!textInput) {
-        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
-        // We could potentially still add the button, but it wouldn't function.
-        // For now, let's prevent adding it if the input isn't found.
-        return;
-    }
+    // Append the menu directly to the button for relative positioning
+    ggMenuButton.append(ggToolsMenu);
 
-    // Create the button
-    const recoveryButton = document.createElement('button');
-    recoveryButton.id = buttonId;
-    recoveryButton.textContent = '🛟'; // Input Recovery icon
-    recoveryButton.classList.add('fa-solid');
-    recoveryButton.classList.add('stui_button');
-    recoveryButton.title = 'Recover previous input'; // Tooltip
+    console.log(`${EXTENSION_NAME}: Appended button and menu.`);
 
-    // Add basic styling (can be moved to style.css later)
-    recoveryButton.style.marginLeft = '5px'; // Space it from the element before it
+    // Right-side container for future Action Buttons
+    const ggActionButtonsContainer = $('<div id="gg-action-buttons-container" style="display: flex; align-items: center; height: 100%; margin-left: auto;"></div>');
+    // TODO: Add GG, GS, GI buttons here later
 
-    // Add click listener for recovery logic
-    recoveryButton.addEventListener('click', (event) => {
-        event.preventDefault(); // Prevent form submission if inside a form
+    // Add Action Buttons container before the regenerate button
+    $('#regenerate_button').before(ggActionButtonsContainer);
 
-        if (storedInput !== null) {
-            console.log(`${EXTENSION_NAME}: Recovering input...`);
-            textInput.value = storedInput; // Put the stored text back
-            storedInput = null; // Clear the stored value after recovery
-            // Optional: Give user feedback (e.g., briefly change button style)
-            recoveryButton.style.opacity = 0.5; // Dim button briefly
-            setTimeout(() => { recoveryButton.style.opacity = 1; }, 500);
+    // --- Event Handlers ---
 
-            // Dispatch an input event to ensure any listeners on the textarea update
-            textInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-
-        } else {
-            console.log(`${EXTENSION_NAME}: No input stored for recovery.`);
-            // Optional: Feedback if nothing is stored (e.g., shake button?)
+    // Save input on send or regenerate
+    $('#send_button, #regenerate_button').on('click', saveInput);
+    // Also save when pressing Enter in the textarea
+    $('#send_textarea').on('keypress', function(e) {
+        if (e.which === 13 && !e.shiftKey) { // Enter key without Shift
+            saveInput();
         }
     });
 
-    // Insert the button before the send button
-    targetContainer.insertBefore(recoveryButton, sendButton);
+    // Toggle GG Tools Menu
+    ggMenuButton.on('click', (event) => {
+        console.log(`${EXTENSION_NAME}: ggMenuButton clicked.`);
+        ggToolsMenu.toggleClass('shown'); // Toggle the .shown class
+        event.stopPropagation(); // Prevent this click from immediately closing the menu via the document handler
+        console.log(`${EXTENSION_NAME}: ggToolsMenu .shown toggled. Has class: ${ggToolsMenu.hasClass('shown')}`);
+    });
 
-    console.log(`${EXTENSION_NAME}: Input Recovery button added.`);
+    // Function to close menu when clicking outside
+    $(document).on('click', (event) => {
+        const $target = $(event.target);
+        // Check if the menu is shown AND if the click is outside the button and the menu
+        if (ggToolsMenu.hasClass('shown') && !$target.closest('#gg-menu-button').length && !$target.closest('#gg-tools-menu').length) {
+            console.log(`${EXTENSION_NAME}: Click outside detected, hiding menu.`);
+            ggToolsMenu.removeClass('shown');
+        }
+    });
+
+    // Add listeners to menu items
+    console.log(`${EXTENSION_NAME}: Attaching listener to #gg-simple-send-action.`);
+    $('#gg-simple-send-action')
+        .off('click') // Remove previous listeners first
+        .on('click', (event) => {
+            console.log(`${EXTENSION_NAME}: Simple Send action clicked.`);
+            simpleSend();
+            ggToolsMenu.removeClass('shown'); // Hide menu after action
+            event.stopPropagation();
+        });
+
+    console.log(`${EXTENSION_NAME}: Attaching listener to #gg-recover-action.`);
+    $('#gg-recover-action')
+        .off('click') // Remove previous listeners first
+        .on('click', (event) => {
+            console.log(`${EXTENSION_NAME}: Recover Input action clicked.`);
+            recoverInput();
+            ggToolsMenu.removeClass('shown'); // Hide menu after action
+            event.stopPropagation();
+        });
 }
+
+console.log(`${EXTENSION_NAME}: setupUI finished.`);
 
 // Function to save the current user input from the textarea
 function saveInput() {
-    // Read the current input directly from the textarea
-    const currentInput = String($('#send_textarea').val());
-
-    if (currentInput && currentInput.trim() !== '') { // Only store non-empty input
-        storedInput = currentInput;
-        console.log(`${EXTENSION_NAME}: Stored input for recovery: "${storedInput}"`);
+    // Ensure the input exists and get its value
+    const textInput = $('#send_textarea');
+    if (textInput && textInput.length > 0) {
+        const currentInput = String(textInput.val());
+        // Store only if it's not empty or just whitespace
+        if (currentInput.trim()) {
+            storedInput = currentInput;
+            //console.log(`${EXTENSION_NAME}: Input saved:`, storedInput); // Optional: Log saved input
+        } else {
+            // If user sends empty, clear stored input too?
+            // storedInput = null;
+            // console.log(`${EXTENSION_NAME}: Empty input sent, cleared stored input.`);
+        }
     } else {
-        // If the input area was empty, ensure storedInput is null
-        // so the recovery button doesn't restore nothing.
-        storedInput = null;
-        console.log(`${EXTENSION_NAME}: Input area empty, nothing to store for recovery.`);
+        console.warn(`${EXTENSION_NAME}: Could not find #send_textarea to save input.`);
     }
 }
 
-// Expose saveInput globally for testing
-window.saveInput = saveInput;
+// Function to recover the last input
+function recoverInput() {
+    if (storedInput !== null) {
+        console.log(`${EXTENSION_NAME}: Recovering input...`);
+        $('#send_textarea').val(storedInput); // Put the stored text back
+        storedInput = null; // Clear the stored value after recovery
+        // Optional: Give user feedback (e.g., briefly change button style)
+        // Feedback can be done via CSS hover/active states now
 
-// Function to add the Simple Send button
-function addSimpleSendButton() {
-    // Find the actual send button and its container
-    const sendButton = document.getElementById('send_but');
-    const targetContainer = sendButton?.parentElement;
-
-    if (!targetContainer) {
-        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add simple send button.`);
-        return;
-    }
-
-    const buttonId = `${EXTENSION_ID}-simple-send-button`;
-    if (document.getElementById(buttonId)) {
-        return;
-    }
-
-    const textInput = document.getElementById('send_textarea');
-    if (!textInput) {
-        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
-        return;
-    }
-
-    const simpleSendButton = document.createElement('button');
-    simpleSendButton.id = buttonId;
-    simpleSendButton.textContent = '➕';
-    simpleSendButton.classList.add('fa-solid');
-    simpleSendButton.classList.add('stui_button');
-    simpleSendButton.title = 'Simple Send (no AI reply)';
-
-    simpleSendButton.style.marginLeft = '5px';
-
-    simpleSendButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        console.log(`${EXTENSION_NAME}: Simple Send button clicked.`);
-        const textToSend = textInput.value;
-        if (textToSend && textToSend.trim() !== '') {
-            const context = SillyTavern.getContext();
-            if (context && context.executeSlashCommandsWithOptions) {
-                // Corrected STscript command with space after pipe
-                const correctedCommand = '/send {{input}}| /setinput';
-                console.log(`${EXTENSION_NAME}: Executing STscript command: ${correctedCommand}`);
-                context.executeSlashCommandsWithOptions(correctedCommand);
-            } else {
-                console.error(`${EXTENSION_NAME}: SillyTavern.getContext() or executeSlashCommandsWithOptions is not available.`);
-                alert(`${EXTENSION_NAME}: Error sending message. See console for details.`);
-            }
-        } else {
-            console.log(`${EXTENSION_NAME}: No text to send.`);
+        // Dispatch an input event to ensure any listeners on the textarea update
+        // Need the DOM element for dispatchEvent
+        const textAreaElement = $('#send_textarea')[0];
+        if (textAreaElement) {
+            textAreaElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
         }
-    });
-
-    targetContainer.insertBefore(simpleSendButton, sendButton);
-
-    console.log(`${EXTENSION_NAME}: Simple Send button added.`);
+    } else {
+        console.log(`${EXTENSION_NAME}: No input stored for recovery.`);
+        // Optional: Feedback if nothing is stored (e.g., shake button?)
+    }
 }
 
-// Function to add the Guided Response button
-function addGuidedResponseButton() {
-    // Find the actual send button and its container
-    const sendButton = document.getElementById('send_but');
-    const targetContainer = sendButton?.parentElement; // Should be #rightSendForm
-
-    if (!targetContainer) {
-        console.warn(`${EXTENSION_NAME}: Could not find send button (#send_but) or its parent container to add guided response button.`);
-        return;
-    }
-
-    // Check if our button already exists
-    const buttonId = `${EXTENSION_ID}-guided-response-button`;
-    if (document.getElementById(buttonId)) {
-        return; // Already added
-    }
-
-    // Find the main text input area
-    const textInput = document.getElementById('send_textarea');
-    if (!textInput) {
-        console.warn(`${EXTENSION_NAME}: Could not find text input #send_textarea.`);
-        return;
-    }
-
-    // Create the button
-    const guidedResponseButton = document.createElement('button');
-    guidedResponseButton.id = buttonId;
-    guidedResponseButton.textContent = '🦮'; // Guided Response icon
-    guidedResponseButton.classList.add('fa-solid'); // Use Font Awesome class if available in ST
-    guidedResponseButton.classList.add('stui_button'); // Basic SillyTavern button styling
-    guidedResponseButton.title = 'Guided Response'; // Tooltip
-
-    // Add basic styling (can be moved to style.css later)
-    guidedResponseButton.style.marginLeft = '5px'; // Space it from the element before it
-
-    // Add click listener for guided response logic (to be implemented)
-    guidedResponseButton.addEventListener('click', (event) => {
-        event.preventDefault(); // Prevent form submission if inside a form
-        // TODO: Implement Guided Response logic here
-        console.log(`${EXTENSION_NAME}: Guided Response button clicked.`);
-        const guidanceText = textInput.value; // For now, guidance is the input text itself
-        if (guidanceText && guidanceText.trim() !== '') {
-            // Need to use context.executeSlashCommandsWithOptions() here for guided response
-            console.log(`${EXTENSION_NAME}: Guidance provided: "${guidanceText}" (Guided Response not yet implemented)`);
-            // Placeholder for STscript command execution
-            // context.executeSlashCommandsWithOptions(...)
-        } else {
-            console.log(`${EXTENSION_NAME}: No guidance text provided.`);
-        }
-    });
-
-    // Insert the button before the send button
-    targetContainer.insertBefore(guidedResponseButton, sendButton);
-
-    console.log(`${EXTENSION_NAME}: Guided Response button added.`);
-}
-
+// Expose functions globally if needed for debugging
+window.ggSaveInput = saveInput;
+window.ggRecoverInput = recoverInput; // Expose recoverInput
+window.ggSimpleSend = simpleSend; // Expose simpleSend
 
 // Function to load settings (placeholder for now)
 function loadSettings() {
@@ -229,24 +241,37 @@ function init() {
 
     // Add the UI elements if enabled
     if (settings.isEnabled) {
-        addRecoveryButton();
-        addSimpleSendButton();
-        addGuidedResponseButton();
+        setupUI();
     }
 
     console.log(`${EXTENSION_NAME}: Initialization complete.`);
 }
 
-// Wait for SillyTavern's UI to be ready before initializing
-// We can use DOMContentLoaded or observe for a specific element
-// A simple check might be to wait for the send button itself
-const checkReadyState = setInterval(() => {
-    // Check if the main chat UI elements are loaded
-    const sendButton = document.getElementById('send_but');
-    const chatLog = document.getElementById('chat'); // Example element
-
-    if (sendButton && chatLog) {
-        clearInterval(checkReadyState); // Stop checking
-        init(); // Initialize the extension
+let setupComplete = false;
+// Function to check if primary UI elements are loaded and then setup GG UI
+const checkElementAndSetup = () => {
+    console.log(`${EXTENSION_NAME}: checkElementAndSetup running...`);
+    // Check for a reliable element that appears when chat is ready
+    // Check for either possible send button ID
+    if (($('#send_button').length > 0 || $('#send_but').length > 0) && !setupComplete) {
+        console.log(`${EXTENSION_NAME}: Found send button (#send_button or #send_but), attempting setup.`);
+        if (settings.isEnabled) {
+            setupUI();
+            setupComplete = true; // Mark setup as complete
+        } else {
+            console.log(`${EXTENSION_NAME}: Extension is disabled in settings.`);
+            setupComplete = true; // Also mark complete if disabled to stop checking
+        }
+    } else if (!setupComplete) {
+        // If elements not found yet and setup isn't complete, try again shortly
+        // console.log(`${EXTENSION_NAME}: Waiting for #send_button...`);
+        setTimeout(checkElementAndSetup, 200); // Check again in 200ms
     }
-}, 100); // Check every 100ms
+};
+
+// Wait for the document to be ready before trying to add UI elements
+$(document).ready(function () {
+    console.log(`${EXTENSION_NAME}: Document ready. Starting setup check.`);
+    // Initial check
+    checkElementAndSetup();
+});

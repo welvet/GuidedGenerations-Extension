@@ -21,27 +21,27 @@ This list outlines the steps to develop the Guided Generations extension based o
 4.  [x] **Input Recovery (🛟):**
     *   [x] Implement temporary `old_input` storage.
     *   [x] Add UI element to restore `old_input`.
-5.  [ ] **Simple Send (➕):**
-    *   [ ] Add UI element.
-    *   [ ] Use SillyTavern API to send message without AI reply.
-6.  [ ] **Guided Response (🦮):**
-    *   [ ] Add UI element.
-    *   [ ] Store `old_input`.
-    *   [ ] Use API to inject context (`instruct` ID).
-    *   [ ] Use API to trigger AI response.
-    *   [ ] Restore `old_input`.
-    *   [ ] *Later:* Add group chat selection logic.
-7.  [ ] **Guided Swipe (➡️):**
-    *   [ ] Add UI element.
-    *   [ ] Check last message author.
-    *   [ ] Store `old_input`.
-    *   [ ] Use API to inject context.
-    *   [ ] Use API to trigger swipe.
-    *   [ ] Restore `old_input`.
-8.  [ ] **Guided Impersonation (✍️, ✍️2, ✍️3):**
-    *   [ ] Add UI elements (consider initial visibility).
-    *   [ ] Use API for impersonation with correct perspective instructions.
-    *   [ ] Implement `old_input`/`new_input` check logic.
+5.  [x] **Simple Send (➕):**
+    *   [x] Add UI element.
+    *   [x] Use SillyTavern API to send message without AI reply.
+6.  [x] **Guided Response (🦮):**
+    *   [x] Add UI element.
+    *   [x] Store `old_input`.
+    *   [x] Use API to inject context (`instruct` ID).
+    *   [x] Use API to trigger AI response.
+    *   [x] Restore `old_input`.
+    *   [x] *Later:* Add group chat selection logic.
+7.  [x] **Guided Swipe (➡️):**
+    *   [x] Add UI element.
+    *   [x] Check last message author.
+    *   [x] Store `old_input`.
+    *   [x] Use API to inject context.
+    *   [x] Use API to trigger swipe.
+    *   [x] Restore `old_input`.
+8.  [x] **Guided Impersonation (✍️, ✍️2, ✍️3):**
+    *   [x] Add UI elements (consider initial visibility).
+    *   [x] Use API for impersonation with correct perspective instructions.
+    *   [x] Implement `old_input`/`new_input` check logic.
 
 **Phase 3: Persistent Guides Implementation (Complex)**
 
@@ -100,3 +100,33 @@ This list outlines the steps to develop the Guided Generations extension based o
 24. [ ] **UI Elements:**
     *   [ ] Add UI button to trigger description update.
     *   [ ] Add UI button to revert to previous updated description (enable only if previous exists).
+
+**Current Button/Menu Structure:**
+
+## Core Features
+
+- [x] Implement Guided Generation Button (Next to Send Button)
+- [x] Implement Guided Swipe Button (Next to Send Button)
+- [x] Implement Guided Impersonation Button (Next to Send Button)
+- [x] Implement Settings/Tools Menu Button (Left side)
+    - [x] Add "Simple Send" action to menu
+    - [x] Add "Recover Input" action to menu
+
+## Enhancements & Refinements
+
+- [ ] Add settings panel (accessible via menu?):
+    - [ ] Toggle individual button visibility (Guided Gen, Swipe, Impersonate)
+    - [ ] Configure default behavior (e.g., auto-send after generation)
+- [ ] Improve UI consistency with SillyTavern themes.
+- [ ] Add localization support (i18n).
+- [ ] Consider adding icons to menu items.
+- [ ] Refactor code for better organization (e.g., separate UI setup, event handlers).
+
+## Known Issues / Bugs
+
+- [ ] Investigate potential conflicts with other extensions modifying the send form.
+
+## Future Ideas
+
+- [ ] Quick preset selection for guided prompts.
+- [ ] Integration with other extensions (e.g., QuickReplies).
