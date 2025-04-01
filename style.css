@@ -1,3 +1,4 @@
+/* Right-side action buttons */
 .gg-button {
     font-size: 1.1em; /* Adjust size as needed */
     padding: 0 5px;   /* Add some horizontal padding */
@@ -23,6 +24,10 @@
     /* Optional: Match font size/color of send button if needed */
     /* font-size: inherit; */
     /* color: inherit; */
+}
+
+.gg-button:hover {
+    color: var(--primary_color); /* Highlight color on hover */
 }
 
 /* Ensure interactable class styles apply if not inherited */
@@ -53,7 +58,7 @@
     color: var(--accent-color); /* Use theme accent color on hover */
 }
 
-/* Left-side GG Tools Menu Trigger Button */
+/* Left-side GG Tools Menu Trigger Button (Gear Icon) */
 .gg-menu-button {
     cursor: pointer;
     padding: 0 8px; /* Adjust padding */
@@ -65,15 +70,15 @@
     align-items: center;
     height: 100%;     /* Match height of parent */
     position: relative; /* Needed for absolute positioning of the menu */
-    order: 10; /* Force it to appear visually later in the flex container */
+    /* order: 10; */ /* Remove fixed order, rely on JS insertion order */
 }
 
 .gg-menu-button:hover {
     color: var(--accent-color);
 }
 
-/* The pop-up menu itself */
-.gg-options-popup {
+/* The pop-up menu container itself */
+#gg-tools-menu {
     display: none; /* Hidden by default */
     position: absolute;
     bottom: 100%; /* Position above the trigger button */
@@ -84,66 +89,52 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     z-index: 1050; /* Ensure it appears above other elements */
     min-width: 150px; /* Optional: set a minimum width */
+    padding: 5px 0; /* Vertical padding for the container */
+    white-space: nowrap; /* Prevent wrapping */
+    -webkit-backdrop-filter: blur(var(--SmartThemeBlurStrength));
+    backdrop-filter: blur(var(--SmartThemeBlurStrength));
 }
 
-/* Show the menu when active */
-.gg-options-popup.active {
+/* Show the menu when the .shown class is added */
+#gg-tools-menu.shown {
     display: block;
 }
 
-/* Mimic .options-content styling */
-.gg-options-popup .options-content {
-    padding: 5px 0; /* Vertical padding */
-    display: flex;
-    flex-direction: column;
-}
-
-/* Style for menu items (<a> tags) */
-.gg-options-popup .options-content a {
+/* Style for individual menu items (divs inside the menu) */
+#gg-tools-menu .gg-menu-item {
     display: flex;
     align-items: center;
-    padding: 8px 15px; /* Padding inside each item */
+    padding: 5px 10px; /* Reduced padding */
     color: var(--text-color); /* Use theme text color */
     text-decoration: none;
-    white-space: nowrap;
     cursor: pointer;
+    font-size: calc(var(--mainFontSize) * 0.9); /* Use ST variable, slightly smaller */
+    /* Inherits interactable styles from menu_button class */
 }
 
-.gg-options-popup .options-content a i {
-    margin-right: 10px; /* Space between icon and text */
-    width: 1.2em; /* Fixed width for alignment */
+#gg-tools-menu .gg-menu-item i {
+    margin-right: 8px; /* Slightly reduced space */
+    width: auto; /* Let icon width be natural */
     text-align: center;
+    /* font-size: 1em; */ /* Let icon inherit font size */
+}
+
+#gg-tools-menu .gg-menu-item:hover {
+    background-color: var(--accent-color-bg); /* Optional: Hover effect like ST menus */
+}
+
+/* Add space between icon and text for old buttons (if they were ever used like this) */
+.gg-icon-spacing {
+    margin-right: 5px; /* Adjust spacing as needed */
+}
+
+/* Ensure Font Awesome icons are displayed correctly */
+.fa-dog, .fa-plus, .fa-recycle, .fa-hand-point-left, .fa-user {
+    /* Basic styles if needed, often handled by FA core CSS */
+    display: inline-block; /* Ensures proper alignment and spacing */
 }
 
 /* Ensure right-side container stays right */
 #gg-action-buttons-container {
     margin-left: auto; /* Push to the far right */
-}
-
-/* GG Tools Popup Menu */
-#gg-tools-menu {
-    display: none; /* Hidden by default */
-    position: absolute;
-    bottom: 100%; /* Position above the button */
-    left: 0;
-    z-index: 100; /* Ensure it's on top */
-    /* Match styles from #options / #extensionsMenu */
-    background-color: var(--SmartThemeBlurTintColor);
-    -webkit-backdrop-filter: blur(var(--SmartThemeBlurStrength));
-    backdrop-filter: blur(var(--SmartThemeBlurStrength));
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
-    padding: 2px;
-    min-width: 150px; /* Keep a min-width for usability */
-    white-space: nowrap; /* Prevent wrapping */
-}
-
-/* Class to show the menu */
-#gg-tools-menu.shown {
-    display: block;
-}
-
-/* Style for items within the menu */
-#gg-tools-menu .options-content {
-    display: flex;
 }

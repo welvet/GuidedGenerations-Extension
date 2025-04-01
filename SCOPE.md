@@ -68,6 +68,10 @@ The extension should aim to implement the following core functionalities:
     *   **Goal:** Basic functionality to send the current input as a message.
     *   **QR Logic Summary:** Equivalent to the standard send button but potentially used in QR chains.
 
+## Documentation
+
+- Internal code documentation and explanations can be found in [`JSDoc.md`](./JSDoc.md).
+
 ## Overall Goal
 
 The extension should provide these guided generation and impersonation tools seamlessly within the SillyTavern UI, likely through dedicated buttons or context menu options, replacing the need for the original QR set while maintaining its established functionalities.
