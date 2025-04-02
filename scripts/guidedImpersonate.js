@@ -3,13 +3,27 @@
 const guidedImpersonate = async () => {
     console.log('[GuidedGenerations] Guided Impersonate button clicked');
 
-    // Stscript: Saves current input, triggers impersonation, restores input.
-    const stscriptCommand = 
-        `/setglobalvar key=gg_old_input {{input}} | ` +
-        `/impersonate | ` +
-        `/setinput {{getglobalvar::gg_old_input}}`; 
+    // Stscript: Checks if current input matches last impersonation result.
+    // If yes, reverts to pre-impersonation input. 
+    // If no, saves current input, impersonates, saves new result.
+    const stscriptCommand = `
+/ifempty value={{getglobalvar::gg_old_input}} {{input}} |
+/setglobalvar key=gg_old_input {{pipe}} |
+/ifempty value={{getglobalvar::gg_new_input}} a |
+/setglobalvar key=gg_new_input {{pipe}} |
 
-    console.log(`[GuidedGenerations] Executing stscript: ${stscriptCommand}`);
+/if left={{input}} rule=eq right={{getglobalvar::gg_new_input}} 
+else={:
+    /setglobalvar key=gg_old_input {{input}} |
+    /impersonate await=true Write in first Person perspective from {{user}}. {{input}} |
+    /setglobalvar key=gg_new_input {{input}} |
+:}
+{:
+    /setinput {{getglobalvar::gg_old_input}} |
+:} |
+    `;
+
+    console.log(`[GuidedGenerations] Executing stscript for Guided Impersonate`);
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
