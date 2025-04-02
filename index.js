@@ -20,6 +20,20 @@ const defaultSettings = {
 
 let settings = { ...defaultSettings };
 
+/**
+ * Checks if the current chat context is a group chat.
+ * @returns {boolean} True if it is a group chat, false otherwise.
+ */
+export function isGroupChat() {
+    try {
+        const context = SillyTavern.getContext();
+        return !!context.groupId; // groupId will be a string ID if group, otherwise null/undefined
+    } catch (error) {
+        console.error(`${EXTENSION_NAME}: Error checking group chat status:`, error);
+        return false; // Assume not a group chat on error
+    }
+}
+
 function loadSettings() {
     // In the future, load settings from extension_settings['Guided Generations']
     // For now, just use defaults
