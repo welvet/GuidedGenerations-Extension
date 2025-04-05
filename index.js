@@ -7,12 +7,11 @@ import { recoverInput } from './scripts/inputRecovery.js';
 import { guidedResponse } from './scripts/guidedResponse.js';
 import { guidedSwipe } from './scripts/guidedSwipe.js';
 import { guidedImpersonate } from './scripts/guidedImpersonate.js'; // Import new function
-// Try importing extension_settings directly
-import { getContext, loadExtensionSettings, extension_settings } from '../../../extensions.js'; // Adjusted path
+// Import necessary functions/objects from SillyTavern
+import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; // Adjusted path
 
-// Constants
-const extensionName = "Silly Tavern-GuidedGenerations"; // Use kebab-case, matching manifest / folder
-const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // Added folder path
+const extensionName = "guided-generations"; // Use the simple name as the internal identifier
+// const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
 
 let isSending = false; 
 // Removed storedInput as recovery now uses stscript global vars
@@ -254,6 +253,7 @@ function addExtensionButtons() {
 // Mimic regex extension pattern: assume container exists and populate on ready
 $(document).ready(async function () { 
     console.log(`${extensionName}: Document ready, initializing...`);
+    console.log('Extension Context:', getContext()); // Log the context
 
     // ***** Load settings FIRST *****
     // loadSettings(); // Ensure settings are loaded before UI is built -- MOVED
@@ -261,7 +261,7 @@ $(document).ready(async function () {
     // --- Settings Panel Initialization ---
     // Use a small delay wrapped in a function to ensure the DOM is ready
     // Also use the correct extensionName variable
-    const loadSettingsPanel = () => {
+    const loadSettingsPanel = async () => { // Make the function async
         const containerId = `extension_settings_${extensionName}`;
         let container = document.getElementById(containerId);
 
@@ -284,16 +284,20 @@ $(document).ready(async function () {
             container.innerHTML = ''; 
         }
 
-        const settingsHtmlUrl = `${extensionFolderPath}/settings.html`;
-        console.log(`${extensionName}: Fetching settings template from: ${settingsHtmlUrl}`);
-
-        // Use $.get to fetch the HTML content
-        $.get(settingsHtmlUrl)
-            .done(function(settingsHtml) {
-                console.log(`${extensionName}: Successfully fetched settings template.`);
-                // Append the fetched HTML to the container
-                container.innerHTML = settingsHtml; // Use innerHTML to replace content
-                
+        // Use renderExtensionTemplateAsync instead of manual $.get
+        try {
+            console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
+            // Assuming 'settings' maps to settings.html by convention
+            // Use the explicit path identifier for third-party extensions, referencing the root folder
+            const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings'); 
+            console.log(`${extensionName}: Settings template rendered successfully.`);
+            
+            // Append the fetched HTML to the container using jQuery
+            $(container).html(settingsHtml); // Use jQuery's .html()
+            
+            // Defer the rest of the logic slightly to allow DOM update
+            setTimeout(() => {
+                console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
                 // ***** Load settings HERE, right before updating UI *****
                 loadSettings(); // Ensure settings are loaded/initialized
 
@@ -302,13 +306,15 @@ $(document).ready(async function () {
 
                 // Add event listeners AFTER the HTML is loaded AND UI is updated
                 addSettingsEventListeners();
-                console.log(`${extensionName}: Settings panel added and listeners attached.`);
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                // Log detailed error
-                console.error(`${extensionName}: Error fetching or rendering settings template:`, jqXHR);
-                container.innerHTML = '<p>Error: Could not load settings.html. Check browser console (F12) for details.</p>';
-            });
+                console.log(`${extensionName}: Settings panel actions complete.`);
+            }, 0); // 0ms delay is usually sufficient
+
+        } catch (error) {
+            console.error(`${extensionName}: Error rendering settings template with renderExtensionTemplateAsync:`, error);
+            if (container) { // Check if container exists before modifying
+                 container.innerHTML = '<p>Error: Could not render settings template. Check browser console (F12).</p>';
+            }
+        }
     };
 
     // Use setTimeout to slightly delay the settings panel loading

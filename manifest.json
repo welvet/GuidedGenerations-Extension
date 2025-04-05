@@ -6,6 +6,5 @@
     "js": "index.js",
     "css": "style.css",
     "author": "Samueras",
-    "settings": "settings.html",
-    "version": "0.3.0"
+    "version": "0.3.6"
 }
