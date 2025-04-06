@@ -1,42 +1,27 @@
 /**
- * @file Contains the logic for the Situational Guides (CoT Light) option in the Persistent Guides menu.
+ * @file Contains the logic for the Situational Guide option in the Persistent Guides menu.
  */
 import { isGroupChat } from '../../index.js'; // Import from two levels up
 
 /**
- * Executes the Situational Guides script to analyze the chat history and provide relevant character information.
- * This is a "Chain of Thought light" implementation that helps maintain character consistency.
+ * Executes the Situational Guide script to analyze the current context and extract relevant information.
+ * This guide helps provide an overview of the current situation and environment for the characters.
  */
 const situationalGuide = () => {
     console.log('[GuidedGenerations] Situational Guide button clicked');
 
-    // Save the current input before executing the script
     let stscriptCommand = `/setvar key=inp {{input}} |
 /flushvar focus | 
 /if left={{getvar::inp}} {:/buttons labels=["Yes","No"] "You have text in the Inputfield! Do you want to use it as a Focus for the Guide?:"| /if left={{pipe}} right=Yes /setvar key=focus Focus on {{getvar::inp}}. |:}|
-
-/flushinject situation |`;
-
-    // Add different script sections based on whether it's a group chat |
-    if (isGroupChat()) {
-        console.log('[GuidedGenerations] Detected Group Chat for Situational Guide');
-        stscriptCommand += `
-/split {{group}} |
-/setvar key=x {{pipe}} |
-/buttons labels=x "Select members {{group}}" |
-/setglobalvar key=selection {{pipe}} |
-/gen [OOC: Answer me out of Character! Considering the next response, write me a list entailing the relevant information of {{getglobalvar::selection}}'s description and chat history that would directly influence this response. {{getvar::focus}}]  |
-/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{getglobalvar::selection}} {{pipe}}] |
-`;
-    } else {
-        console.log('[GuidedGenerations] Detected Single Chat for Situational Guide');
-        stscriptCommand += `
-/gen [OOC: Answer me out of Character! Considering the next response, write me a list entailing the relevant information of {{char}}'s description and chat history that would directly influence this response. {{getvar::focus}}]  |
-/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{char}} {{pipe}}] |
-`;
-    }
-
-    stscriptCommand += `/:\"Guided Generations.SysSituation\"|
+/flushinject situation |
+/gen [Analyze the chat history and provide a concise summary of: 
+1. Current location and setting (indoors/outdoors, time of day, weather if relevant)
+2. Present characters and their current activities
+3. Relevant objects, items, or environmental details that could influence interactions
+4. Recent events or topics of conversation (last 10-20 messages)
+{{getvar::focus}}
+Keep the overview factual and neutral without speculation. Format in clear paragraphs.] |
+/inject id=situation position=chat depth=3 [Current Situation: {{pipe}}] |
 /listinjects |`;
 
     console.log(`[GuidedGenerations] Executing Situational Guide stscript`);
@@ -49,9 +34,12 @@ const situationalGuide = () => {
             context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false }); // Keep output hidden
             console.log('[GuidedGenerations] Situational Guide stscript executed.');
         } catch (error) {
-            console.error('[GuidedGenerations] Error executing Situational Guide:', error);
+            console.error(`[GuidedGenerations] Error executing Situational Guide: ${error}`);
         }
+    } else {
+        console.error('[GuidedGenerations] SillyTavern context is not available.');
     }
+    return true;
 };
 
 // Export the function for use in the main extension file

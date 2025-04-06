@@ -5,11 +5,12 @@
 /**
  * Executes the Clothes Guide script to create a detailed description of what each character is wearing.
  * This helps maintain visual consistency throughout the chat.
+ * @param {boolean} isAuto - Whether this guide is being auto-triggered (true) or called directly from menu (false)
  */
-const clothesGuide = () => {
-    console.log('[GuidedGenerations] Clothes Guide button clicked');
+const clothesGuide = (isAuto = false) => {
+    console.log('[GuidedGenerations] Clothes Guide ' + (isAuto ? 'auto-triggered' : 'button clicked'));
 
-    const stscriptCommand = `/listinjects return=object | 
+    let stscriptCommand = `/listinjects return=object | 
 /let injections {{pipe}} | 
 /let x {{var::injections}} | 
 /var index=clothes x | 
@@ -34,11 +35,22 @@ const clothesGuide = () => {
 /inject id=clothes position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |
 
 // Switch back to the original preset|
-/preset {{getvar::oldPreset}} |
-/:\"Guided Generations.SysClothes\"|
-/listinjects |`;
+/preset {{getvar::oldPreset}} |`;
 
-    console.log(`[GuidedGenerations] Executing Clothes Guide stscript: ${stscriptCommand}`);
+    // Only include /listinjects if not auto-triggered
+    if (!isAuto) {
+        console.log('[GuidedGenerations] Running in manual mode, adding /listinjects command');
+        stscriptCommand += `
+/listinjects |`;
+    } else {
+        console.log('[GuidedGenerations] Running in auto mode, NOT adding /listinjects command');
+    }
+
+    console.log(`[GuidedGenerations] Executing Clothes Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
+
+    // Print the full command for debugging
+    console.log(`[GuidedGenerations] Clothes Guide final stscript (isAuto=${isAuto}):`);
+    console.log(stscriptCommand);
 
     // Use the context executeSlashCommandsWithOptions method
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
@@ -51,8 +63,9 @@ const clothesGuide = () => {
             console.error(`[GuidedGenerations] Error executing Clothes Guide stscript: ${error}`);
         }
     } else {
-        console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
+        console.error('[GuidedGenerations] SillyTavern context is not available.');
     }
+    return true;
 };
 
 // Export the function for use in the main extension file

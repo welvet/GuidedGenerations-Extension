@@ -10,8 +10,7 @@ const showGuides = () => {
     console.log('[GuidedGenerations] Show Guides button clicked');
 
     const stscriptCommand = `// Display all active guides in a popup|
-/listinjects |
-/:\"Guided Generations.ShowGuides\"|`;
+/listinjects |`;
 
     console.log(`[GuidedGenerations] Executing Show Guides stscript`);
 

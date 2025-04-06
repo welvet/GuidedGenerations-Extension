@@ -16,28 +16,9 @@ const customGuide = () => {
 /var index=Custom x | 
 /let y {{pipe}} | 
 /var index=value y |
-
-// If we have an existing Custom guide, prefill the input field with it |
-/if left={{pipe}} rule=neq right="" {:
-    /setvar key=existing_guide {{pipe}} |
-:} {:
-    /setvar key=existing_guide "Write your custom guide here..." |
-:}|
-
-// Show input field with existing content or default text |
-/input label="Enter your custom guide:" value={{getvar::existing_guide}} |
-/setvar key=custom_guide_input {{pipe}} |
-
-// Inject the custom guide if the user entered something |
-/if left={{getvar::custom_guide_input}} rule=neq right="" {:
-    /flushinject Custom |
-    /inject id=Custom position=chat depth=0 [Custom Guide: {{getvar::custom_guide_input}}] |
-    /:"Guided Generations.SysCustom"|
-    /listinjects |
-:} {:
-    // User canceled or didn't enter anything |
-    /echo Custom guide creation canceled. |
-:}|`;
+/input large=off wide=on rows=20 default={{pipe}} Enter your custom Guide |
+/inject id=Custom position=chat depth=1 {{pipe}} |
+/listinjects |`;
 
     console.log(`[GuidedGenerations] Executing Custom Guide stscript`);
 

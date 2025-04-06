@@ -9,37 +9,20 @@
 const flushGuides = () => {
     console.log('[GuidedGenerations] Flush Guides button clicked');
 
-    const stscriptCommand = `// Get list of active guides |
-/listinjects return=object |
-/setvar key=guides {{pipe}} |
-
-/if left={{getvar::guides}} rule=eq right="{}" {:
-    /echo No active guides to flush. |
+    const stscriptCommand = `// Display initial Flush Options |
+/listinjects return=object | 
+/let injections {{pipe}} | 
+/keys {{var::injections}} | 
+/setvar key=injection_names {{pipe}} | 
+/addvar key=injection_names "All" |
+/buttons labels={{getvar::injection_names}} "Select an Guide to flush:" |
+/let selected_injection {{pipe}} |
+// Handle "All" selection |
+/if left={{var::selected_injection}} rule=eq right="All" else={:
+/flushinject {{var::selected_injection}} |
 :} {:
-    // Format guides into button labels and add "All" option |
-    /var index=keys {{getvar::guides}} |
-    /if left={{pipe}} rule=eq right="" {:
-        /echo No active guides to flush. |
-    :} {:
-        // Add "All" option to the buttons |
-        /setvar key=guide_options {{pipe}},"All" |
-        
-        // Show selection buttons for guides |
-        /buttons labels={{getvar::guide_options}} "Select a guide to flush:" |
-        /setvar key=selected_guide {{pipe}} |
-        
-        // Handle selected guide |
-        /if left={{getvar::selected_guide}} rule=eq right="All" {:
-            // Flush all guides |
-            /flushinjects |
-            /echo All guides have been flushed. |
-        :} {:
-            // Flush specific guide |
-            /flushinject {{getvar::selected_guide}} |
-            /echo Guide flushed: {{getvar::selected_guide}} |
-            /listinjects |
-        :} |
-    :} |
+  /flushinjects |
+  /echo All Guides have been flushed. |
 :} |`;
 
     console.log(`[GuidedGenerations] Executing Flush Guides stscript`);

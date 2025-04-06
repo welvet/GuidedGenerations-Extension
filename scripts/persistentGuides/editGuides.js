@@ -9,44 +9,18 @@
 const editGuides = () => {
     console.log('[GuidedGenerations] Edit Guides button clicked');
 
-    const stscriptCommand = `// Get list of active guides |
-/listinjects return=object |
-/setvar key=guides {{pipe}} |
-
-/if left={{getvar::guides}} rule=eq right="{}" {:
-    /echo No active guides to edit. Generate guides first. |
-:} {:
-    // Format guides into button labels |
-    /var index=keys {{getvar::guides}} |
-    /if left={{pipe}} rule=eq right="" {:
-        /echo No active guides to edit. Generate guides first. |
-    :} {:
-        // Show selection buttons for guides |
-        /buttons labels={{pipe}} "Select a guide to edit:" |
-        /setvar key=selected_guide {{pipe}} |
-        
-        // Get the content of the selected guide |
-        /var index={{getvar::selected_guide}} {{getvar::guides}} |
-        /var index=value {{pipe}} |
-        /setvar key=guide_content {{pipe}} |
-        
-        // Show input field with guide content |
-        /input label="Edit guide content:" value={{getvar::guide_content}} |
-        /setvar key=edited_content {{pipe}} |
-        
-        // Check if user entered something |
-        /if left={{getvar::edited_content}} rule=neq right="" {:
-            // Re-inject the guide with edited content |
-            /flushinject {{getvar::selected_guide}} |
-            /inject id={{getvar::selected_guide}} position=chat depth=0 [{{getvar::selected_guide}}: {{getvar::edited_content}}] |
-            /echo Guide updated: {{getvar::selected_guide}} |
-            /listinjects |
-        :} {:
-            // User canceled |
-            /echo Edit canceled. |
-        :} |
-    :} |
-:} |`;
+    const stscriptCommand = `/listinjects return=object | 
+/let injections {{pipe}} | 
+/keys {{var::injections}} | 
+/let injection_names {{pipe}} | 
+/buttons labels={{var::injection_names}} "Select an Guide to edit:" |
+/let selected_injection {{pipe}} |
+/let x {{var::injections}} | 
+/var index={{var::selected_injection}} x | 
+/let y {{pipe}} | 
+/var index=value y |
+/input large=off wide=on rows=20 default={{pipe}} Edit |
+/inject id={{var::selected_injection}} position=chat depth=1 {{pipe}} |`;
 
     console.log(`[GuidedGenerations] Executing Edit Guides stscript`);
 

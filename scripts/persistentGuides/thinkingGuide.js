@@ -6,9 +6,10 @@ import { isGroupChat } from '../../index.js'; // Import from two levels up
 /**
  * Executes the Thinking Guide script to create an insight into what characters are thinking.
  * This helps authors understand character motivations and inner thoughts without changing the chat.
+ * @param {boolean} isAuto - Whether this guide is being auto-triggered (true) or called directly from menu (false)
  */
-const thinkingGuide = () => {
-    console.log('[GuidedGenerations] Thinking Guide button clicked');
+const thinkingGuide = (isAuto = false) => {
+    console.log('[GuidedGenerations] Thinking Guide ' + (isAuto ? 'auto-triggered' : 'button clicked'));
 
     // Common part of the script with preset handling |
     let stscriptCommand = `// Get the currently active preset|
@@ -46,11 +47,22 @@ const thinkingGuide = () => {
     // Add ending to switch back to original preset |
     stscriptCommand += `
 // Switch back to the original preset|
-/preset {{getvar::oldPreset}} |
-/:\"Guided Generations.SysThinking\"|
-/listinjects |`;
+/preset {{getvar::oldPreset}} |`;
 
-    console.log(`[GuidedGenerations] Executing Thinking Guide stscript`);
+    // Only include /listinjects if not auto-triggered
+    if (!isAuto) {
+        console.log('[GuidedGenerations] Running in manual mode, adding /listinjects command');
+        stscriptCommand += `
+/listinjects |`;
+    } else {
+        console.log('[GuidedGenerations] Running in auto mode, NOT adding /listinjects command');
+    }
+
+    // Print the full command for debugging
+    console.log(`[GuidedGenerations] Thinking Guide final stscript (isAuto=${isAuto}):`);
+    console.log(stscriptCommand);
+
+    console.log(`[GuidedGenerations] Executing Thinking Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
 
     // Use the context executeSlashCommandsWithOptions method
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
@@ -60,25 +72,10 @@ const thinkingGuide = () => {
             context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false }); // Keep output hidden
             console.log('[GuidedGenerations] Thinking Guide stscript executed.');
         } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Thinking Guide: ${error}`);
-            return false;
+            console.error(`[GuidedGenerations] Error executing Thinking Guide stscript: ${error}`);
         }
     } else {
-        // Try the older method with imported functions from extensions.js
-        try {
-            // Get context from imports and execute command
-            const context = getContext();
-            if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
-                context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false });
-                console.log('[GuidedGenerations] Thinking Guide stscript executed (fallback method).');
-            } else {
-                console.error('[GuidedGenerations] Could not execute Thinking Guide: missing context or method');
-                return false;
-            }
-        } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Thinking Guide (fallback): ${error}`);
-            return false;
-        }
+        console.error('[GuidedGenerations] SillyTavern context is not available.');
     }
     return true;
 };

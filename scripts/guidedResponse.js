@@ -2,29 +2,20 @@
  * @file Contains the logic for the Guided Response button.
  */
 import { isGroupChat } from '../index.js'; // Import the group chat checker
+import { extension_settings } from '../../../../extensions.js'; // Correct path to extensions.js
+
+// Import the guide scripts for direct execution
+import thinkingGuide from './persistentGuides/thinkingGuide.js'; // Correct relative path
+import stateGuide from './persistentGuides/stateGuide.js'; // Correct relative path
+import clothesGuide from './persistentGuides/clothesGuide.js'; // Correct relative path
+
+const extensionName = "guided-generations";
 
 const guidedResponse = async () => {
     console.log('[GuidedGenerations] Guided Response button clicked');
 
-    // Common parts of the script
-    const scriptStart = `/setglobalvar key=gg_old_input {{input}} |
-// Check for Autotrigger Clothes |
-/qr-get set="Guided Generations" label=SysClothes |
-/let qrdetails {{pipe}} |
-/var index=executeOnUser qrdetails |
-/if left={{pipe}} {:/:\"Guided Generations.SysClothes\"|:}|
-// Check for Autotrigger State |
-/qr-get set="Guided Generations" label=SysState |
-/let qrdetails3 {{pipe}} |
-/var index=executeOnUser qrdetails3 |
-/if left={{pipe}} {:/:\"Guided Generations.SysState\"|:}|
-// Check for AutoTrigger Thinking |
-/qr-get set="Guided Generations" label=SysThinking |
-/let qrdetails2 {{pipe}} |
-/var index=executeOnUser qrdetails2 |
-/if left={{pipe}} {:/:\"Guided Generations.SysThinking\"|:}|
-`;
-
+    // Save the current input value
+    const scriptStart = `/setglobalvar key=gg_old_input {{input}} |`;
     const scriptEnd = `// Restore original input
 /setinput {{getglobalvar::gg_old_input}}|`;
 
@@ -51,22 +42,46 @@ const guidedResponse = async () => {
 ` + scriptEnd;
     }
 
-    console.log(`[GuidedGenerations] Executing stscript: ${stscriptCommand}`);
-
-    // Use the context executeSlashCommandsWithOptions method
+    // Execute the main stscript command
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
         try {
-            // Send the combined script via context
-            await context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false }); // Keep output hidden
+            // First check for auto-trigger settings and execute relevant guides
+            const settings = extension_settings[extensionName];
+            console.log(`[GuidedGenerations] Checking auto-trigger settings:`, settings);
+            
+            // Run auto-trigger guides if enabled (only thinking, state, and clothes support auto-trigger)
+            if (settings.autoTriggerThinking) {
+                console.log('[GuidedGenerations] Auto-triggering Thinking Guide with isAuto=true');
+                thinkingGuide(true); // Pass isAuto=true
+            }
+            
+            if (settings.autoTriggerState) {
+                console.log('[GuidedGenerations] Auto-triggering State Guide with isAuto=true');
+                stateGuide(true); // Pass isAuto=true
+            }
+            
+            if (settings.autoTriggerClothes) {
+                console.log('[GuidedGenerations] Auto-triggering Clothes Guide with isAuto=true');
+                clothesGuide(true); // Pass isAuto=true
+            }
+            
+            // Now execute the main guided response command
+            console.log('[GuidedGenerations] Executing main guidedResponse stscript command:', stscriptCommand);
+            context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false });
             console.log('[GuidedGenerations] Guided Response stscript executed.');
+            
+            // Show the list of injections after execution
+            setTimeout(() => {
+                context.executeSlashCommandsWithOptions('/listinjects', { showOutput: true });
+            }, 500);
+            
         } catch (error) {
             console.error(`[GuidedGenerations] Error executing Guided Response stscript: ${error}`);
         }
     } else {
-        console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
+        console.error('[GuidedGenerations] SillyTavern context is not available.');
     }
 };
 
-// Export the function
 export { guidedResponse };

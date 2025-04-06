@@ -43,7 +43,7 @@ const rulesGuide = () => {
 /inject id=rule_guide position=chat depth=0 [{{char}}'s rules: {{pipe}}] |`;
     }
     
-    // Add ending to switch back to original preset |
+    // Add ending to switch back to original preset and show list of injections |
     stscriptCommand += `
 // Switch back to the original preset|
 /preset {{getvar::oldPreset}} |
@@ -62,7 +62,10 @@ const rulesGuide = () => {
         } catch (error) {
             console.error(`[GuidedGenerations] Error executing Rules Guide: ${error}`);
         }
+    } else {
+        console.error('[GuidedGenerations] SillyTavern context is not available.');
     }
+    return true;
 };
 
 // Export the function for use in the main extension file
