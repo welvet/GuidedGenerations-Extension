@@ -306,56 +306,52 @@ function updateExtensionButtons() {
             return item;
         };
 
-        // Import the guide functions
-        import('./scripts/persistentGuides/situationalGuide.js').then(module => {
-            const situationalGuideItem = createGuideItem('Situational', 'fa-location-dot', module.default);
-            pgToolsMenu.appendChild(situationalGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing situationalGuide:`, error));
+        // Define the order and details for content guides
+        const contentGuides = [
+            { name: 'Situational', icon: 'fa-location-dot', path: './scripts/persistentGuides/situationalGuide.js' },
+            { name: 'Thinking', icon: 'fa-brain', path: './scripts/persistentGuides/thinkingGuide.js' },
+            { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js' },
+            { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js' },
+            { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js' },
+            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' }
+        ];
 
-        import('./scripts/persistentGuides/thinkingGuide.js').then(module => {
-            const thinkingGuideItem = createGuideItem('Thinking', 'fa-brain', module.default);
-            pgToolsMenu.appendChild(thinkingGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing thinkingGuide:`, error));
+        // Define the order and details for tool guides
+        const toolGuides = [
+            { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js' },
+            { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js' },
+            { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js' }
+        ];
 
-        import('./scripts/persistentGuides/clothesGuide.js').then(module => {
-            const clothesGuideItem = createGuideItem('Clothes', 'fa-shirt', module.default);
-            pgToolsMenu.appendChild(clothesGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing clothesGuide:`, error));
+        // Load the content guides in sequence
+        Promise.all(contentGuides.map(guide => {
+            return import(guide.path)
+                .then(module => {
+                    const guideItem = createGuideItem(guide.name, guide.icon, module.default);
+                    pgToolsMenu.appendChild(guideItem);
+                    console.log(`${extensionName}: Added ${guide.name} guide to menu`);
+                })
+                .catch(error => console.error(`${extensionName}: Error importing ${guide.name} guide:`, error));
+        }))
+        .then(() => {
+            // After all content guides, add the separator
+            const separator = document.createElement('hr');
+            separator.className = 'pg-separator';
+            pgToolsMenu.appendChild(separator);
+            console.log(`${extensionName}: Added separator to menu`);
 
-        import('./scripts/persistentGuides/stateGuide.js').then(module => {
-            const stateGuideItem = createGuideItem('State', 'fa-face-smile', module.default);
-            pgToolsMenu.appendChild(stateGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing stateGuide:`, error));
-
-        import('./scripts/persistentGuides/rulesGuide.js').then(module => {
-            const rulesGuideItem = createGuideItem('Rules', 'fa-list-ol', module.default);
-            pgToolsMenu.appendChild(rulesGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing rulesGuide:`, error));
-
-        import('./scripts/persistentGuides/customGuide.js').then(module => {
-            const customGuideItem = createGuideItem('Custom', 'fa-pen-to-square', module.default);
-            pgToolsMenu.appendChild(customGuideItem);
-        }).catch(error => console.error(`${extensionName}: Error importing customGuide:`, error));
-
-        // Add separator between generation guides and management guides
-        const separator = document.createElement('hr');
-        separator.className = 'pg-separator';
-        pgToolsMenu.appendChild(separator);
-
-        import('./scripts/persistentGuides/editGuides.js').then(module => {
-            const editGuidesItem = createGuideItem('Edit Guides', 'fa-edit', module.default);
-            pgToolsMenu.appendChild(editGuidesItem);
-        }).catch(error => console.error(`${extensionName}: Error importing editGuides:`, error));
-
-        import('./scripts/persistentGuides/showGuides.js').then(module => {
-            const showGuidesItem = createGuideItem('Show Guides', 'fa-eye', module.default);
-            pgToolsMenu.appendChild(showGuidesItem);
-        }).catch(error => console.error(`${extensionName}: Error importing showGuides:`, error));
-
-        import('./scripts/persistentGuides/flushGuides.js').then(module => {
-            const flushGuidesItem = createGuideItem('Flush Guides', 'fa-trash', module.default);
-            pgToolsMenu.appendChild(flushGuidesItem);
-        }).catch(error => console.error(`${extensionName}: Error importing flushGuides:`, error));
+            // Then load the tool guides
+            return Promise.all(toolGuides.map(guide => {
+                return import(guide.path)
+                    .then(module => {
+                        const guideItem = createGuideItem(guide.name, guide.icon, module.default);
+                        pgToolsMenu.appendChild(guideItem);
+                        console.log(`${extensionName}: Added ${guide.name} tool to menu`);
+                    })
+                    .catch(error => console.error(`${extensionName}: Error importing ${guide.name} tool:`, error));
+            }));
+        })
+        .catch(error => console.error(`${extensionName}: Error setting up persistent guides menu:`, error));
 
         // Append the menu itself to the body
         document.body.appendChild(pgToolsMenu);
