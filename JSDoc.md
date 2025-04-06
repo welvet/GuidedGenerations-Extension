@@ -24,7 +24,6 @@ Main entry point for the Guided Generations extension. Initializes the extension
 
 *   `loadSettings()`
     *   Loads extension settings.
-    *   *TODO: Implement loading from `extension_settings['Guided Generations']`.*
 *   `init()`
     *   Initializes the extension.
     *   Loads settings and sets up a MutationObserver to add UI elements when the DOM is ready.

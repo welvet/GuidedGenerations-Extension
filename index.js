@@ -178,7 +178,21 @@ function updateExtensionButtons() {
     // Clear the container before adding/arranging buttons
     buttonContainer.innerHTML = '';
 
-    // --- Create or Move GG Tools Menu Button (Wand) --- 
+    // Create a separate container for menu buttons (left side)
+    const menuButtonsContainer = document.createElement('div');
+    menuButtonsContainer.id = 'gg-menu-buttons-container';
+    menuButtonsContainer.className = 'gg-menu-buttons-container';
+    
+    // Create a separate container for action buttons (right side)
+    const actionButtonsContainer = document.createElement('div');
+    actionButtonsContainer.id = 'gg-regular-buttons-container';
+    actionButtonsContainer.className = 'gg-regular-buttons-container';
+    
+    // Add both containers to the main button container
+    buttonContainer.appendChild(menuButtonsContainer);
+    buttonContainer.appendChild(actionButtonsContainer);
+
+    // --- Create GG Tools Menu Button (Wand) --- 
     let ggMenuButton = document.getElementById('gg_menu_button');
     if (!ggMenuButton) {
         // Create it for the first time
@@ -259,8 +273,101 @@ function updateExtensionButtons() {
         });
         console.log(`${extensionName}: Created GG Tools menu button.`);
     } 
-    // Add menu button to the container first (for left alignment)
-    buttonContainer.appendChild(ggMenuButton);
+    // Add menu button to the menu buttons container
+    menuButtonsContainer.appendChild(ggMenuButton);
+
+    // --- Create Persistent Guides Menu Button --- 
+    let pgMenuButton = document.getElementById('pg_menu_button');
+    if (!pgMenuButton) {
+        // Create it for the first time
+        pgMenuButton = document.createElement('div');
+        pgMenuButton.id = 'pg_menu_button';
+        pgMenuButton.className = 'gg-menu-button fa-solid fa-bookmark'; // Bookmark icon
+        pgMenuButton.classList.add('interactable'); // Make sure it has interactable styles
+        pgMenuButton.title = 'Persistent Guides';
+        pgMenuButton.style.marginLeft = '5px'; // Add some spacing from the GG Tools button
+
+        const pgToolsMenu = document.createElement('div');
+        pgToolsMenu.id = 'pg_tools_menu';
+        pgToolsMenu.className = 'gg-tools-menu'; // Use same dropdown menu styling
+
+        // Add menu items for each persistent guide
+        const createGuideItem = (name, icon, action) => {
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'interactable';
+            item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`;
+            item.addEventListener('click', (event) => {
+                console.log(`${extensionName}: ${name} Guide clicked.`);
+                action();
+                pgToolsMenu.classList.remove('shown');
+                event.stopPropagation();
+            });
+            return item;
+        };
+
+        // Import the guide functions
+        import('./scripts/persistentGuides/situationalGuide.js').then(module => {
+            const situationalGuideItem = createGuideItem('Situational', 'fa-location-dot', module.default);
+            pgToolsMenu.appendChild(situationalGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing situationalGuide:`, error));
+
+        import('./scripts/persistentGuides/thinkingGuide.js').then(module => {
+            const thinkingGuideItem = createGuideItem('Thinking', 'fa-brain', module.default);
+            pgToolsMenu.appendChild(thinkingGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing thinkingGuide:`, error));
+
+        import('./scripts/persistentGuides/clothesGuide.js').then(module => {
+            const clothesGuideItem = createGuideItem('Clothes', 'fa-shirt', module.default);
+            pgToolsMenu.appendChild(clothesGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing clothesGuide:`, error));
+
+        import('./scripts/persistentGuides/stateGuide.js').then(module => {
+            const stateGuideItem = createGuideItem('State', 'fa-face-smile', module.default);
+            pgToolsMenu.appendChild(stateGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing stateGuide:`, error));
+
+        // Append the menu itself to the body
+        document.body.appendChild(pgToolsMenu);
+
+        // Event Handlers for Menu Toggle and Close
+        pgMenuButton.addEventListener('click', (event) => {
+            console.log(`${extensionName}: pgMenuButton clicked.`);
+
+            // Temporarily show the menu off-screen to measure its height
+            pgToolsMenu.style.visibility = 'hidden'; 
+            pgToolsMenu.style.display = 'block';
+            const menuHeight = pgToolsMenu.offsetHeight; 
+            pgToolsMenu.style.display = ''; 
+            pgToolsMenu.style.visibility = ''; 
+
+            // Calculate position before showing
+            const buttonRect = pgMenuButton.getBoundingClientRect();
+            const gap = 5; // Add a 5px gap above the button
+
+            // Calculate Y so the *bottom* of the menu is 'gap' pixels above the button's top
+            const targetMenuBottomY = buttonRect.top - gap + window.scrollY;
+            const targetMenuTopY = targetMenuBottomY - menuHeight; // This is the final top coordinate
+            const targetMenuLeftX = buttonRect.left + window.scrollX;
+
+            // Apply top/left instead of transform
+            pgToolsMenu.style.top = `${targetMenuTopY}px`;
+            pgToolsMenu.style.left = `${targetMenuLeftX}px`;
+
+            pgToolsMenu.classList.toggle('shown');
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (pgToolsMenu.classList.contains('shown') && !pgMenuButton.contains(event.target)) {
+                console.log(`${extensionName}: Click outside detected, hiding persistent guides menu.`);
+                pgToolsMenu.classList.remove('shown');
+            }
+        });
+        console.log(`${extensionName}: Created Persistent Guides menu button.`);
+    } 
+    // Add Persistent Guides menu button to the menu buttons container
+    menuButtonsContainer.appendChild(pgMenuButton);
 
     // --- Create Action Buttons --- 
     // Helper function to create buttons
@@ -277,24 +384,24 @@ function updateExtensionButtons() {
     // Conditionally create and add buttons
     if (settings.showImpersonate1stPerson) {
         const btn1 = createActionButton('gg_impersonate_button', 'Guided Impersonate (1st Person)', 'fa-solid fa-user', guidedImpersonate);
-        buttonContainer.appendChild(btn1); // Add directly to container
+        actionButtonsContainer.appendChild(btn1); // Add directly to action buttons container
     }
     if (settings.showImpersonate2ndPerson) {
         const btn2 = createActionButton('gg_impersonate_button_2nd', 'Guided Impersonate (2nd Person)', 'fa-solid fa-user-group', guidedImpersonate2nd);
-        buttonContainer.appendChild(btn2);
+        actionButtonsContainer.appendChild(btn2);
     }
     if (settings.showImpersonate3rdPerson) {
         const btn3 = createActionButton('gg_impersonate_button_3rd', 'Guided Impersonate (3rd Person)', 'fa-solid fa-users', guidedImpersonate3rd);
-        buttonContainer.appendChild(btn3);
+        actionButtonsContainer.appendChild(btn3);
     }
 
     // Guided Swipe Button (Restore correct icon)
     const guidedSwipeButton = createActionButton('gg_swipe_button', 'Guided Swipe', 'fa-solid fa-forward', guidedSwipe); // Correct icon: fa-forward
-    buttonContainer.appendChild(guidedSwipeButton);
+    actionButtonsContainer.appendChild(guidedSwipeButton);
 
     // Guided Response Button (Restore correct icon)
     const guidedResponseButton = createActionButton('gg_response_button', 'Guided Response', 'fa-solid fa-dog', guidedResponse); // Correct icon: fa-dog
-    buttonContainer.appendChild(guidedResponseButton);
+    actionButtonsContainer.appendChild(guidedResponseButton);
 }
 
 // Initial setup function

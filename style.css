@@ -18,11 +18,26 @@
 
 /* Style for the container holding the Guided Generations action buttons (now below input area) */
 .gg-action-buttons-container {
-    display: flex; /* Use grid for column layout */
+    display: flex; /* Use flex layout */
+    justify-content: space-between; /* Space between menu and action buttons */
     gap: 5px; /* Space between buttons */
-    padding: 5px; /* Add some vertical spacing */
-    justify-content: flex-end; /* Align grid content to the right */
-	width:100%;
+    padding: 5px; /* Add some padding */
+    width: 100%;
+}
+
+/* Container for menu buttons (left side) */
+.gg-menu-buttons-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* Container for regular action buttons (right side) */
+.gg-regular-buttons-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-left: auto; /* Push to the right */
 }
 
 /* Common style for Action Buttons and Menu Button */
@@ -49,7 +64,6 @@
 
 /* Specific styles for the Menu Button */
 .gg-menu-button {
-    margin-right: auto; /* Push other buttons to the right */
     position: relative; /* Needed for dropdown menu positioning */
 }
 
@@ -106,6 +120,51 @@
 .gg-tools-menu .list-group-item:hover {
     background-color: var(--SmartThemeHover);
     color: var(--SmartThemeUi, var(--SmartThemeBodyColor));
+}
+
+/* Persistent Guides Styles */
+.persistent-guides-header {
+    font-weight: 500;
+    position: relative;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2));
+    margin-top: 5px;
+    padding-top: 8px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--SmartThemeBodyColor);
+}
+
+.persistent-guides-container {
+    display: flex;
+    flex-direction: column;
+    margin-left: 15px;
+}
+
+.persistent-guide-item {
+    padding: 3px 0;
+    text-decoration: none;
+    color: var(--SmartThemeBodyColor);
+    display: flex;
+    align-items: center;
+}
+
+.persistent-guide-item:hover,
+.persistent-guides-header:hover {
+    color: var(--SmartThemeActColor);
+}
+
+.persistent-guide-item i {
+    margin-right: 8px;
+}
+
+.persistent-guides-content {
+    padding-left: 15px;
+}
+
+.persistent-guides-content > .interactable {
+    font-size: 0.95em;
+    padding: 4px 8px;
 }
 
 /* Settings panel specific styles */

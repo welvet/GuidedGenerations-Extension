@@ -72,11 +72,12 @@ This list outlines the steps to develop the Guided Generations extension based o
 
 **Phase 4: Settings & Finalization**
 
-14. [ ] **Settings UI `(Menu)`:**
-    *   [ ] Create settings UI section/modal, accessed via Tools Menu.
-    *   [ ] Add toggles `(Panel)` for auto-triggers and impersonation visibility inside Settings panel.
+14. [x] **Settings UI `(Menu)`:**
+    *   [x] Create settings UI section/modal, accessed via Tools Menu.
+    *   [x] Add toggles `(Panel)` for auto-triggers and impersonation visibility inside Settings panel.
 15. [ ] **Styling & Polish:**
     *   [ ] Refine UI with `style.css`.
+    *   [x] Style Tools Menu popup and action buttons.
     *   [ ] Ensure consistency.
 16. [ ] **Testing & Debugging:**
     *   [ ] Test all features thoroughly.
