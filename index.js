@@ -12,7 +12,7 @@ import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Imp
 // Import necessary functions/objects from SillyTavern
 import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; 
 
-const extensionName = "guided-generations"; // Use the simple name as the internal identifier
+export const extensionName = "guided-generations"; // Use the simple name as the internal identifier
 // const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
 
 let isSending = false; 
@@ -229,8 +229,73 @@ function updateExtensionButtons() {
             event.stopPropagation();
         });
 
+        // Add new menu items from the JSON file
+        // 1. Edit Intros
+        const editIntrosMenuItem = document.createElement('a');
+        editIntrosMenuItem.href = '#';
+        editIntrosMenuItem.className = 'interactable';
+        editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
+        editIntrosMenuItem.addEventListener('click', async (event) => {
+            console.log(`${extensionName}: Edit Intros action clicked.`);
+            const { default: editIntros } = await import('./scripts/tools/editIntros.js');
+            await editIntros();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // 2. Corrections
+        const correctionsMenuItem = document.createElement('a');
+        correctionsMenuItem.href = '#';
+        correctionsMenuItem.className = 'interactable';
+        correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
+        correctionsMenuItem.addEventListener('click', async (event) => {
+            console.log(`${extensionName}: Corrections action clicked.`);
+            const { default: corrections } = await import('./scripts/tools/corrections.js');
+            await corrections();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // 3. Spellchecker
+        const spellcheckerMenuItem = document.createElement('a');
+        spellcheckerMenuItem.href = '#';
+        spellcheckerMenuItem.className = 'interactable';
+        spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
+        spellcheckerMenuItem.addEventListener('click', async (event) => {
+            console.log(`${extensionName}: Spellchecker action clicked.`);
+            const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
+            await spellchecker();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // 4. Clear Input
+        const clearInputMenuItem = document.createElement('a');
+        clearInputMenuItem.href = '#';
+        clearInputMenuItem.className = 'interactable';
+        clearInputMenuItem.innerHTML = '<i class="fa-solid fa-trash fa-fw"></i><span data-i18n="Clear Input">Clear Input</span>';
+        clearInputMenuItem.addEventListener('click', async (event) => {
+            console.log(`${extensionName}: Clear Input action clicked.`);
+            const { default: clearInput } = await import('./scripts/tools/clearInput.js');
+            await clearInput();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // Add original items first
         ggToolsMenu.appendChild(simpleSendMenuItem);
         ggToolsMenu.appendChild(recoverInputMenuItem);
+        
+        // Add a separator
+        const separator = document.createElement('hr');
+        separator.className = 'pg-separator';
+        ggToolsMenu.appendChild(separator);
+        
+        // Add new items after the separator
+        ggToolsMenu.appendChild(editIntrosMenuItem);
+        ggToolsMenu.appendChild(correctionsMenuItem);
+        ggToolsMenu.appendChild(spellcheckerMenuItem);
+        ggToolsMenu.appendChild(clearInputMenuItem);
 
         // Append the menu itself to the body, not the button
         document.body.appendChild(ggToolsMenu);
