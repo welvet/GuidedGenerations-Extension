@@ -9,14 +9,14 @@
 const stateGuide = () => {
     console.log('[GuidedGenerations] State Guide button clicked');
 
-    const stscriptCommand = `//set the current Injection to depth 4
+    const stscriptCommand = `//set the current Injection to depth 4|
 /listinjects return=object | 
 /let injections {{pipe}} | 
 /let x {{var::injections}} | 
 /var index=state x | 
 /let y {{pipe}} | 
 /var index=value y |
-/inject id=state position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}]|
+/inject id=state position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}] |
 
 // Get the currently active preset|
 /preset|
@@ -32,7 +32,7 @@ const stateGuide = () => {
 
 /gen as=char [OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.]  |
 
-/inject id=state position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}]|
+/inject id=state position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |
 // Switch back to the original preset|
 /preset {{getvar::oldPreset}} |
 /:\"Guided Generations.SysState\"|

@@ -15,7 +15,7 @@ const clothesGuide = () => {
 /var index=clothes x | 
 /let y {{pipe}} | 
 /var index=value y |
-/inject id=clothes position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}|
+/inject id=clothes position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}] |
 
 // Get the currently active preset|
 /preset|
@@ -31,7 +31,7 @@ const clothesGuide = () => {
 
 /gen as=char [OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don't mention People or clothing pieces who are no longer relevant to the ongoing scene.]  |
 
-/inject id=clothes position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}|
+/inject id=clothes position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |
 
 // Switch back to the original preset|
 /preset {{getvar::oldPreset}} |

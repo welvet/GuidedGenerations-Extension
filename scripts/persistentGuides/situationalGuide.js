@@ -17,7 +17,7 @@ const situationalGuide = () => {
 
 /flushinject situation |`;
 
-    // Add different script sections based on whether it's a group chat
+    // Add different script sections based on whether it's a group chat |
     if (isGroupChat()) {
         console.log('[GuidedGenerations] Detected Group Chat for Situational Guide');
         stscriptCommand += `
@@ -26,13 +26,13 @@ const situationalGuide = () => {
 /buttons labels=x "Select members {{group}}" |
 /setglobalvar key=selection {{pipe}} |
 /gen [OOC: Answer me out of Character! Considering the next response, write me a list entailing the relevant information of {{getglobalvar::selection}}'s description and chat history that would directly influence this response. {{getvar::focus}}]  |
-/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{getglobalvar::selection}} {{pipe}}|
+/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{getglobalvar::selection}} {{pipe}}] |
 `;
     } else {
         console.log('[GuidedGenerations] Detected Single Chat for Situational Guide');
         stscriptCommand += `
 /gen [OOC: Answer me out of Character! Considering the next response, write me a list entailing the relevant information of {{char}}'s description and chat history that would directly influence this response. {{getvar::focus}}]  |
-/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{char}} {{pipe}}|
+/inject id=situation position=chat depth=1 [Relevant Informations for portraying {{char}} {{pipe}}] |
 `;
     }
 

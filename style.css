@@ -123,6 +123,26 @@
 }
 
 /* Persistent Guides Styles */
+#persistent-guides-menu {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    background-color: var(--SmartTheme_bg-color);
+    border: 1px solid var(--SmartTheme_border-color);
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 1000;
+    max-width: 200px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.pg-separator {
+    margin: 5px 0;
+    border: 0;
+    height: 1px;
+    background-color: var(--SmartTheme_border-color);
+}
+
 .persistent-guides-header {
     font-weight: 500;
     position: relative;

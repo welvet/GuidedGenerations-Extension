@@ -10,7 +10,7 @@ import { isGroupChat } from '../../index.js'; // Import from two levels up
 const thinkingGuide = () => {
     console.log('[GuidedGenerations] Thinking Guide button clicked');
 
-    // Common part of the script with preset handling
+    // Common part of the script with preset handling |
     let stscriptCommand = `// Get the currently active preset|
 /preset|
 /setvar key=currentPreset {{pipe}} |
@@ -26,7 +26,7 @@ const thinkingGuide = () => {
 // Thinking |
 /flushinject thinking |`;
     
-    // Add different script sections based on whether it's a group chat
+    // Add different script sections based on whether it's a group chat |
     if (isGroupChat()) {
         console.log('[GuidedGenerations] Detected Group Chat for Thinking Guide');
         stscriptCommand += `
@@ -43,7 +43,7 @@ const thinkingGuide = () => {
 /inject id=thinking position=chat depth=0 [{{char}} is currently thinking: {{pipe}}] |`;
     }
     
-    // Add ending to switch back to original preset
+    // Add ending to switch back to original preset |
     stscriptCommand += `
 // Switch back to the original preset|
 /preset {{getvar::oldPreset}} |

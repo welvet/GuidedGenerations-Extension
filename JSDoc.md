@@ -159,15 +159,21 @@ async function setAndRestoreInput() {
         console.error("Error executing STScript:", error);
     }
 }
-```
-
-**Important Notes:**
 
 *   Always check if `SillyTavern.getContext` and `context.executeSlashCommandsWithOptions` exist before calling them to avoid errors if the SillyTavern version changes or the extension loads unexpectedly.
 *   Escape special characters (like `|`) within user input (`{{input}}`) if inserting it directly into a command string to prevent parsing issues. Use `/setglobalvar` to store complex input first, then reference it with `{{getglobalvar::key}}`.
 *   The `executeSlashCommandsWithOptions` function might be asynchronous, so using `await` is recommended if you need subsequent actions to wait for the command to complete (though the exact behavior might depend on the specific STscript command being run).
+*   **CRITICAL**: In STScript, EVERY line must end with a pipe character `|`, including comments! For example:
+    ```
+    // This is a comment| <-- Note the pipe at the end
+    /send Hello|
+    // This is another comment| <-- Note the pipe at the end
+    ```
+    Failing to end comments with a pipe character will cause the script to break, as the STScript parser treats every line as a command that must end with the pipe delimiter.
 
 ---
 
 ### `guidedResponse()`
 {{ ... }}
+    }
+}

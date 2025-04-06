@@ -327,6 +327,36 @@ function updateExtensionButtons() {
             pgToolsMenu.appendChild(stateGuideItem);
         }).catch(error => console.error(`${extensionName}: Error importing stateGuide:`, error));
 
+        import('./scripts/persistentGuides/rulesGuide.js').then(module => {
+            const rulesGuideItem = createGuideItem('Rules', 'fa-list-ol', module.default);
+            pgToolsMenu.appendChild(rulesGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing rulesGuide:`, error));
+
+        import('./scripts/persistentGuides/customGuide.js').then(module => {
+            const customGuideItem = createGuideItem('Custom', 'fa-pen-to-square', module.default);
+            pgToolsMenu.appendChild(customGuideItem);
+        }).catch(error => console.error(`${extensionName}: Error importing customGuide:`, error));
+
+        // Add separator between generation guides and management guides
+        const separator = document.createElement('hr');
+        separator.className = 'pg-separator';
+        pgToolsMenu.appendChild(separator);
+
+        import('./scripts/persistentGuides/editGuides.js').then(module => {
+            const editGuidesItem = createGuideItem('Edit Guides', 'fa-edit', module.default);
+            pgToolsMenu.appendChild(editGuidesItem);
+        }).catch(error => console.error(`${extensionName}: Error importing editGuides:`, error));
+
+        import('./scripts/persistentGuides/showGuides.js').then(module => {
+            const showGuidesItem = createGuideItem('Show Guides', 'fa-eye', module.default);
+            pgToolsMenu.appendChild(showGuidesItem);
+        }).catch(error => console.error(`${extensionName}: Error importing showGuides:`, error));
+
+        import('./scripts/persistentGuides/flushGuides.js').then(module => {
+            const flushGuidesItem = createGuideItem('Flush Guides', 'fa-trash', module.default);
+            pgToolsMenu.appendChild(flushGuidesItem);
+        }).catch(error => console.error(`${extensionName}: Error importing flushGuides:`, error));
+
         // Append the menu itself to the body
         document.body.appendChild(pgToolsMenu);
 
