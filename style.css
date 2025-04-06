@@ -127,8 +127,8 @@
     position: absolute;
     display: none;
     flex-direction: column;
-    background-color: var(--SmartTheme_bg-color);
-    border: 1px solid var(--SmartTheme_border-color);
+    background-color: var(--SmartThemeBg);
+    border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 5px;
     padding: 5px;
     z-index: 1000;
@@ -140,7 +140,7 @@
     margin: 5px 0;
     border: 0;
     height: 1px;
-    background-color: var(--SmartTheme_border-color);
+    background-color: var(--SmartThemeBorderColor);
 }
 
 .persistent-guides-header {
@@ -213,12 +213,12 @@
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--SmartThemeShadowColor);
 }
 
 .gg-popup-content {
-    background-color: var(--SmartThemeBodyColor);
-    color: var(--SmartThemeTextColor);
+    background-color: var(--SmartThemeBlurTintColor);
+    color: var(--SmartThemeBodyColor);
     margin: 5% auto;
     padding: 20px;
     border: 1px solid var(--SmartThemeBorderColor);
@@ -227,7 +227,7 @@
     max-width: 600px;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px var(--SmartThemeShadowColor);
 }
 
 .gg-popup-header {
@@ -242,12 +242,18 @@
 .gg-popup-header h2 {
     margin: 0;
     font-size: 1.5em;
+    color: var(--SmartThemeBodyColor);
 }
 
 .gg-popup-close {
     font-size: 24px;
     font-weight: bold;
     cursor: pointer;
+    color: var(--SmartThemeBodyColor);
+}
+
+.gg-popup-close:hover {
+    color: var(--SmartThemeBorderColor);
 }
 
 .gg-popup-body {
@@ -262,6 +268,7 @@
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 1.2em;
+    color: var(--SmartThemeEmColor);
     border-bottom: 1px solid var(--SmartThemeBorderColor);
     padding-bottom: 5px;
 }
@@ -273,17 +280,23 @@
 }
 
 .gg-option {
-    background-color: var(--SmartThemeQuoteColor);
+    background-color: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 5px;
     padding: 8px 12px;
     cursor: pointer;
     position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.gg-option:hover {
+    background-color: var(--ac-style-color-hoveredBackground, var(--SmartThemeBotMesBlurTintColor));
 }
 
 .gg-option.selected {
-    background-color: var(--SmartThemeRightGradient);
-    color: white;
+    background-color: var(--SmartThemeUserMesBlurTintColor);
+    color: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
 }
 
 .gg-option-title {
@@ -295,13 +308,13 @@
     position: absolute;
     left: 0;
     top: 100%;
-    background-color: var(--SmartThemeBodyColor);
+    background-color: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 5px;
     padding: 5px 0;
     z-index: 10;
     min-width: 200px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px var(--SmartThemeShadowColor);
 }
 
 .gg-option:hover .gg-suboptions {
@@ -311,15 +324,16 @@
 .gg-suboption {
     padding: 8px 12px;
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .gg-suboption:hover {
-    background-color: var(--SmartThemeQuoteColor);
+    background-color: var(--ac-style-color-hoveredBackground, var(--SmartThemeBotMesBlurTintColor));
 }
 
 .gg-suboption.selected {
-    background-color: var(--SmartThemeRightGradient);
-    color: white;
+    background-color: var(--SmartThemeUserMesBlurTintColor);
+    color: var(--SmartThemeBodyColor);
 }
 
 .gg-popup-footer {
@@ -336,16 +350,18 @@
     border: none;
     cursor: pointer;
     font-weight: 500;
+    transition: opacity 0.2s ease;
 }
 
 .gg-button-primary {
-    background-color: var(--SmartThemeRightGradient);
-    color: white;
+    background-color: var(--SmartThemeUserMesBlurTintColor);
+    color: var(--SmartThemeBodyColor);
 }
 
 .gg-button-secondary {
-    background-color: var(--SmartThemeQuoteColor);
-    color: var(--SmartThemeTextColor);
+    background-color: var(--SmartThemeChatTintColor);
+    color: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
 }
 
 .gg-button:hover {
