@@ -9,8 +9,12 @@ import { guidedSwipe } from './scripts/guidedSwipe.js';
 import { guidedImpersonate } from './scripts/guidedImpersonate.js';
 import { guidedImpersonate2nd } from './scripts/guidedImpersonate2nd.js'; // Import 2nd
 import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Import 3rd
+// Import the new Update Character function
+import { updateCharacter } from './scripts/persistentGuides/updateCharacter.js';
 // Import necessary functions/objects from SillyTavern
 import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; 
+// Import Preset Manager
+import { getPresetManager } from '../../../../scripts/preset-manager.js';
 
 export const extensionName = "guided-generations"; // Use the simple name as the internal identifier
 // const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
@@ -297,6 +301,19 @@ function updateExtensionButtons() {
         ggToolsMenu.appendChild(spellcheckerMenuItem);
         ggToolsMenu.appendChild(clearInputMenuItem);
 
+        // Add Update Character item
+        const updateCharacterMenuItem = document.createElement('a');
+        updateCharacterMenuItem.href = '#';
+        updateCharacterMenuItem.className = 'interactable';
+        updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
+        updateCharacterMenuItem.addEventListener('click', (event) => {
+            console.log(`${extensionName}: Update Character action clicked.`);
+            updateCharacter();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+        ggToolsMenu.appendChild(updateCharacterMenuItem);
+
         // Append the menu itself to the body, not the button
         document.body.appendChild(ggToolsMenu);
 
@@ -360,8 +377,8 @@ function updateExtensionButtons() {
         const createGuideItem = (name, icon, action) => {
             const item = document.createElement('a');
             item.href = '#';
-            item.className = 'interactable';
-            item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`;
+            item.className = 'interactable'; // Use interactable class
+            item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`; // Add icon + span
             item.addEventListener('click', (event) => {
                 console.log(`${extensionName}: ${name} Guide clicked.`);
                 action();
@@ -508,11 +525,123 @@ function setup() {
     // Modifying the saveSettingsDebounced or finding an event might be better later.
 }
 
+// --- Preset Installation ---
+// Installs the text completion preset defined within GGSytemPrompt.json if it doesn't exist.
+// This file should be a full preset object exported from SillyTavern.
+async function installPreset() {
+    const presetFileName = 'GGSytemPrompt.json';
+    // Derive the preset name from the filename (matching manual import behavior)
+    const presetName = presetFileName.replace(/\.json$/i, ''); // Remove .json extension case-insensitively
+    // Preset type for Chat Completion parameters (OpenAI/ChatGPT style models)
+    const presetApiId = 'openai'; 
+    // Construct the path relative to the SillyTavern root
+    const presetPath = `scripts/extensions/third-party/${extensionName}/${presetFileName}`;
+    console.log(`${extensionName}: Attempting to install ${presetApiId} preset "${presetName}" from ${presetPath}`);
+
+    try {
+        const response = await fetch(presetPath);
+
+        if (!response.ok) {
+            console.error(`${extensionName}: Failed to fetch ${presetFileName}. Status: ${response.status}`);
+            if (response.status === 404) {
+                 console.error(`${extensionName}: Make sure '${presetFileName}' exists in the '${extensionName}' extension folder.`);
+            }
+            return;
+        }
+
+        // Read the full preset data from the JSON file
+        const presetData = await response.json(); 
+
+        // Validate internal structure: Must have a prompts array with at least one entry containing name and content.
+        // Keep this validation even for chat completion presets to ensure the file has the right structure
+        if (!presetData || typeof presetData !== 'object' || 
+            !Array.isArray(presetData.prompts) || presetData.prompts.length === 0 || 
+            !presetData.prompts[0].name || typeof presetData.prompts[0].content !== 'string') {
+            console.error(`${extensionName}: Invalid internal structure in ${presetFileName}. It must be an object containing a 'prompts' array, where the first element has 'name' and 'content' properties. Received structure:`, presetData);
+            return;
+        }
+
+        // Use the filename-derived name for checking and saving.
+        console.log(`${extensionName}: Validated internal structure of ${presetFileName} for preset "${presetName}"`);
+
+        const presetManager = getPresetManager(presetApiId);
+
+        if (!presetManager) {
+            console.error(`${extensionName}: Could not get Preset Manager for apiId '${presetApiId}'.`);
+            return;
+        }
+
+        // Store the currently selected preset name/value before we install ours
+        let currentPresetName = null;
+        try {
+            // Get the currently selected option
+            const $select = $(presetManager.select);
+            const currentValue = $select.val();
+            
+            if (presetManager.isKeyedApi()) {
+                // For keyed APIs (like 'openai'), the value is the name
+                currentPresetName = currentValue;
+            } else {
+                // For indexed APIs, we need to get the text of the selected option
+                currentPresetName = $select.find('option:selected').text();
+            }
+            
+            console.log(`${extensionName}: Current ${presetApiId} preset: "${currentPresetName}"`);
+        } catch(err) {
+            console.warn(`${extensionName}: Could not determine current preset: ${err}`);
+        }
+
+        // Check if preset already exists using the filename-derived name
+        const existingPreset = presetManager.findPreset(presetName);
+
+        if (existingPreset !== undefined && existingPreset !== null) {
+            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
+        } else {
+            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
+            // Save the entire original presetData object, using the filename-derived name.
+            // This matches how performMasterImport handles chat completion presets.
+            await presetManager.savePreset(presetName, presetData);
+            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) successfully saved (using full data structure and filename).`);
+            
+            // If we had a previously selected preset, switch back to it
+            if (currentPresetName && currentPresetName !== presetName) {
+                try {
+                    // This uses jQuery to select the option and trigger the change event
+                    // This is the same way PresetManager does it internally
+                    setTimeout(() => {
+                        const $select = $(presetManager.select);
+                        if (presetManager.isKeyedApi()) {
+                            $select.val(currentPresetName).trigger('change');
+                        } else {
+                            // For indexed APIs, find the option with the matching text
+                            const $option = $select.find(`option:contains("${currentPresetName}")`);
+                            if ($option.length > 0) {
+                                $select.val($option.val()).trigger('change');
+                            }
+                        }
+                        console.log(`${extensionName}: Restored previous ${presetApiId} preset: "${currentPresetName}"`);
+                    }, 100); // Small delay to ensure the DOM has updated
+                } catch(err) {
+                    console.warn(`${extensionName}: Could not restore previous preset: ${err}`);
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error(`${extensionName}: Error during preset installation:`, error);
+        if (error instanceof SyntaxError) {
+             console.error(`${extensionName}: Check if ${presetFileName} contains valid JSON.`);
+        }
+    }
+}
+
 // Run setup after page load
 $(document).ready(function() {
     setup();
     // Settings Panel Setup (runs with delay)
     loadSettingsPanel(); 
+    // Attempt to install the preset
+    installPreset(); 
 });
 
 // --- Settings Panel Loading --- (Keep existing loadSettingsPanel async function)
