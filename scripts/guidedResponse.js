@@ -16,7 +16,7 @@ const guidedResponse = async () => {
 
     // Save the current input value
     const scriptStart = `/setglobalvar key=gg_old_input {{input}} |`;
-    const scriptEnd = `// Restore original input
+    const scriptEnd = `// Restore original input|
 /setinput {{getglobalvar::gg_old_input}}|`;
 
     let stscriptCommand;
@@ -71,10 +71,7 @@ const guidedResponse = async () => {
             context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false });
             console.log('[GuidedGenerations] Guided Response stscript executed.');
             
-            // Show the list of injections after execution
-            setTimeout(() => {
-                context.executeSlashCommandsWithOptions('/listinjects', { showOutput: true });
-            }, 500);
+
             
         } catch (error) {
             console.error(`[GuidedGenerations] Error executing Guided Response stscript: ${error}`);
