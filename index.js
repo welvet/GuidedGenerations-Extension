@@ -67,7 +67,7 @@ async function loadSettings() {
     console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
 
     // Update UI elements based on loaded settings
-    const settingsPanelId = `extension_settings_guided-generations`; // Keep this ID based on folder name
+    const settingsPanelId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
     const container = document.getElementById(settingsPanelId);
     if (container) {
          console.log(`${extensionName}: Updating UI elements from settings.`);
@@ -642,7 +642,7 @@ $(document).ready(function() {
 
 // --- Settings Panel Loading --- (Keep existing loadSettingsPanel async function)
 async function loadSettingsPanel() {
-    const containerId = `extension_settings_guided-generations`; // Use ID based on folder name
+    const containerId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
     let container = document.getElementById(containerId);
 
     // Check if container exists, create if not (robustness)
@@ -667,9 +667,8 @@ async function loadSettingsPanel() {
     // Use renderExtensionTemplateAsync instead of manual $.get
     try {
         console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
-        // Assuming 'settings' maps to settings.html by convention
-        // Keep using `guided-generations` here as it refers to the folder name for template rendering
-        const settingsHtml = await renderExtensionTemplateAsync('third-party/guided-generations', 'settings'); 
+        // Use the new extensionName for the template path, assuming the folder was renamed
+        const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings');
         console.log(`${extensionName}: Settings template rendered successfully.`);
         
         // Append the fetched HTML to the container using jQuery
