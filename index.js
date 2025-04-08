@@ -287,19 +287,6 @@ function updateExtensionButtons() {
             event.stopPropagation();
         });
 
-        // Add Update Character item
-        const updateCharacterMenuItem = document.createElement('a');
-        updateCharacterMenuItem.href = '#';
-        updateCharacterMenuItem.className = 'interactable';
-        updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
-        updateCharacterMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Update Character action clicked.`);
-            updateCharacter();
-            ggToolsMenu.classList.remove('shown');
-            event.stopPropagation();
-        });
-        ggToolsMenu.appendChild(updateCharacterMenuItem);
-
         // Add original items first
         ggToolsMenu.appendChild(simpleSendMenuItem);
         ggToolsMenu.appendChild(recoverInputMenuItem);
@@ -314,6 +301,19 @@ function updateExtensionButtons() {
         ggToolsMenu.appendChild(correctionsMenuItem);
         ggToolsMenu.appendChild(spellcheckerMenuItem);
         ggToolsMenu.appendChild(clearInputMenuItem);
+
+        // Add Update Character item
+        /*const updateCharacterMenuItem = document.createElement('a');
+        updateCharacterMenuItem.href = '#';
+        updateCharacterMenuItem.className = 'interactable';
+        updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
+        updateCharacterMenuItem.addEventListener('click', (event) => {
+            console.log(`${extensionName}: Update Character action clicked.`);
+            updateCharacter();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+        ggToolsMenu.appendChild(updateCharacterMenuItem);*/
 
         // Append the menu itself to the body, not the button
         document.body.appendChild(ggToolsMenu);
