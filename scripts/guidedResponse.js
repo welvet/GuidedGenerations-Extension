@@ -9,7 +9,7 @@ import thinkingGuide from './persistentGuides/thinkingGuide.js'; // Correct rela
 import stateGuide from './persistentGuides/stateGuide.js'; // Correct relative path
 import clothesGuide from './persistentGuides/clothesGuide.js'; // Correct relative path
 
-const extensionName = "guided-generations";
+const extensionName = "GuidedGenerations-Extension";
 
 const guidedResponse = async () => {
     console.log('[GuidedGenerations] Guided Response button clicked');

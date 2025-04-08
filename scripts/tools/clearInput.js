@@ -4,7 +4,7 @@
  * @returns {Promise<void>}
  */
 export default async function clearInput() {
-    const extensionName = "guided-generations";
+    const extensionName = "GuidedGenerations-Extension";
     console.log(`${extensionName}: Executing Clear Input tool`);
     
     // Execute the clearInput workflow
@@ -18,7 +18,7 @@ export default async function clearInput() {
  * @param {string} stscript - The ST-Script command to execute
  */
 function executeSTScript(stscript) {
-    const extensionName = "guided-generations";
+    const extensionName = "GuidedGenerations-Extension";
     try {
         // Use the context executeSlashCommandsWithOptions method
         if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {

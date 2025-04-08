@@ -16,7 +16,7 @@ import { getContext, loadExtensionSettings, extension_settings, renderExtensionT
 // Import Preset Manager
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
 
-export const extensionName = "guided-generations"; // Use the simple name as the internal identifier
+export const extensionName = "GuidedGenerations-Extension"; // Use the simple name as the internal identifier
 // const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
 
 let isSending = false; 
@@ -45,7 +45,7 @@ export function isGroupChat() {
     }
 }
 
-function loadSettings() {
+async function loadSettings() {
     // Ensure the settings object exists
     extension_settings[extensionName] = extension_settings[extensionName] || {};
 
@@ -67,7 +67,8 @@ function loadSettings() {
     console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
 
     // Update UI elements based on loaded settings
-    const container = document.getElementById('extension_settings_guided-generations');
+    const settingsPanelId = `extension_settings_guided-generations`; // Keep this ID based on folder name
+    const container = document.getElementById(settingsPanelId);
     if (container) {
          console.log(`${extensionName}: Updating UI elements from settings.`);
         Object.keys(defaultSettings).forEach(key => {
@@ -286,6 +287,19 @@ function updateExtensionButtons() {
             event.stopPropagation();
         });
 
+        // Add Update Character item
+        const updateCharacterMenuItem = document.createElement('a');
+        updateCharacterMenuItem.href = '#';
+        updateCharacterMenuItem.className = 'interactable';
+        updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
+        updateCharacterMenuItem.addEventListener('click', (event) => {
+            console.log(`${extensionName}: Update Character action clicked.`);
+            updateCharacter();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+        ggToolsMenu.appendChild(updateCharacterMenuItem);
+
         // Add original items first
         ggToolsMenu.appendChild(simpleSendMenuItem);
         ggToolsMenu.appendChild(recoverInputMenuItem);
@@ -300,19 +314,6 @@ function updateExtensionButtons() {
         ggToolsMenu.appendChild(correctionsMenuItem);
         ggToolsMenu.appendChild(spellcheckerMenuItem);
         ggToolsMenu.appendChild(clearInputMenuItem);
-
-        // Add Update Character item
-        const updateCharacterMenuItem = document.createElement('a');
-        updateCharacterMenuItem.href = '#';
-        updateCharacterMenuItem.className = 'interactable';
-        updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
-        updateCharacterMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Update Character action clicked.`);
-            updateCharacter();
-            ggToolsMenu.classList.remove('shown');
-            event.stopPropagation();
-        });
-        ggToolsMenu.appendChild(updateCharacterMenuItem);
 
         // Append the menu itself to the body, not the button
         document.body.appendChild(ggToolsMenu);
@@ -514,15 +515,10 @@ function updateExtensionButtons() {
 
 // Initial setup function
 function setup() {
-    // Initial call to setup buttons based on default/loaded settings
-    // Make sure settings are loaded first!
-    loadSettings(); // Load settings early
-    updateExtensionButtons(); // Then update/create buttons
+    // No need to call loadSettings here, loadSettingsPanel handles it
 
-    // Add listener to update buttons when settings change
-    // We need to listen for the save event or similar.
-    // Let's try calling updateExtensionButtons after settings are saved.
-    // Modifying the saveSettingsDebounced or finding an event might be better later.
+    // Add Guide Buttons
+    updateExtensionButtons(); // Initial button creation/update
 }
 
 // --- Preset Installation ---
@@ -646,7 +642,7 @@ $(document).ready(function() {
 
 // --- Settings Panel Loading --- (Keep existing loadSettingsPanel async function)
 async function loadSettingsPanel() {
-    const containerId = `extension_settings_${extensionName}`;
+    const containerId = `extension_settings_guided-generations`; // Use ID based on folder name
     let container = document.getElementById(containerId);
 
     // Check if container exists, create if not (robustness)
@@ -672,8 +668,8 @@ async function loadSettingsPanel() {
     try {
         console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
         // Assuming 'settings' maps to settings.html by convention
-        // Use the explicit path identifier for third-party extensions, referencing the root folder
-        const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings'); 
+        // Keep using `guided-generations` here as it refers to the folder name for template rendering
+        const settingsHtml = await renderExtensionTemplateAsync('third-party/guided-generations', 'settings'); 
         console.log(`${extensionName}: Settings template rendered successfully.`);
         
         // Append the fetched HTML to the container using jQuery

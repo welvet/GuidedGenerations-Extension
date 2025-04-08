@@ -4,7 +4,7 @@
  * @returns {Promise<void>}
  */
 export default async function spellchecker() {
-    const extensionName = "guided-generations";
+    const extensionName = "GuidedGenerations-Extension";
     console.log(`${extensionName}: Executing Spellchecker tool`);
     
     // Execute the spellchecker workflow
@@ -38,7 +38,7 @@ export default async function spellchecker() {
  * @param {string} stscript - The ST-Script command to execute
  */
 function executeSTScript(stscript) {
-    const extensionName = "guided-generations";
+    const extensionName = "GuidedGenerations-Extension";
     try {
         // Use the context executeSlashCommandsWithOptions method
         if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {

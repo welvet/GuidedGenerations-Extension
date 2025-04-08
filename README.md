@@ -1,4 +1,4 @@
-# SillyTavern Guided Generations Extension
+a# SillyTavern Guided Generations Extension
 
 This extension aims to replicate the functionality of the 'Guided Generations V8' Quick Reply set within SillyTavern.
 

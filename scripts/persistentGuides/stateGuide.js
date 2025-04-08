@@ -6,8 +6,9 @@
  * Executes the State Guide script to track the physical state and positions of characters.
  * This helps maintain spatial awareness and physical continuity in the scene.
  * @param {boolean} isAuto - Whether this guide is being auto-triggered (true) or called directly from menu (false)
+ * @returns {Promise<string|null>} The generated state info from the pipe, or null on error.
  */
-const stateGuide = (isAuto = false) => {
+const stateGuide = async (isAuto = false) => {
     console.log('[GuidedGenerations] State Guide ' + (isAuto ? 'auto-triggered' : 'button clicked'));
 
     let stscriptCommand = `//set the current Injection to depth 4|
@@ -56,16 +57,40 @@ const stateGuide = (isAuto = false) => {
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
         try {
-            // Send the combined script via context
-            context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false }); // Keep output hidden
-            console.log('[GuidedGenerations] State Guide stscript executed.');
+            // Send the combined script via context and await the result
+            const result = await context.executeSlashCommandsWithOptions(stscriptCommand, {
+                showOutput: false, // Keep output hidden
+                handleExecutionErrors: true // Allow capturing script errors
+            });
+
+            console.log('[GuidedGenerations] State Guide stscript executed. Full Result:', result);
+
+            // Check specifically for STScript execution errors
+            if (result && result.isError) {
+                console.error(`[GuidedGenerations] STScript execution failed: ${result.errorMessage}`, result);
+                return null; // Indicate failure
+            }
+
+            // Check the pipe for the result
+            if (result && result.pipe !== undefined && result.pipe !== null && result.pipe !== '') {
+                console.log('[GuidedGenerations] Successfully retrieved pipe value:', result.pipe);
+                if (typeof window !== 'undefined') {
+                    window.ggLastStateGeneratedContent = result.pipe;
+                    console.log('[GuidedGenerations] Stored pipe value in window.ggLastStateGeneratedContent');
+                }
+                return result.pipe; // Return the content from pipe
+            } else {
+                console.warn('[GuidedGenerations] State Guide did not return a value in the pipe. Result:', result);
+                return null; // Indicate failure
+            }
         } catch (error) {
-            console.error(`[GuidedGenerations] Error executing State Guide stscript: ${error}`);
+            console.error(`[GuidedGenerations] JavaScript error executing State Guide script: ${error}`);
+            return null; // Indicate failure
         }
     } else {
         console.error('[GuidedGenerations] SillyTavern context is not available.');
+        return null; // Indicate failure
     }
-    return true;
 };
 
 // Export the function for use in the main extension file
