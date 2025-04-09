@@ -29,6 +29,7 @@ const defaultSettings = {
     showImpersonate1stPerson: true, // Default on
     showImpersonate2ndPerson: false, // Default on
     showImpersonate3rdPerson: false, // Default off
+    useGGSytemPreset: true, // NEW SETTING: Default to using the preset
 };
 
 /**
@@ -46,109 +47,89 @@ export function isGroupChat() {
 }
 
 async function loadSettings() {
-    // Ensure the settings object exists
     extension_settings[extensionName] = extension_settings[extensionName] || {};
 
-    // Check if settings are already loaded and have keys, otherwise initialize with defaults
+    // Check if settings are empty and initialize with defaults
+    // This simplified approach assumes defaults are complete.
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         console.log(`${extensionName}: Initializing settings with defaults.`);
         Object.assign(extension_settings[extensionName], defaultSettings);
     } else {
-        console.log(`${extensionName}: Settings already loaded.`);
-    }
-
-    // Ensure all default keys exist (migration / update handling)
-    for (const key in defaultSettings) {
-        if (extension_settings[extensionName][key] === undefined) {
-            console.warn(`${extensionName}: Setting key "${key}" missing, adding default value: ${defaultSettings[key]}`);
-            extension_settings[extensionName][key] = defaultSettings[key];
+         console.log(`${extensionName}: Settings already loaded, ensuring all keys exist.`);
+        // Ensure all default keys exist (migration / update handling)
+        for (const key in defaultSettings) {
+            if (extension_settings[extensionName][key] === undefined) {
+                console.warn(`${extensionName}: Setting key "${key}" missing, adding default value: ${defaultSettings[key]}`);
+                extension_settings[extensionName][key] = defaultSettings[key];
+            }
         }
     }
+
     console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
 
-    // Update UI elements based on loaded settings
-    const settingsPanelId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
-    const container = document.getElementById(settingsPanelId);
-    if (container) {
-         console.log(`${extensionName}: Updating UI elements from settings.`);
-        Object.keys(defaultSettings).forEach(key => {
-            const checkbox = container.querySelector(`input[name="${key}"]`);
-            if (checkbox) {
-                checkbox.checked = extension_settings[extensionName][key];
-            } else {
-                // This might happen before template is rendered, it's ok.
-                // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" during loadSettings.`);
-            }
-        });
-    } else {
-         // This might happen before template is rendered, it's ok.
-         // console.warn(`${extensionName}: Settings container not found during loadSettings.`);
-    }
+    // No need to update UI here, updateSettingsUI will be called separately after template render
 }
 
 function updateSettingsUI() {
-    const settings = extension_settings[extensionName];
-    const container = document.getElementById(`extension_settings_${extensionName}`);
-    if (!container) {
-        //console.error(`${extensionName}: Settings container not found during UI update.`);
-        // It's okay if the container isn't ready yet on initial load
-        return;
-    }
-
-    console.log(`${extensionName}: Updating settings UI...`, settings);
-    let uiChanged = false;
-    for (const key in settings) {
-        const value = settings[key];
-        const checkbox = container.querySelector(`input[type="checkbox"][name="${key}"]`);
-        if (checkbox) {
-            if (checkbox.checked !== Boolean(value)) {
-                checkbox.checked = Boolean(value);
-                uiChanged = true; // Track if UI actually changed
+    const settingsPanelId = `extension_settings_${extensionName}`;
+    const container = document.getElementById(settingsPanelId);
+    if (container) {
+        console.log(`${extensionName}: Updating UI elements from settings.`);
+        Object.keys(defaultSettings).forEach(key => {
+            const checkbox = container.querySelector(`input[name="${key}"]`);
+            if (checkbox) {
+                // Check if the setting exists before trying to access it
+                if (extension_settings[extensionName] && extension_settings[extensionName].hasOwnProperty(key)) {
+                     checkbox.checked = extension_settings[extensionName][key];
+                } else {
+                    console.warn(`${extensionName}: Setting key "${key}" not found in loaded settings during UI update. Using default: ${defaultSettings[key]}`);
+                    checkbox.checked = defaultSettings[key]; // Use default if missing
+                }
+            } else {
+                 // Allow this warning during initial load before template might be ready
+                 // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" during updateSettingsUI.`);
             }
-            //console.log(`${extensionName}: Set checkbox ${key} to ${checkbox.checked}`);
-        } else {
-            //console.warn(`${extensionName}: Checkbox for setting ${key} not found in UI.`);
-        }
-    }
-
-    // Only update buttons if the UI relevant to them might have changed
-    if (uiChanged) {
-         console.log(`${extensionName}: Settings UI changed, updating buttons.`);
-         updateExtensionButtons();
+        });
+    } else {
+        console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
     }
 }
 
 function addSettingsEventListeners() {
-    const container = document.getElementById(`extension_settings_${extensionName}`);
-    if (!container) {
-        // console.error(`${extensionName}: Settings container not found for adding listeners.`);
-        return; // Okay if not ready yet
+    const settingsPanelId = `extension_settings_${extensionName}`;
+    const container = document.getElementById(settingsPanelId);
+    if (container) {
+        console.log(`${extensionName}: Adding event listeners to settings checkboxes.`);
+        Object.keys(defaultSettings).forEach(key => {
+            const checkbox = container.querySelector(`input[name="${key}"]`);
+            if (checkbox) {
+                checkbox.removeEventListener('change', handleSettingChange); // Prevent duplicate listeners
+                checkbox.addEventListener('change', handleSettingChange);
+            } else {
+                 // Allow this during initial load
+                 // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" to add listener.`);
+            }
+        });
+    } else {
+        console.error(`${extensionName}: Settings container #${settingsPanelId} not found when adding listeners.`);
     }
+}
 
-    // Clear previous listeners if any (simple approach)
-    // A more robust way would be to store and remove specific listeners
-    const newContainer = container.cloneNode(true);
-    container.parentNode.replaceChild(newContainer, container);
-
-    console.log(`${extensionName}: Adding settings event listeners...`);
-    Object.keys(extension_settings[extensionName]).forEach(key => {
-        const checkbox = newContainer.querySelector(`input[type="checkbox"][name="${key}"]`);
-        if (checkbox) {
-            checkbox.addEventListener('change', (event) => {
-                console.log(`${extensionName}: Setting ${key} changed to ${event.target.checked}`);
-                extension_settings[extensionName][key] = event.target.checked;
-                saveSettingsDebounced();
-
-                // Update buttons immediately if a relevant setting changed
-                if (key.startsWith('showImpersonate')) {
-                    updateExtensionButtons();
-                }
-            });
-        } else {
-            // console.warn(`${extensionName}: Checkbox for setting ${key} not found for adding listener.`);
+// Separate handler function for clarity
+function handleSettingChange(event) {
+    const key = event.target.name;
+    const value = event.target.checked;
+    console.log(`${extensionName}: Setting "${key}" changed to ${value}`);
+    if (extension_settings[extensionName]) {
+        extension_settings[extensionName][key] = value;
+        saveSettingsDebounced(); // Save settings
+        // If a 'Show Button' setting changed, update the buttons
+        if (key.startsWith('showImpersonate')) {
+            updateExtensionButtons();
         }
-    });
-    console.log(`${extensionName}: Settings event listeners added.`);
+    } else {
+         console.error(`${extensionName}: extension_settings[extensionName] is undefined! Cannot save setting change.`);
+    }
 }
 
 // Function to create and add/remove buttons based on settings

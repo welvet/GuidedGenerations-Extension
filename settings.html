@@ -17,13 +17,13 @@
                 <div class="setting_block gg-setting-inline">
                     <label for="gg_showImpersonate2ndPerson">
                         <input type="checkbox" id="gg_showImpersonate2ndPerson" name="showImpersonate2ndPerson">
-                        Show Impersonate (2nd Person) <small>(WIP)</small>
+                        Show Impersonate (2nd Person)
                     </label>
                 </div>
                 <div class="setting_block gg-setting-inline">
                     <label for="gg_showImpersonate3rdPerson">
                         <input type="checkbox" id="gg_showImpersonate3rdPerson" name="showImpersonate3rdPerson">
-                        Show Impersonate (3rd Person) <small>(WIP)</small>
+                        Show Impersonate (3rd Person)
                     </label>
                 </div>
                 <hr>
@@ -45,6 +45,18 @@
                         <input type="checkbox" id="gg_autoTriggerThinking" name="autoTriggerThinking">
                         Describe Thinking
                     </label>
+                </div>
+                <hr>
+                <h4>Preset Usage</h4> <!-- New Heading for Preset Setting -->
+                <div class="setting_item"> <!-- Container for the setting -->
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;"> <!-- Flex container for checkbox and label -->
+                        <input type="checkbox" id="gg_useGGSytemPreset" name="useGGSytemPreset" class="gg-setting-input"> <!-- Checkbox - ID matches JS -->
+                        <label for="gg_useGGSytemPreset" style="margin-left: 8px;">Use 'GGSytemPrompt' Preset</label> <!-- Label next to checkbox -->
+                    </div>
+                    <small class="setting_item_description"> <!-- Description below -->
+                        Enables using the specialized 'GGSytemPrompt' preset for certain guides/tools (State, Thinking, Rules, Clothes guides; Spellchecker, Corrections tools). <br>
+                        This preset can improve the quality and relevance of the generated output. However, disabling it might reduce the likelihood of triggering censorship on models with strict filters.
+                    </small>
                 </div>
             </div>
         </div>
