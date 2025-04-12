@@ -6,37 +6,98 @@
  * Executes the Flush Guides script to remove one or all active guides.
  * Allows users to select which guide to flush or remove all guides at once.
  */
-const flushGuides = () => {
+const flushGuides = async () => { // Make function async
     console.log('[GuidedGenerations] Flush Guides button clicked');
 
-    const stscriptCommand = `// Display initial Flush Options |
-/listinjects return=object | 
-/let injections {{pipe}} | 
-/keys {{var::injections}} | 
-/setvar key=injection_names {{pipe}} | 
-/addvar key=injection_names "All" |
-/buttons labels={{getvar::injection_names}} "Select an Guide to flush:" |
+    // Get SillyTavern context
+    let context;
+    try {
+        context = SillyTavern.getContext(); // Use global context object
+        if (!context || typeof context.executeSlashCommandsWithOptions !== 'function') {
+            console.error('[GuidedGenerations] SillyTavern context or executeSlashCommandsWithOptions not available.');
+            return;
+        }
+    } catch (error) {
+        console.error('[GuidedGenerations] Error getting SillyTavern context:', error);
+        return;
+    }
+
+    // --- Step 1: Get the list of injections ---
+    const listInjectsScript = `/listinjects return=object |`;
+    let injectionObject = null;
+
+    try {
+        console.log(`[GuidedGenerations] Executing script to list injections...`);
+        const result = await context.executeSlashCommandsWithOptions(listInjectsScript, {
+            showOutput: false, // Don't show intermediate output
+            handleExecutionErrors: true // Capture errors
+        });
+
+        console.log('[GuidedGenerations] List injections script result:', result);
+
+        if (result && result.isError) {
+            console.error(`[GuidedGenerations] STScript error listing injections: ${result.errorMessage}`);
+            return;
+        }
+
+        // Assuming the object is returned in the pipe as a stringified JSON
+        if (result && result.pipe) {
+            try {
+                injectionObject = JSON.parse(result.pipe);
+                console.log('[GuidedGenerations] Parsed injection object:', injectionObject);
+            } catch (parseError) {
+                console.error('[GuidedGenerations] Error parsing injection object from pipe:', parseError, 'Pipe content:', result.pipe);
+                // Fallback or error handling: maybe the pipe isn't JSON? Or maybe result has the object elsewhere?
+                // For now, we'll error out if parsing fails.
+                return;
+            }
+        } else {
+             console.warn('[GuidedGenerations] No pipe value returned from listinjects command.');
+             injectionObject = {}; // Assume no injections if pipe is empty/missing
+        }
+
+    } catch (error) {
+        console.error(`[GuidedGenerations] Error executing list injections script: ${error}`);
+        return;
+    }
+
+    // --- Step 2: Process keys in JS and build the second script ---
+    let injectionKeys = [];
+    if (injectionObject && typeof injectionObject === 'object') {
+         injectionKeys = Object.keys(injectionObject);
+    } else {
+        console.warn('[GuidedGenerations] Injection data is not a valid object:', injectionObject);
+        injectionObject = {}; // Ensure it's an object for safety, keys will be empty
+        injectionKeys = [];
+    }
+    
+    // Always add "All" option
+    const buttonOptions = [...injectionKeys, "All"]; 
+    const buttonLabels = JSON.stringify(buttonOptions); // Format as JSON array string
+
+    const flushLogicScript = `// Display buttons and handle selection |
+/buttons labels=${buttonLabels} "Select an Guide to flush:" |
 /let selected_injection {{pipe}} |
-// Handle "All" selection |
+// Handle selection |
 /if left={{var::selected_injection}} rule=eq right="All" else={:
 /flushinject {{var::selected_injection}} |
+/echo {{var::selected_injection}} Guide flushed. | // Provide feedback
 :} {:
   /flushinjects |
   /echo All Guides have been flushed. |
 :} |`;
 
-    console.log(`[GuidedGenerations] Executing Flush Guides stscript`);
-
-    // Use the context executeSlashCommandsWithOptions method
-    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-        const context = SillyTavern.getContext();
-        try {
-            // Send the combined script via context
-            context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: true }); // Show output for user feedback
-            console.log('[GuidedGenerations] Flush Guides stscript executed.');
-        } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Flush Guides: ${error}`);
-        }
+    // --- Step 3: Execute the second script ---
+    try {
+        console.log(`[GuidedGenerations] Executing flush logic script with labels: "${buttonLabels}"`);
+        console.log(`[GuidedGenerations] Full script: ${flushLogicScript}`);
+        await context.executeSlashCommandsWithOptions(flushLogicScript, {
+             showOutput: true, // Show the final output/buttons to the user
+             handleExecutionErrors: true
+        });
+        console.log('[GuidedGenerations] Flush logic script executed.');
+    } catch (error) {
+        console.error(`[GuidedGenerations] Error executing flush logic script: ${error}`);
     }
 };
 
