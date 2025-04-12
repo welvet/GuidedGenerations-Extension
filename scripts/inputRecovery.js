@@ -1,23 +1,24 @@
 // scripts/inputRecovery.js
+import { getPreviousImpersonateInput } from '../index.js'; // Import the shared state getter
 
 const recoverInput = () => {
     console.log('[GuidedGenerations] Input Recovery button clicked');
+    const textarea = document.getElementById('send_textarea');
 
-    // Use stscript to get the value from the global variable and set the input field
-    const command = `/setinput {{getglobalvar::gg_old_input}}`;
+    if (!textarea) {
+        console.error('[GuidedGenerations][InputRecovery] Textarea #send_textarea not found.');
+        return;
+    }
 
-    console.log("GG Input Recovery Executing:", command);
-
-    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-        const context = SillyTavern.getContext();
-        try {
-            context.executeSlashCommandsWithOptions(command);
-            console.log('GG Input Recovery stscript executed.');
-        } catch (error) {
-            console.error("GG Input Recovery Error:", error);
-        }
-    } else {
-        console.error("GG Input Recovery Error: SillyTavern.getContext is not available globally.");
+    try {
+        const previousInput = getPreviousImpersonateInput();
+        console.log(`[GuidedGenerations][InputRecovery] Recovering input: "${previousInput}"`);
+        textarea.value = previousInput;
+        // Dispatch event for UI updates
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log('[GuidedGenerations][InputRecovery] Input recovered successfully.');
+    } catch (error) {
+        console.error("[GuidedGenerations][InputRecovery] Error recovering input:", error);
     }
 };
 

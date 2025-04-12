@@ -1,38 +1,48 @@
 // scripts/guidedImpersonate.js
+import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; // Import shared state functions
 
 const guidedImpersonate = async () => {
-    console.log('[GuidedGenerations] Guided Impersonate button clicked');
+    console.log('[GuidedGenerations] Guided Impersonate (1st Person) button clicked'); // Clarify type
+    const textarea = document.getElementById('send_textarea');
+    if (!textarea) {
+        console.error('[GuidedGenerations] Textarea #send_textarea not found.');
+        return;
+    }
+    const currentInputText = textarea.value;
+    const lastGeneratedText = getLastImpersonateResult(); // Use getter
 
-    // Stscript: Checks if current input matches last impersonation result.
-    // If yes, reverts to pre-impersonation input. 
-    // If no, saves current input, impersonates, saves new result.
-    const stscriptCommand = `
-/ifempty value={{getglobalvar::gg_old_input}} {{input}} |
-/setglobalvar key=gg_old_input {{pipe}} |
-/ifempty value={{getglobalvar::gg_new_input}} a |
-/setglobalvar key=gg_new_input {{pipe}} |
+    // Check if the current input matches the last generated text
+    if (lastGeneratedText && currentInputText === lastGeneratedText) {
+        console.log('[GuidedGenerations] Input matches last impersonation, restoring previous input.');
+        textarea.value = getPreviousImpersonateInput(); // Use getter
+        // We don't clear lastGeneratedText here based on user's correction in previous step
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        return; // Restoration done, exit
+    }
 
-/if left={{input}} rule=eq right={{getglobalvar::gg_new_input}} 
-else={:
-    /setglobalvar key=gg_old_input {{input}} |
-    /impersonate await=true Write in first Person perspective from {{user}}. {{input}} |
-    /setglobalvar key=gg_new_input {{input}} |
-:}
-{:
-    /setinput {{getglobalvar::gg_old_input}} |
-:} |
-    `;
+    // --- If not restoring, proceed with impersonation ---
+    console.log('[GuidedGenerations] Performing new 1st person impersonation.');
+    setPreviousImpersonateInput(currentInputText); // Use setter
 
-    console.log(`[GuidedGenerations] Executing stscript for Guided Impersonate`);
+    // Only the core impersonate command remains
+    const stscriptCommand = `/impersonate await=true Write in first Person perspective from {{user}}. {{input}} |`;
+
+    console.log(`[GuidedGenerations] Executing 1st person stscript: ${stscriptCommand}`);
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
         try {
-            await context.executeSlashCommandsWithOptions(stscriptCommand);
-            console.log('[GuidedGenerations] Guided Impersonate stscript executed.');
+            // Execute the command and wait for it to complete
+            await context.executeSlashCommandsWithOptions(stscriptCommand); 
+            
+            // After completion, read the new input and store it using the setter
+            setLastImpersonateResult(textarea.value);
+            console.log('[GuidedGenerations] Guided Impersonate (1st) stscript executed, new input stored in shared state.');
+
         } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Guided Impersonate stscript: ${error}`);
-        } 
+            console.error(`[GuidedGenerations] Error executing Guided Impersonate (1st) stscript: ${error}`);
+            setLastImpersonateResult(''); // Use setter to clear shared state on error
+        }
     } else {
         console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
     }

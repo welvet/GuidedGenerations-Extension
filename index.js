@@ -16,6 +16,24 @@ import { getContext, loadExtensionSettings, extension_settings, renderExtensionT
 // Import Preset Manager
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
 
+// --- Shared State for Impersonation Input Recovery ---
+let previousImpersonateInput = ''; // Input before the last impersonation
+let lastImpersonateResult = '';    // Input after the last impersonation
+
+export function getPreviousImpersonateInput() {
+    return previousImpersonateInput;
+}
+export function setPreviousImpersonateInput(value) {
+    previousImpersonateInput = value;
+}
+export function getLastImpersonateResult() {
+    return lastImpersonateResult;
+}
+export function setLastImpersonateResult(value) {
+    lastImpersonateResult = value;
+}
+// --- End Shared State ---
+
 export const extensionName = "GuidedGenerations-Extension"; // Use the simple name as the internal identifier
 // const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
 
