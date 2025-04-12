@@ -34,6 +34,8 @@ Main entry point for the Guided Generations extension. Initializes the extension
         *   Items added to this menu:
             *   Simple Send (`#gg-simple-send-action`)
             *   Recover Input (`#gg-recover-action`)
+            *   Corrections (`#gg-corrections-action`)
+            *   Spellchecker (`#gg-spellchecker-action`)
     *   **Right Side Buttons:** Creates individual action buttons next to the main send button (`#send_but`) in `#rightSendForm`.
         *   Buttons added (in order before send button): Guided Response (🦮), Guided Swipe (👈), Guided Impersonate (👤)
     *   Attaches event listeners to trigger the corresponding imported functions.
@@ -54,7 +56,8 @@ Contains the logic for the Simple Send button.
 
 *   `simpleSend()`
     *   Sends the current text in the input box as a message without generating an AI reply.
-    *   Uses the stscript command: `/setglobalvar key=gg_old_input {{input}} | /send {{input}} | /setinput`
+    *   Saves the current input using the shared JavaScript state function `setPreviousImpersonateInput`.
+    *   Uses the stscript command: `/send {{input}} | /setinput`
 
 ---
 
@@ -65,8 +68,9 @@ Contains the logic for the Input Recovery button.
 ### Functions
 
 *   `recoverInput()`
-    *   Recovers the previously stored input (from `gg_old_input` global variable) and places it back into the main chat input field.
-    *   Uses the stscript command: `/setinput {{getglobalvar::gg_old_input}}`
+    *   Recovers the previously stored input (retrieved via the shared JavaScript state function `getPreviousImpersonateInput`).
+    *   Places the recovered text directly into the main chat input field using JavaScript (`textarea.value = ...`).
+    *   No longer uses STscript.
 
 ---
 
@@ -78,11 +82,10 @@ Contains the logic for the Guided Response button.
 
 *   `guidedResponse()`
     *   Handles the Guided Response action:
-        1.  Stores the current input in the `gg_old_input` global variable.
-        2.  Injects the stored input as ephemeral instruction context (`gg_instruct`).
-        3.  Triggers an AI generation (awaiting completion).
-        4.  Restores the original input from `gg_old_input` back into the input field.
-    *   Uses the stscript command: `/setglobalvar key=gg_old_input {{input}} | /inject id=gg_instruct position=chat ephemeral=true depth=0 [Context: {{getglobalvar::gg_old_input}}] | /trigger await=true | /setinput {{getglobalvar::gg_old_input}}`
+        1.  Saves the current input using the shared JavaScript state function `setPreviousImpersonateInput`.
+        2.  Executes STscript to inject context and trigger an AI generation (`/inject`, `/trigger await=true`).
+        3.  Uses a `finally` block to ensure the original input is always restored directly to the textarea using JavaScript (`textarea.value = ...`) after the script execution (or if an error occurs).
+        4.  No longer uses `gg_old_input` STscript variable for restoration.
 
 ---
 
@@ -94,10 +97,10 @@ Contains the logic for the Guided Swipe button.
 
 *   `guidedSwipe()`
     *   Handles the Guided Swipe action:
-        1.  Stores the current input in the `gg_old_input` global variable.
-        2.  Executes a swipe action (`/swipe`).
-        3.  Restores the original input from `gg_old_input` back into the input field.
-    *   Uses the stscript command: `/setglobalvar key=gg_old_input {{input}} | /swipe | /setinput {{getglobalvar::gg_old_input}}`
+        1.  Saves the current input using the shared JavaScript state function `setPreviousImpersonateInput`.
+        2.  Executes the STscript command `/swipe`.
+        3.  Uses a `finally` block to ensure the original input is always restored directly to the textarea using JavaScript (`textarea.value = ...`) after the swipe command executes (or if an error occurs).
+        4.  No longer uses `gg_old_input` STscript variable for restoration.
 
 ---
 
@@ -109,10 +112,43 @@ Contains the logic for the Guided Impersonate button.
 
 *   `guidedImpersonate()`
     *   Handles the Guided Impersonate action (first person):
-        1.  Stores the current input in the `gg_old_input` global variable.
-        2.  Triggers an impersonation generation (`/impersonate`).
-        3.  Restores the original input from `gg_old_input` back into the input field.
-    *   Uses the stscript command: `/setglobalvar key=gg_old_input {{input}} | /impersonate | /setinput {{getglobalvar::gg_old_input}}`
+        1.  Checks if the current input matches the result of the last impersonation (stored in shared JS state `lastImpersonateResult`). If it does, restores the input from *before* that last impersonation (using `getPreviousImpersonateInput`) directly via JavaScript.
+        2.  If not restoring, saves the current input using `setPreviousImpersonateInput`.
+        3.  Executes the STscript command `/impersonate await=true ...`.
+        4.  After successful execution, stores the newly generated text in the shared JS state `lastImpersonateResult`.
+        5.  No longer uses `gg_old_input` STscript variable.
+
+---
+
+## `/scripts/tools/corrections.js`
+
+Contains the logic for the Corrections tool, accessed via the tools menu (Gear Icon).
+
+### Functions
+
+*   `corrections()`
+    *   Provides a way to modify the last AI message based on user instructions provided in the input field.
+    *   Saves the user's instruction input using the shared JavaScript state function `setPreviousImpersonateInput`.
+    *   Optionally switches ST presets (if `useGGSytemPreset` setting is true) using STscript.
+    *   Injects the last AI message and the user's instructions as ephemeral context using STscript (`/inject`).
+    *   Uses complex JavaScript/jQuery logic (copied from `guidedSwipe.js`) to navigate to the last swipe of the previous message and trigger a new generation by simulating a click on the swipe button.
+    *   Restores the original ST preset (if changed) using STscript in a `finally` block.
+
+---
+
+## `/scripts/tools/spellchecker.js`
+
+Contains the logic for the Spellchecker tool, accessed via the tools menu (Gear Icon).
+
+### Functions
+
+*   `spellchecker()`
+    *   Corrects grammar, punctuation, and flow of the text currently in the input field.
+    *   Saves the current input using the shared JavaScript state function `setPreviousImpersonateInput` (mainly for consistency, as the input is overwritten).
+    *   Optionally switches ST presets (if `useGGSytemPreset` setting is true) using STscript.
+    *   Uses the STscript command `/genraw ... {{input}} |` to generate the corrected text based on the current input.
+    *   Uses the STscript command `/setinput {{pipe}} |` to replace the content of the input field with the generated correction.
+    *   Restores the original ST preset (if changed) using STscript.
 
 ---
 
@@ -125,7 +161,7 @@ The standard way to execute these commands is via the SillyTavern context object
 1.  **Get the Context:** Use `const context = SillyTavern.getContext();` or `import { getContext } from '../../../../extensions.js'; const context = getContext();`.
 2.  **Execute Command:** Call the `executeSlashCommandsWithOptions(commandString)` method on the context object. This method can handle single commands (e.g., `/send Hello`) or multiple commands chained with `|` (e.g., `/setglobalvar key=x {{input}} | /send {{getglobalvar::x}}`).
 
-**Example:**
+**Example (Saving/Restoring Global Variable - Still used for presets etc.):**
 
 ```javascript
 import { getContext } from '../../../../extensions.js';
@@ -135,8 +171,8 @@ async function setAndRestoreInput() {
     const currentInput = inputElement ? inputElement.value : '';
     const escapedInput = currentInput.replace(/\|/g, '\\|'); // Escape pipe characters
 
-    const commandSave = `/setglobalvar key=my_saved_input ${escapedInput}`;
-    const commandRestore = `/setinput {{getglobalvar::my_saved_input}}`;
+    const commandSave = `/setglobalvar key=my_saved_var ${escapedInput}`; // Example using a global variable
+    const commandRestore = `/setinput {{getglobalvar::my_saved_var}}`;
 
     try {
         const context = getContext(); // Or SillyTavern.getContext();
@@ -160,14 +196,14 @@ async function setAndRestoreInput() {
     }
 }
 
+*   Note: While the example above uses `/setglobalvar` for saving/restoring input, the core Guided Generation buttons (Response, Swipe, Impersonate, SimpleSend, InputRecovery) have been refactored to use **JavaScript shared state** (`setPreviousImpersonateInput`, `getPreviousImpersonateInput` defined in `index.js`) for managing the user's input before/after actions, rather than the STscript global variable `gg_old_input`. Global variables are still used for other purposes like managing presets.
 *   Always check if `SillyTavern.getContext` and `context.executeSlashCommandsWithOptions` exist before calling them to avoid errors if the SillyTavern version changes or the extension loads unexpectedly.
-*   Escape special characters (like `|`) within user input (`{{input}}`) if inserting it directly into a command string to prevent parsing issues. Use `/setglobalvar` to store complex input first, then reference it with `{{getglobalvar::key}}`.
+*   Escape special characters (like `|`) within user input (`{{input}}`) if inserting it directly into a command string to prevent parsing issues. Using `/setglobalvar` to store complex input first, then referencing it with `{{getglobalvar::key}}` can help.
 *   The `executeSlashCommandsWithOptions` function might be asynchronous, so using `await` is recommended if you need subsequent actions to wait for the command to complete (though the exact behavior might depend on the specific STscript command being run).
 *   **CRITICAL**: In STScript, EVERY line must end with a pipe character `|`, including comments! For example:
     ```
-    // This is a comment| <-- Note the pipe at the end
-    /send Hello|
-    // This is another comment| <-- Note the pipe at the end
+    // This is a comment and needs a pipe |
+    /echo This is a command | /setvar key=test Hello | 
     ```
     Failing to end comments with a pipe character will cause the script to break, as the STScript parser treats every line as a command that must end with the pipe delimiter.
 

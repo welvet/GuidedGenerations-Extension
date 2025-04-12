@@ -54,10 +54,10 @@ const clothesGuide = async (isAuto = false) => { // Make async
 /var index=value y |
 /inject id=clothes position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}] |
 
-// Generate Clothes Description
+// Generate Clothes Description|
 /gen as=char [OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don't mention People or clothing pieces who are no longer relevant to the ongoing scene.]  |
 
-// Inject the generated description
+// Inject the generated description|
 /inject id=clothes position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |`;
 
     // Conditionally add /listinjects
