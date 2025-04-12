@@ -2,40 +2,68 @@
  * @file Contains the logic for the Edit Guides option in the Persistent Guides menu.
  */
 
+import editGuidesPopup from './editGuidesPopup.js'; // Import the popup instance
+
 /**
- * Executes the Edit Guides script to modify existing guides.
- * Allows users to select a guide and edit its content.
+ * Edit Guides Functionality
+ * Fetches persistent guide injections directly from context and opens a custom popup for editing.
  */
-const editGuides = () => {
-    console.log('[GuidedGenerations] Edit Guides button clicked');
-
-    const stscriptCommand = `/listinjects return=object | 
-/let injections {{pipe}} | 
-/keys {{var::injections}} | 
-/let injection_names {{pipe}} | 
-/buttons labels={{var::injection_names}} "Select an Guide to edit:" |
-/let selected_injection {{pipe}} |
-/let x {{var::injections}} | 
-/var index={{var::selected_injection}} x | 
-/let y {{pipe}} | 
-/var index=value y |
-/input large=off wide=on rows=20 default={{pipe}} Edit |
-/inject id={{var::selected_injection}} position=chat depth=1 {{pipe}} |`;
-
-    console.log(`[GuidedGenerations] Executing Edit Guides stscript`);
-
-    // Use the context executeSlashCommandsWithOptions method
-    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+async function editGuides() {
+    console.log('[GuidedGenerations] editGuides function called.');
+    try {
         const context = SillyTavern.getContext();
+        if (!context || !context.extensionPrompts) {
+            console.error('[GuidedGenerations] SillyTavern context or extensionPrompts not available.');
+            // Optionally inform the user via echo
+            try {
+                 await context.executeSlashCommandsWithOptions('/echo Error: Could not access guide data. |', { showOutput: true });
+            } catch (echoError) { /* Ignore failure to echo */ }
+            return;
+        }
+
+        console.log('[GuidedGenerations] Accessing context.extensionPrompts...');
+        const allPrompts = context.extensionPrompts;
+        const guidePrompts = {};
+
+        // Filter prompts to only include those starting with 'script_inject_'
+        for (const key in allPrompts) {
+            if (key.startsWith('script_inject_')) {
+                // We only need the key, value, and depth for the editor
+                guidePrompts[key] = {
+                    value: allPrompts[key].value,
+                    depth: allPrompts[key].depth
+                    // Add other properties if needed later (e.g., position, role)
+                };
+            }
+        }
+
+        console.log('[GuidedGenerations] Filtered guide prompts:', guidePrompts);
+
+        if (Object.keys(guidePrompts).length === 0) {
+            console.warn('[GuidedGenerations] No guide prompts found starting with script_inject_.');
+            try {
+                 await context.executeSlashCommandsWithOptions('/echo No editable guides found. |', { showOutput: true });
+            } catch (echoError) { /* Ignore failure to echo */ }
+            return;
+        }
+
+        // Ensure the popup is initialized (awaits if first time)
+        await editGuidesPopup.init(); 
+
+        // Open the popup with the fetched data
+        editGuidesPopup.open(guidePrompts);
+
+    } catch (error) {
+        console.error('[GuidedGenerations] Error in editGuides function:', error);
+        // Optionally inform the user via echo
         try {
-            // Send the combined script via context
-            context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: true }); // Show output for user feedback
-            console.log('[GuidedGenerations] Edit Guides stscript executed.');
-        } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Edit Guides: ${error}`);
+            const context = SillyTavern.getContext();
+            await context.executeSlashCommandsWithOptions(`/echo An error occurred while trying to edit guides: ${error.message} |`, { showOutput: true });
+        } catch (echoError) {
+            console.error('[GuidedGenerations] Failed to echo error message:', echoError);
         }
     }
-};
+}
 
-// Export the function for use in the main extension file
+// Expose the function using default export for dynamic import
 export default editGuides;

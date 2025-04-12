@@ -206,7 +206,7 @@
 /* Edit Intros Popup Styles */
 .gg-popup {
     display: none;
-    position: fixed;
+    position: absolute;
     z-index: 1000;
     left: 0;
     top: 0;
@@ -214,12 +214,17 @@
     height: 100%;
     overflow: auto;
     background-color: var(--SmartThemeShadowColor);
+    /* Revert flexbox changes */
+    /* display: flex; */
+    /* align-items: center; */ /* Vertical center */
+    /* justify-content: center; */ /* Horizontal center */
 }
 
 .gg-popup-content {
     background-color: var(--SmartThemeBlurTintColor);
     color: var(--SmartThemeBodyColor);
-    margin: 5% auto;
+    /* Remove old margin */
+    /* margin: 5vh auto; */ 
     padding: 20px;
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 10px;
@@ -228,6 +233,11 @@
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 4px 8px var(--SmartThemeShadowColor);
+    /* Add absolute positioning and transform for centering */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .gg-popup-header {
