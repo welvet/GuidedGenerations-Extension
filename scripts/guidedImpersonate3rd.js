@@ -16,7 +16,7 @@ const guidedImpersonate3rd = async () => {
 /if left={{input}} rule=eq right={{getglobalvar::gg_new_input_3rd}} 
 else={:
     /setglobalvar key=gg_old_input_3rd {{input}} |
-    /impersonate await=true Write in third Person perspective from {{user}}. {{input}} | // Changed to 3rd person
+    /impersonate await=true Write in third Person perspective from {{user}}. {{input}} |
     /setglobalvar key=gg_new_input_3rd {{input}} |
 :}
 {:

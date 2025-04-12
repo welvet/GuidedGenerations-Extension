@@ -25,7 +25,7 @@ const guidedResponse = async () => {
     if (isGroupChat()) {
         console.log('[GuidedGenerations] Detected Group Chat for Guided Response');
         stscriptCommand = scriptStart +
-            `// Group chat logic
+            `// Group chat logic|
 /split {{group}} |
 /setvar key=x {{pipe}} |
 /buttons labels=x "Select members {{group}}" |
@@ -36,7 +36,7 @@ const guidedResponse = async () => {
     } else {
         console.log('[GuidedGenerations] Detected Single Chat for Guided Response');
         stscriptCommand = scriptStart +
-            `// Single character logic
+            `// Single character logic|
 /inject id=instruct position=chat ephemeral=true depth=0 [Take the following into special concideration for your next message: {{getglobalvar::gg_old_input}}]|
 /trigger await=true|
 ` + scriptEnd;
@@ -68,7 +68,7 @@ const guidedResponse = async () => {
             
             // Now execute the main guided response command
             console.log('[GuidedGenerations] Executing main guidedResponse stscript command:', stscriptCommand);
-            context.executeSlashCommandsWithOptions(stscriptCommand, { showOutput: false });
+            context.executeSlashCommandsWithOptions(stscriptCommand);
             console.log('[GuidedGenerations] Guided Response stscript executed.');
             
 
