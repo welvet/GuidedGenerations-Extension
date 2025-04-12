@@ -1,7 +1,7 @@
 /**
  * @file Contains the logic for the Spellcheck tool.
  */
-import { extensionName } from '../../index.js'; 
+import { extensionName, setPreviousImpersonateInput } from '../../index.js'; // Import shared state function
 import { getContext, extension_settings } from '../../../../../extensions.js'; 
 
 /**
@@ -10,16 +10,28 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
  * @returns {Promise<void>}
  */
 export default async function spellchecker() {
+    console.log('[GuidedGenerations][Spellchecker] Tool activated.');
+    const textarea = document.getElementById('send_textarea');
+    if (!textarea) {
+        console.error('[GuidedGenerations][Spellchecker] Textarea #send_textarea not found.');
+        return;
+    }
+    const originalInput = textarea.value; // Get current input
+
+    // Save the input state using the shared function (even though we overwrite it later)
+    setPreviousImpersonateInput(originalInput);
+    console.log(`[GuidedGenerations][Spellchecker] Original input saved (for potential recovery elsewhere): "${originalInput}"`);
+
     // Get setting (use optional chaining and nullish coalescing for safety)
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`${extensionName}: Spellchecker tool - useGGSytemPreset setting is ${usePresetSwitching}`);
+    console.log(`[GuidedGenerations][Spellchecker] useGGSytemPreset setting is ${usePresetSwitching}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
     let presetSwitchEnd = '';
 
     if (usePresetSwitching) {
-        console.log(`${extensionName}: Spellchecker tool - Preset switching ENABLED.`);
+        console.log(`[GuidedGenerations][Spellchecker] Preset switching ENABLED.`);
         presetSwitchStart = `
 // Get the currently active preset|
 /preset|
@@ -38,7 +50,7 @@ export default async function spellchecker() {
 /preset {{getvar::oldPreset}} |
 `; // Note the closing pipe
     } else {
-        console.log(`${extensionName}: Spellchecker tool - Preset switching DISABLED.`);
+        console.log(`[GuidedGenerations][Spellchecker] Preset switching DISABLED.`);
         presetSwitchStart = `// Preset switching disabled by setting|`;
         presetSwitchEnd = `// Preset switching disabled by setting|`;
     }
@@ -47,12 +59,9 @@ export default async function spellchecker() {
     const stscript = `
         ${presetSwitchStart}
 
-        // Store current input if not already stored
-        /ifempty value={{getglobalvar::old_input}} {{input}} |
-        /setglobalvar key=old_input {{pipe}} |
-        
-        // Generate correction
+        // Generate correction using the current input|
         /genraw Without any intro or outro correct the grammar, and punctuation, and improves the paragraph's flow of: {{input}} |
+        // Replace the input field with the generated correction|
         /setinput {{pipe}}|
 
         ${presetSwitchEnd}
@@ -69,6 +78,7 @@ async function executeSTScript(stscript) { // Make helper async if it needs cont
     try {
         // Use the context executeSlashCommandsWithOptions method
         const context = getContext(); // Get context via imported function
+        console.log(`[GuidedGenerations][Spellchecker] Executing STScript: ${stscript}`);
         // Send the combined script via context
         await context.executeSlashCommandsWithOptions(stscript);
         console.log(`${extensionName}: Spellchecker ST-Script executed successfully.`);
