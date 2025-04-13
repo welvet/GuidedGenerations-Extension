@@ -16,10 +16,11 @@ import { extensionName } from '../../index.js'; // Import extensionName from ind
 const stateGuide = async (isAuto = false) => {
     console.log('[GuidedGenerations] State Guide ' + (isAuto ? 'auto-triggered' : 'button clicked'));
 
-    // --- Get Setting ---
+    // --- Get Settings ---
     // Use optional chaining and nullish coalescing for safety
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[GuidedGenerations] State Guide: useGGSytemPreset setting is ${usePresetSwitching}`);
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    console.log(`[GuidedGenerations] State Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -66,7 +67,7 @@ ${presetSwitchStart}
 /gen as=char [OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.]  |
 
 // Inject the generated state|
-/inject id=state position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |
+/inject id=state position=chat depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |
 
 ${presetSwitchEnd}
 `; // Removed extra pipe at the end here, will be added below if needed

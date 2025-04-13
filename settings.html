@@ -58,6 +58,19 @@
                         This preset can improve the quality and relevance of the generated output. However, disabling it might reduce the likelihood of triggering censorship on models with strict filters.
                     </small>
                 </div>
+                <hr> <!-- Add a separator -->
+                <h4>Injection Settings</h4> <!-- New Heading -->
+                <div class="setting_item"> <!-- Container for the new setting -->
+                    <label for="gg_injectionEndRole" style="margin-bottom: 5px; display: block;">Send Injections as:</label> <!-- Label for the dropdown -->
+                    <select id="gg_injectionEndRole" name="injectionEndRole" class="gg-setting-input text_pole select_compact"> <!-- Dropdown -->
+                        <option value="system">System</option>
+                        <option value="assistant">Assistant</option>
+                        <option value="user">User</option>
+                    </select>
+                    <small class="setting_item_description"> <!-- Description -->
+                        Determines the role assigned to the end of injected content (like Describe State/Clothes) before generation. 'System' is often best for guidance, 'Assistant' continues the flow, 'User' can sometimes be useful depending on the model/prompt structure. Default: System.
+                    </small>
+                </div>
             </div>
         </div>
     </div>

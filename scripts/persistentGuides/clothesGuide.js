@@ -12,9 +12,10 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
 const clothesGuide = async (isAuto = false) => { // Make async
     console.log(`[${extensionName}] Clothes Guide ` + (isAuto ? 'auto-triggered' : 'button clicked'));
 
-    // --- Get Setting ---
+    // --- Get Settings ---
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[${extensionName}] Clothes Guide: useGGSytemPreset setting is ${usePresetSwitching}`);
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    console.log(`[${extensionName}] Clothes Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -58,7 +59,7 @@ const clothesGuide = async (isAuto = false) => { // Make async
 /gen as=char [OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don't mention People or clothing pieces who are no longer relevant to the ongoing scene.]  |
 
 // Inject the generated description|
-/inject id=clothes position=chat depth=1 [Relevant Informations for portraying characters {{pipe}}] |`;
+/inject id=clothes position=chat depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
 
     // Conditionally add /listinjects
     let listInjectsCommand = '';

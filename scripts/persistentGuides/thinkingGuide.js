@@ -12,9 +12,13 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
 const thinkingGuide = async (isAuto = false) => { // Make async
     console.log(`[${extensionName}] Thinking Guide ` + (isAuto ? 'auto-triggered' : 'button clicked'));
 
-    // --- Get Setting ---
+    // --- Get Settings ---
+    // *** ADDING LOG FOR DEBUGGING ***
+    console.log(`[${extensionName}] Current extension_settings[${extensionName}] object:`, JSON.stringify(extension_settings[extensionName]));
+
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[${extensionName}] Thinking Guide: useGGSytemPreset setting is ${usePresetSwitching}`);
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    console.log(`[${extensionName}] Thinking Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -59,12 +63,14 @@ const thinkingGuide = async (isAuto = false) => { // Make async
 /buttons labels=x Select members {{group}} |
 /setglobalvar key=selection {{pipe}} |
 /gen [Write what {{getglobalvar::selection}} is currently thinking, do not describe their actions or dialogue, only pure thought and only {{getglobalvar::selection}}'s thoughts.]  |
-/inject id=thinking position=chat depth=0 [{{getglobalvar::selection}} is currently thinking: {{pipe}}] |`;
+/inject id=thinking position=chat depth=0 role=${injectionRole} [{{getglobalvar::selection}} is currently thinking: {{pipe}}] |
+`;
     } else {
         console.log(`[${extensionName}] Detected Single Chat for Thinking Guide`);
         mainScriptLogic += `
 /gen name={{char}} [Write what {{char}} and other characters that are in the current scene are currently thinking; do not describe their actions or dialogue, only pure thought. Do not include the {{user}}'s thoughts in this.]  |
-/inject id=thinking position=chat depth=0 [{{char}} is currently thinking: {{pipe}}] |`;
+/inject id=thinking position=chat depth=0 role=${injectionRole} [{{char}} is currently thinking: {{pipe}}] |
+`;
     }
 
     // Conditionally add /listinjects
@@ -85,6 +91,11 @@ const thinkingGuide = async (isAuto = false) => { // Make async
     console.log(stscriptCommand);
 
     console.log(`[${extensionName}] Executing Thinking Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
+
+    // *** ADDING LOG FOR TESTING ***
+    console.log("--- STScript to be executed by Thinking Guide ---");
+    console.log(stscriptCommand);
+    console.log("-------------------------------------------------");
 
     // Use the context executeSlashCommandsWithOptions method
     try {

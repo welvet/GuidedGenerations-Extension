@@ -48,6 +48,7 @@ const defaultSettings = {
     showImpersonate2ndPerson: false, // Default on
     showImpersonate3rdPerson: false, // Default off
     useGGSytemPreset: true, // NEW SETTING: Default to using the preset
+    injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
 };
 
 /**
@@ -108,49 +109,104 @@ function updateSettingsUI() {
                  // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" during updateSettingsUI.`);
             }
         });
+
+        // Update checkboxes
+        document.querySelectorAll('.gg-setting-input[type="checkbox"]').forEach(checkbox => {
+            const settingName = checkbox.name;
+            if (settingName in extension_settings[extensionName]) {
+                checkbox.checked = extension_settings[extensionName][settingName];
+            }
+        });
+
+        // Update the new dropdown
+        const injectionRoleSelect = document.getElementById('gg_injectionEndRole');
+        if (injectionRoleSelect && extension_settings[extensionName].injectionEndRole) {
+            injectionRoleSelect.value = extension_settings[extensionName].injectionEndRole;
+        }
+
+        console.log(`${extensionName}: Settings UI updated.`);
     } else {
         console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
     }
 }
 
-function addSettingsEventListeners() {
-    const settingsPanelId = `extension_settings_${extensionName}`;
-    const container = document.getElementById(settingsPanelId);
-    if (container) {
-        console.log(`${extensionName}: Adding event listeners to settings checkboxes.`);
-        Object.keys(defaultSettings).forEach(key => {
-            const checkbox = container.querySelector(`input[name="${key}"]`);
-            if (checkbox) {
-                checkbox.removeEventListener('change', handleSettingChange); // Prevent duplicate listeners
-                checkbox.addEventListener('change', handleSettingChange);
-            } else {
-                 // Allow this during initial load
-                 // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" to add listener.`);
-            }
-        });
+/**
+ * Adds event listeners to the settings panel elements after they are loaded.
+ * Uses event delegation on the container.
+ */
+const addSettingsEventListeners = () => {
+    // Get the specific container for this extension's settings
+    const containerId = `extension_settings_${extensionName}`;
+    const settingsContainer = document.getElementById(containerId);
+
+    if (settingsContainer) {
+        console.log(`[${extensionName}] Adding delegated event listener to #${containerId}`);
+        // Remove any potentially existing listener first to avoid duplicates on reload
+        settingsContainer.removeEventListener('change', handleSettingsChangeDelegated);
+        // Add the delegated listener
+        settingsContainer.addEventListener('change', handleSettingsChangeDelegated);
     } else {
-        console.error(`${extensionName}: Settings container #${settingsPanelId} not found when adding listeners.`);
+        console.error(`[${extensionName}] Could not find settings container #${containerId} to attach listeners.`);
     }
-}
+};
+
+/**
+ * Delegated event handler for settings changes within the container.
+ * @param {Event} event The event object
+ */
+const handleSettingsChangeDelegated = (event) => {
+    // Check if the changed element has the correct class
+    if (event.target.classList.contains('gg-setting-input')) {
+        console.log(`[${extensionName}] Delegated change event detected on:`, event.target);
+        handleSettingChange(event); // Call the original handler
+
+        // Special handling for button visibility settings after change
+        if (event.target.name === 'showImpersonateButton') {
+            updateImpersonateButtonVisibility();
+        }
+        if (event.target.name === 'showPersistentGuidesMenu') {
+            const menu = document.getElementById('persistent_guides_menu');
+            if (menu) menu.style.display = event.target.checked ? '' : 'none';
+        }
+        if (event.target.name === 'showSwipeButton') {
+            const button = document.getElementById('guided_swipe_button');
+            if (button) button.style.display = event.target.checked ? '' : 'none';
+        }
+        if (event.target.name === 'showResponseButton') {
+            const button = document.getElementById('guided_response_button');
+            if (button) button.style.display = event.target.checked ? '' : 'none';
+        }
+    }
+};
 
 // Separate handler function for clarity
 function handleSettingChange(event) {
-    const key = event.target.name;
-    const value = event.target.checked;
-    console.log(`${extensionName}: Setting "${key}" changed to ${value}`);
-    if (extension_settings[extensionName]) {
-        extension_settings[extensionName][key] = value;
-        saveSettingsDebounced(); // Save settings
-        // If a 'Show Button' setting changed, update the buttons
-        if (key.startsWith('showImpersonate')) {
-            updateExtensionButtons();
-        }
+    const target = event.target;
+    const settingName = target.name;
+    let settingValue;
+
+    if (target.type === 'checkbox') {
+        settingValue = target.checked;
+    } else if (target.tagName === 'SELECT') { // Handle dropdowns
+        settingValue = target.value;
     } else {
-         console.error(`${extensionName}: extension_settings[extensionName] is undefined! Cannot save setting change.`);
+        console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);
+        return; // Don't save if it's not a recognized type
+    }
+
+    console.log(`[${extensionName}] Setting Changed: ${settingName} = ${settingValue} (Type: ${typeof settingValue})`);
+
+    if (extension_settings[extensionName]) {
+        extension_settings[extensionName][settingName] = settingValue;
+        console.log(`[${extensionName}] > Updated setting: Key='${settingName}', New Value='${settingValue}'`);
+        console.log(`[${extensionName}] > Current extension_settings[${extensionName}]:`, JSON.stringify(extension_settings[extensionName]));
+        saveSettingsDebounced(); // Save after updating the specific key
+    } else {
+        console.error(`[${extensionName}] Error: extension_settings[${extensionName}] is undefined.`);
     }
 }
 
-// Function to create and add/remove buttons based on settings
+// Function to create and add buttons based on settings
 function updateExtensionButtons() {
     const settings = extension_settings[extensionName];
     if (!settings) {
@@ -633,10 +689,14 @@ async function installPreset() {
 // Run setup after page load
 $(document).ready(function() {
     setup();
-    // Settings Panel Setup (runs with delay)
-    loadSettingsPanel(); 
-    // Attempt to install the preset
-    installPreset(); 
+    // Settings Panel Setup (runs with delay to allow main UI to render)
+    setTimeout(() => {
+        console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
+        loadSettingsPanel();
+    }, 1000); // Increased delay to 1000ms (1 second)
+
+    // Attempt to install the preset (can run relatively early)
+    installPreset();
 });
 
 // --- Settings Panel Loading --- (Keep existing loadSettingsPanel async function)
@@ -644,17 +704,24 @@ async function loadSettingsPanel() {
     const containerId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
     let container = document.getElementById(containerId);
 
+    // *** ADDED DEBUG LOG ***
+    const parentContainer = document.getElementById('extensions_settings');
+    console.log(`[${extensionName}] Checking parent container #extensions_settings:`, parentContainer ? 'Found' : 'NOT Found');
+
     // Check if container exists, create if not (robustness)
     if (!container) {
-        console.warn(`${extensionName}: Settings container #${containerId} not found. Creating...`);
-        // Find the main settings area in SillyTavern (adjust selector if needed)
-        const settingsArea = document.getElementById('extensions_settings'); 
-        if (settingsArea) {
+        // Use a more reliable selector if possible, or wait longer?
+        // Let's assume #extensions_settings is the correct parent for now.
+        // const settingsArea = document.getElementById('extensions_settings'); 
+        // Use the parentContainer variable we just checked
+        if (parentContainer) { 
+            console.log(`[${extensionName}] Settings container #${containerId} not initially found. Ensuring it exists...`); 
             container = document.createElement('div');
             container.id = containerId;
-            settingsArea.appendChild(container);
+            parentContainer.appendChild(container); // Append to the found parent
         } else {
-            console.error(`${extensionName}: Could not find main settings area to create container.`);
+            // If the main area itself isn't found, log an error and stop.
+            console.error(`${extensionName}: Could not find main settings area (#extensions_settings) to create container.`);
             return; // Stop if we can't create the container
         }
     } else {
@@ -685,7 +752,7 @@ async function loadSettingsPanel() {
             // Add event listeners AFTER the HTML is loaded AND UI is updated
             addSettingsEventListeners();
             console.log(`${extensionName}: Settings panel actions complete.`);
-        }, 0); // 0ms delay is usually sufficient
+        }, 100); // Increase delay slightly to 100ms just in case
 
     } catch (error) {
         console.error(`${extensionName}: Error rendering settings template with renderExtensionTemplateAsync:`, error);

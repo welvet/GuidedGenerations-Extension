@@ -20,6 +20,10 @@ const guidedResponse = async () => {
     }
     const originalInput = textarea.value; // Get current input
 
+    // --- Get Setting ---
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    console.log(`[GuidedGenerations][Response] Using injectionEndRole: ${injectionRole}`);
+
     // Save the input state using the shared function
     setPreviousImpersonateInput(originalInput);
     console.log('[GuidedGenerations][Response] Original input saved.');
@@ -35,14 +39,14 @@ const guidedResponse = async () => {
 /setvar key=x {{pipe}} |
 /buttons labels=x "Select members {{group}}" |
 /setglobalvar key=selection {{pipe}} |
-/inject id=instruct position=chat ephemeral=true depth=0 [Take the following into special concideration for your next message: ${originalInput}] |
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special concideration for your next message: ${originalInput}] |
 /trigger await=true {{getglobalvar::selection}}|
 `;
     } else {
         console.log('[GuidedGenerations] Detected Single Chat for Guided Response');
         stscriptCommand = 
             `// Single character logic|
-/inject id=instruct position=chat ephemeral=true depth=0 [Take the following into special concideration for your next message: ${originalInput}]|
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special concideration for your next message: ${originalInput}]|
 /trigger await=true|
 `;
     }

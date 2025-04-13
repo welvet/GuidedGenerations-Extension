@@ -11,9 +11,10 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
 const rulesGuide = async () => { // Make async
     console.log(`[${extensionName}] Rules Guide button clicked`);
 
-    // --- Get Setting ---
+    // --- Get Settings ---
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[${extensionName}] Rules Guide: useGGSytemPreset setting is ${usePresetSwitching}`);
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    console.log(`[${extensionName}] Rules Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -58,12 +59,12 @@ const rulesGuide = async () => { // Make async
 /buttons labels=x "Select members {{group}}" |
 /setglobalvar key=selection {{pipe}} |
 /gen [Create a list of explicit rules that {{getglobalvar::selection}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.]  |
-/inject id=rule_guide position=chat depth=0 [{{getglobalvar::selection}}'s rules: {{pipe}}] |`;
+/inject id=rule_guide position=chat depth=0 role=${injectionRole} [{{getglobalvar::selection}}'s rules: {{pipe}}] |`;
     } else {
         console.log(`[${extensionName}] Detected Single Chat for Rules Guide`);
         mainScriptLogic += `
 /gen [Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] |
-/inject id=rule_guide position=chat depth=0 [{{char}}'s rules: {{pipe}}] |`;
+/inject id=rule_guide position=chat depth=0 role=${injectionRole} [{{char}}'s rules: {{pipe}}] |`;
     }
     
     // Combine all parts, including the original /listinjects
