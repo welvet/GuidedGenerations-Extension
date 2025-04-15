@@ -170,15 +170,26 @@ const guidedSwipe = async () => {
         // Save the input state using the shared function (imported)
         setPreviousImpersonateInput(originalInput);
 
-        // --- 1. Store Input & Inject Context (if any) --- (Uses local executeSTScriptCommand)
+        // --- 1. Store Input & Inject Context (if any) --- (Use direct context method)
         if (originalInput.trim()) {
              // Use the currentInjectionRole retrieved above
-             const injectCommand = `/inject id=gg_instruct position=${currentInjectionRole} ephemeral=true depth=0 [Context: ${originalInput}]`;
-             console.log('[GuidedGenerations][Response] Executed Command:', injectCommand); 
-             await executeSTScriptCommand(injectCommand);
-        } else {
-             console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
-        }
+             const injectCommand = `/inject id=gg_instruct position=chat ephemeral=true depth=0 role=${currentInjectionRole} [Take the following into special consideration for your next message: ${originalInput}]`;
+             
+             // Get context and execute directly
+             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+                 const context = SillyTavern.getContext();
+                 if (typeof context.executeSlashCommandsWithOptions === 'function') {
+                    await context.executeSlashCommandsWithOptions(injectCommand);
+                    console.log('[GuidedGenerations][Swipe] Executed Command:', injectCommand); 
+                 } else {
+                    throw new Error("context.executeSlashCommandsWithOptions function not found.");
+                 }
+             } else {
+                throw new Error("SillyTavern.getContext function not found.");
+             }
+         } else {
+              console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
+         }
 
         // --- 2. Generate New Swipe using the extracted function ---
         const swipeSuccess = await generateNewSwipe();
