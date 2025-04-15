@@ -9,8 +9,6 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
  * This helps maintain consistency in character behavior based on established rules.
  */
 const rulesGuide = async () => { // Make async
-    console.log(`[${extensionName}] Rules Guide button clicked`);
-
     // --- Get Settings ---
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
@@ -71,8 +69,6 @@ const rulesGuide = async () => { // Make async
     const stscriptCommand = presetSwitchStart + mainScriptLogic + presetSwitchEnd + `
 /:"Guided Generations.SysRules"|
 /listinjects |`;
-
-    console.log(`[${extensionName}] Executing Rules Guide stscript`);
 
     // Use the context executeSlashCommandsWithOptions method
     try {

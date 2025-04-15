@@ -4,7 +4,6 @@ import { getContext } from '../../../../extensions.js';
 import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; 
 
 const guidedImpersonate3rd = async () => {
-    console.log('[GuidedGenerations] Guided Impersonate (3rd Person) button clicked');
     const textarea = document.getElementById('send_textarea');
     if (!textarea) {
         console.error('[GuidedGenerations] Textarea #send_textarea not found.');
@@ -15,20 +14,16 @@ const guidedImpersonate3rd = async () => {
 
     // Check if the current input matches the last generated text (from any impersonation)
     if (lastGeneratedText && currentInputText === lastGeneratedText) {
-        console.log('[GuidedGenerations] Input matches last impersonation, restoring previous input.');
         textarea.value = getPreviousImpersonateInput(); // Use shared getter
         textarea.dispatchEvent(new Event('input', { bubbles: true })); 
         return; // Restoration done, exit
     }
 
     // --- If not restoring, proceed with impersonation ---
-    console.log('[GuidedGenerations] Performing new 3rd person impersonation.');
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
     // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = `/impersonate await=true Write in third Person perspective from {{user}}. {{input}} |`;
-
-    console.log(`[GuidedGenerations] Executing 3rd person stscript: ${stscriptCommand}`);
+    const stscriptCommand = `/impersonate 3rd |`;
 
     try {
         const context = getContext(); 

@@ -3,6 +3,7 @@
  */
 import { extensionName, setPreviousImpersonateInput } from '../../index.js'; // Import shared state function
 import { getContext, extension_settings } from '../../../../../extensions.js'; 
+import { generateNewSwipe } from '../guidedSwipe.js'; // Import the new function
 
 // Helper function for delays (copied from guidedSwipe.js)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -140,9 +141,16 @@ export default async function corrections() {
         console.log('[GuidedGenerations][Corrections] Skipping verification step for now.');
 
         // Final Click to Generate
-        console.log("[GuidedGenerations][Corrections] Performing final click to trigger generation...");
-        $button.first().trigger('click');
-        console.log("[GuidedGenerations][Corrections] Final click performed.");
+        console.log("[GuidedGenerations][Corrections] Attempting to generate new swipe after correction...");
+        const swipeSuccess = await generateNewSwipe(); // Call the imported function
+
+        if (swipeSuccess) {
+            console.log("[GuidedGenerations][Corrections] New swipe generated successfully. Executing final click to trigger generation...");
+            $button.first().trigger('click');
+            console.log("[GuidedGenerations][Corrections] Final click performed.");
+        } else {
+            console.error("[GuidedGenerations][Corrections] Failed to generate new swipe after correction.");
+        }
 
         console.log('[GuidedGenerations][Corrections] JS Swipe Logic finished.');
 

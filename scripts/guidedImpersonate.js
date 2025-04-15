@@ -2,7 +2,6 @@
 import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; // Import shared state functions
 
 const guidedImpersonate = async () => {
-    console.log('[GuidedGenerations] Guided Impersonate (1st Person) button clicked'); // Clarify type
     const textarea = document.getElementById('send_textarea');
     if (!textarea) {
         console.error('[GuidedGenerations] Textarea #send_textarea not found.');
@@ -13,21 +12,16 @@ const guidedImpersonate = async () => {
 
     // Check if the current input matches the last generated text
     if (lastGeneratedText && currentInputText === lastGeneratedText) {
-        console.log('[GuidedGenerations] Input matches last impersonation, restoring previous input.');
         textarea.value = getPreviousImpersonateInput(); // Use getter
-        // We don't clear lastGeneratedText here based on user's correction in previous step
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
         return; // Restoration done, exit
     }
 
     // --- If not restoring, proceed with impersonation ---
-    console.log('[GuidedGenerations] Performing new 1st person impersonation.');
     setPreviousImpersonateInput(currentInputText); // Use setter
 
     // Only the core impersonate command remains
     const stscriptCommand = `/impersonate await=true Write in first Person perspective from {{user}}. {{input}} |`;
-
-    console.log(`[GuidedGenerations] Executing 1st person stscript: ${stscriptCommand}`);
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();

@@ -10,12 +10,9 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
  * @param {boolean} isAuto - Whether this guide is being auto-triggered (true) or called directly from menu (false)
  */
 const clothesGuide = async (isAuto = false) => { // Make async
-    console.log(`[${extensionName}] Clothes Guide ` + (isAuto ? 'auto-triggered' : 'button clicked'));
-
     // --- Get Settings ---
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
-    console.log(`[${extensionName}] Clothes Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -75,10 +72,6 @@ const clothesGuide = async (isAuto = false) => { // Make async
     const stscriptCommand = presetSwitchStart + mainScriptLogic + presetSwitchEnd + listInjectsCommand;
 
     console.log(`[${extensionName}] Executing Clothes Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
-
-    // Print the full command for debugging
-    console.log(`[${extensionName}] Clothes Guide final stscript (isAuto=${isAuto}):`);
-    console.log(stscriptCommand);
 
     // Use the context executeSlashCommandsWithOptions method
     try {

@@ -201,6 +201,9 @@ function handleSettingChange(event) {
         console.log(`[${extensionName}] > Updated setting: Key='${settingName}', New Value='${settingValue}'`);
         console.log(`[${extensionName}] > Current extension_settings[${extensionName}]:`, JSON.stringify(extension_settings[extensionName]));
         saveSettingsDebounced(); // Save after updating the specific key
+
+        // *** ADDED: Refresh buttons after setting change ***
+        updateExtensionButtons();
     } else {
         console.error(`[${extensionName}] Error: extension_settings[${extensionName}] is undefined.`);
     }
@@ -258,7 +261,7 @@ function updateExtensionButtons() {
         // Create it for the first time
         ggMenuButton = document.createElement('div');
         ggMenuButton.id = 'gg_menu_button';
-        ggMenuButton.className = 'gg-menu-button fa-solid fa-wand-magic-sparkles'; // Base classes
+        ggMenuButton.className = 'gg-menu-button fa-solid fa-bookmark'; // Base classes
         ggMenuButton.classList.add('interactable'); // Make sure it has interactable styles
         ggMenuButton.title = 'Guided Generations Tools';
 
@@ -420,7 +423,7 @@ function updateExtensionButtons() {
         // Create it for the first time
         pgMenuButton = document.createElement('div');
         pgMenuButton.id = 'pg_menu_button';
-        pgMenuButton.className = 'gg-menu-button fa-solid fa-bookmark'; // Bookmark icon
+        pgMenuButton.className = 'gg-menu-button fa-solid fa-book-open-reader'; // Thinking icon
         pgMenuButton.classList.add('interactable'); // Make sure it has interactable styles
         pgMenuButton.title = 'Persistent Guides';
         pgMenuButton.style.marginLeft = '5px'; // Add some spacing from the GG Tools button

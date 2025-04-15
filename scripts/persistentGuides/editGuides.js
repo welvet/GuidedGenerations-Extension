@@ -9,19 +9,19 @@ import editGuidesPopup from './editGuidesPopup.js'; // Import the popup instance
  * Fetches persistent guide injections directly from context and opens a custom popup for editing.
  */
 async function editGuides() {
-    console.log('[GuidedGenerations] editGuides function called.');
     try {
         const context = SillyTavern.getContext();
         if (!context || !context.extensionPrompts) {
             console.error('[GuidedGenerations] SillyTavern context or extensionPrompts not available.');
             // Optionally inform the user via echo
             try {
-                 await context.executeSlashCommandsWithOptions('/echo Error: Could not access guide data. |', { showOutput: true });
-            } catch (echoError) { /* Ignore failure to echo */ }
+                await context.executeSlashCommandsWithOptions('/echo Error: SillyTavern context or extensionPrompts not available.', { showOutput: true });
+            } catch (echoError) {
+                console.error('[GuidedGenerations] Failed to echo error message:', echoError);
+            }
             return;
         }
 
-        console.log('[GuidedGenerations] Accessing context.extensionPrompts...');
         const allPrompts = context.extensionPrompts;
         const guidePrompts = {};
 
@@ -37,12 +37,10 @@ async function editGuides() {
             }
         }
 
-        console.log('[GuidedGenerations] Filtered guide prompts:', guidePrompts);
-
         if (Object.keys(guidePrompts).length === 0) {
             console.warn('[GuidedGenerations] No guide prompts found starting with script_inject_.');
             try {
-                 await context.executeSlashCommandsWithOptions('/echo No editable guides found. |', { showOutput: true });
+                await context.executeSlashCommandsWithOptions('/echo No editable guides found. |', { showOutput: true });
             } catch (echoError) { /* Ignore failure to echo */ }
             return;
         }

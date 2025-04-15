@@ -10,22 +10,15 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
  * @param {boolean} isAuto - Whether this guide is being auto-triggered (true) or called directly from menu (false)
  */
 const thinkingGuide = async (isAuto = false) => { // Make async
-    console.log(`[${extensionName}] Thinking Guide ` + (isAuto ? 'auto-triggered' : 'button clicked'));
-
     // --- Get Settings ---
-    // *** ADDING LOG FOR DEBUGGING ***
-    console.log(`[${extensionName}] Current extension_settings[${extensionName}] object:`, JSON.stringify(extension_settings[extensionName]));
-
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
-    console.log(`[${extensionName}] Thinking Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
     let presetSwitchEnd = '';
 
     if (usePresetSwitching) {
-        console.log(`[${extensionName}] Thinking Guide: Preset switching ENABLED.`);
         presetSwitchStart = `
 // Get the currently active preset|
 /preset|
@@ -44,7 +37,6 @@ const thinkingGuide = async (isAuto = false) => { // Make async
 /preset {{getvar::oldPreset}} |
 `; // Note the closing pipe
     } else {
-        console.log(`[${extensionName}] Thinking Guide: Preset switching DISABLED.`);
         presetSwitchStart = `// Preset switching disabled by setting|`;
         presetSwitchEnd = `// Preset switching disabled by setting|`;
     }
@@ -56,7 +48,6 @@ const thinkingGuide = async (isAuto = false) => { // Make async
     
     // Add different script sections based on whether it's a group chat | 
     if (await isGroupChat()) { // Await the async check
-        console.log(`[${extensionName}] Detected Group Chat for Thinking Guide`);
         mainScriptLogic += `
 /split {{group}} |
 /setvar key=x {{pipe}} |
@@ -66,7 +57,6 @@ const thinkingGuide = async (isAuto = false) => { // Make async
 /inject id=thinking position=chat depth=0 role=${injectionRole} [{{getglobalvar::selection}} is currently thinking: {{pipe}}] |
 `;
     } else {
-        console.log(`[${extensionName}] Detected Single Chat for Thinking Guide`);
         mainScriptLogic += `
 /gen name={{char}} [Write what {{char}} and other characters that are in the current scene are currently thinking; do not describe their actions or dialogue, only pure thought. Do not include the {{user}}'s thoughts in this.]  |
 /inject id=thinking position=chat depth=0 role=${injectionRole} [{{char}} is currently thinking: {{pipe}}] |
@@ -76,11 +66,8 @@ const thinkingGuide = async (isAuto = false) => { // Make async
     // Conditionally add /listinjects
     let listInjectsCommand = '';
     if (!isAuto) {
-        console.log(`[${extensionName}] Running in manual mode, adding /listinjects command`);
         listInjectsCommand = `
 /listinjects |`;
-    } else {
-        console.log(`[${extensionName}] Running in auto mode, NOT adding /listinjects command`);
     }
 
     // Combine all parts
@@ -90,14 +77,6 @@ const thinkingGuide = async (isAuto = false) => { // Make async
     console.log(`[${extensionName}] Thinking Guide final stscript (isAuto=${isAuto}):`);
     console.log(stscriptCommand);
 
-    console.log(`[${extensionName}] Executing Thinking Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
-
-    // *** ADDING LOG FOR TESTING ***
-    console.log("--- STScript to be executed by Thinking Guide ---");
-    console.log(stscriptCommand);
-    console.log("-------------------------------------------------");
-
-    // Use the context executeSlashCommandsWithOptions method
     try {
         const context = getContext(); // Use imported function
         // Send the combined script via context

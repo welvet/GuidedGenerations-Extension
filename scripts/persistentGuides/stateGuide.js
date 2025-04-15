@@ -14,20 +14,16 @@ import { extensionName } from '../../index.js'; // Import extensionName from ind
  * @returns {Promise<string|null>} The generated state info from the pipe, or null on error.
  */
 const stateGuide = async (isAuto = false) => {
-    console.log('[GuidedGenerations] State Guide ' + (isAuto ? 'auto-triggered' : 'button clicked'));
-
     // --- Get Settings ---
     // Use optional chaining and nullish coalescing for safety
     const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
-    console.log(`[GuidedGenerations] State Guide: useGGSytemPreset=${usePresetSwitching}, injectionEndRole=${injectionRole}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
     let presetSwitchEnd = '';
 
     if (usePresetSwitching) {
-        console.log('[GuidedGenerations] State Guide: Preset switching ENABLED.');
         presetSwitchStart = `
 // Get the currently active preset|
 /preset|
@@ -46,7 +42,6 @@ const stateGuide = async (isAuto = false) => {
 /preset {{getvar::oldPreset}} |
 `; // Note the closing pipe
     } else {
-        console.log('[GuidedGenerations] State Guide: Preset switching DISABLED.');
         presetSwitchStart = `// Preset switching disabled by setting|`;
         presetSwitchEnd = `// Preset switching disabled by setting|`;
     }
@@ -74,22 +69,14 @@ ${presetSwitchEnd}
 
     // Only include /listinjects if not auto-triggered
     if (!isAuto) {
-        console.log('[GuidedGenerations] Running in manual mode, adding /listinjects command');
         stscriptCommand += `
 /listinjects |`; // Add the command and the required pipe
     } else {
-        console.log('[GuidedGenerations] Running in auto mode, NOT adding /listinjects command');
         // Ensure the script ends with a pipe if no listinjects is added
         if (!stscriptCommand.trim().endsWith('|')) {
              stscriptCommand += ' |'; 
         }
     }
-
-    // Print the full command for debugging
-    console.log(`[GuidedGenerations] State Guide final stscript (isAuto=${isAuto}, usePreset=${usePresetSwitching}):`);
-    console.log(stscriptCommand);
-
-    console.log(`[GuidedGenerations] Executing State Guide stscript: ${isAuto ? 'auto mode' : 'manual mode'}`);
 
     // --- Execute Script ---
     // Use the context executeSlashCommandsWithOptions method
@@ -113,10 +100,8 @@ ${presetSwitchEnd}
 
             // Check the pipe for the result
             if (result && result.pipe !== undefined && result.pipe !== null && result.pipe !== '') {
-                console.log('[GuidedGenerations] Successfully retrieved pipe value:', result.pipe);
                 if (typeof window !== 'undefined') {
                     window.ggLastStateGeneratedContent = result.pipe;
-                    console.log('[GuidedGenerations] Stored pipe value in window.ggLastStateGeneratedContent');
                 }
                 return result.pipe; // Return the content from pipe
             } else {
