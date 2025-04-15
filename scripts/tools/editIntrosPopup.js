@@ -306,10 +306,6 @@ export class EditIntrosPopup {
         const customEdit = textareaElement ? textareaElement.value.trim() : ''; 
 
         const scriptPart1 = `
-            /qr-update set="Guided Generations" label=SysThinking user=false|
-            /qr-update set="Guided Generations" label=SysState user=false|
-            /qr-update set="Guided Generations" label=SysClothes user=false|
-            /echo Autotrigger for the Persistent Guides State, Clothes, and Thinking have been deactivated. You can manually turn them back on after you are finished editing your Intro!
 
             // Editing Intro messages |
             /sys at=0 Editing Intro messages | 
@@ -319,13 +315,10 @@ export class EditIntrosPopup {
             /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
 
             // Rewrite the intro |
-            /inject id=msgtorework position=chat depth=0 role=assistant {{lastMessage}}|
-            /inject id=instruct position=chat depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] |
-        `;
+            /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
+            /inject id=instruct position=chat ephemeral=true depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] | `;
 
         const scriptPart2 = `
-            /flushinjects instruct|
-            /flushinjects msgtorework|
             /cut 0|
         `;
 
@@ -354,48 +347,7 @@ export class EditIntrosPopup {
         this.close();
     }
 
-    /**
-     * Execute the edit intros script
-     * @param {string} instruction - The transformation instruction
-     */
-    executeEditIntros(instruction) {
-        const stscript = `
-            /qr-update set="Guided Generations" label=SysThinking user=false|
-            /qr-update set="Guided Generations" label=SysState user=false|
-            /qr-update set="Guided Generations" label=SysClothes user=false|
-            /echo Autotrigger for the Persistent Guides State, Clothes, and Thinking have been deactivated. You can manually turn them back on after you are finished editing your Intro!
-
-            // Editing Intro messages |
-            /sys at=0 Editing Intro messages | 
-            /hide 0 |
-
-            // Set the instruction |
-            /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
-
-            // Rewrite the intro |
-            /inject id=msgtorework position=chat depth=0 role=assistant {{lastMessage}}|
-            /inject id=instruct position=chat depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] |
-            /swipes-swipe |
-
-            /flushinjects instruct|
-            /flushinjects msgtorework|
-            /cut 0|
-        `;
-        
-        try {
-            if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-                const context = SillyTavern.getContext();
-                context.executeSlashCommandsWithOptions(stscript);
-                console.log('[GuidedGenerations] Edit Intros script executed successfully.');
-            } else {
-                console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
-            }
-        } catch (error) {
-            console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
-        }
-    }
 }
-
 // Singleton instance
 const editIntrosPopup = new EditIntrosPopup();
 export default editIntrosPopup;

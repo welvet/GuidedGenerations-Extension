@@ -35,7 +35,7 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 - Can be hidden or displayed individually per settings. 1st Person is displayed by default.
 
 ### 📖 Persistent Guides Menu
-*Manage persistent scenario context via the 📖 menu.*
+*Manage persistent scenario context.*
 - Click the 📖 button to open the persistent guides menu.
 - Select a guide type (see below) to generate or manage context.
 
@@ -54,7 +54,7 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 - Auto-trigger for Thinking, Clothes, and State can be toggled in settings.
 
 ### 🔖 Tools Menu
-*Access additional utilities via the ✨ (wand) menu.*
+*Access additional utilities*
   - **🔧 Corrections:** Edit the last AI message with targeted instructions.
   - **✅ Spellchecker:** Polish your input for grammar, punctuation, and flow.
   - **✈️ Simple Send:** Send input as a user message without triggering a model response.
