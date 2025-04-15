@@ -62,13 +62,12 @@ const rulesGuide = async () => { // Make async
         console.log(`[${extensionName}] Detected Single Chat for Rules Guide`);
         mainScriptLogic += `
 /gen [Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] |
-/inject id=rule_guide position=chat depth=0 role=${injectionRole} [{{char}}'s rules: {{pipe}}] |`;
+/inject id=rule_guide position=chat depth=0 role=${injectionRole} [{{char}}'s rules: {{pipe}}] |
+/listinjects |`;
     }
     
     // Combine all parts, including the original /listinjects
-    const stscriptCommand = presetSwitchStart + mainScriptLogic + presetSwitchEnd + `
-/:"Guided Generations.SysRules"|
-/listinjects |`;
+    const stscriptCommand = presetSwitchStart + mainScriptLogic + presetSwitchEnd;
 
     // Use the context executeSlashCommandsWithOptions method
     try {

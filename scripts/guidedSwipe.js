@@ -1,11 +1,11 @@
 // scripts/guidedSwipe.js
 
-import { getContext } from '../../../../extensions.js'; // Import getContext
+import { getContext, extension_settings } from '../../../../extensions.js'; // Import getContext and extension_settings
 import { setPreviousImpersonateInput, getPreviousImpersonateInput } from '../index.js'; // Import shared state functions
 
 // Helper function for delays
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
+const extensionName = "GuidedGenerations-Extension";
 // Helper function to execute STScripts using the context method
 // NOTE: This version assumes executeSlashCommandsWithOptions exists and handles errors locally.
 // It might need adjustments based on the exact SillyTavern API if it changes.
@@ -163,13 +163,18 @@ const guidedSwipe = async () => {
     }
     const originalInput = textarea.value; // Get current input
 
+    // Get the LATEST injection role setting HERE
+    const currentInjectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+
     try {
         // Save the input state using the shared function (imported)
         setPreviousImpersonateInput(originalInput);
 
         // --- 1. Store Input & Inject Context (if any) --- (Uses local executeSTScriptCommand)
         if (originalInput.trim()) {
-             const injectCommand = `/inject id=gg_instruct position=chat ephemeral=true depth=0 [Context: ${originalInput}]`;
+             // Use the currentInjectionRole retrieved above
+             const injectCommand = `/inject id=gg_instruct position=${currentInjectionRole} ephemeral=true depth=0 [Context: ${originalInput}]`;
+             console.log('[GuidedGenerations][Response] Executed Command:', injectCommand); 
              await executeSTScriptCommand(injectCommand);
         } else {
              console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
