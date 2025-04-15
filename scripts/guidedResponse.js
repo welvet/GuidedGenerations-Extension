@@ -12,7 +12,6 @@ import clothesGuide from './persistentGuides/clothesGuide.js'; // Correct relati
 const extensionName = "GuidedGenerations-Extension";
 
 const guidedResponse = async () => {
-    console.log('[GuidedGenerations] Guided Response button clicked');
     const textarea = document.getElementById('send_textarea');
     if (!textarea) {
         console.error('[GuidedGenerations][Response] Textarea #send_textarea not found.');
@@ -22,31 +21,27 @@ const guidedResponse = async () => {
 
     // --- Get Setting ---
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
-    console.log(`[GuidedGenerations][Response] Using injectionEndRole: ${injectionRole}`);
 
     // Save the input state using the shared function
     setPreviousImpersonateInput(originalInput);
-    console.log('[GuidedGenerations][Response] Original input saved.');
 
     let stscriptCommand;
 
     // Check if it's a group chat using the helper function
     if (isGroupChat()) {
-        console.log('[GuidedGenerations] Detected Group Chat for Guided Response');
         stscriptCommand = 
             `// Group chat logic|
 /split {{group}} |
 /setvar key=x {{pipe}} |
 /buttons labels=x "Select members {{group}}" |
 /setglobalvar key=selection {{pipe}} |
-/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special concideration for your next message: ${originalInput}] |
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special consideration for your next message: ${originalInput}] |
 /trigger await=true {{getglobalvar::selection}}|
 `;
     } else {
-        console.log('[GuidedGenerations] Detected Single Chat for Guided Response');
         stscriptCommand = 
             `// Single character logic|
-/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special concideration for your next message: ${originalInput}]|
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special consideration for your next message: ${originalInput}]|
 /trigger await=true|
 `;
     }
@@ -57,13 +52,11 @@ const guidedResponse = async () => {
         try {
             // First check for auto-trigger settings and execute relevant guides
             const settings = extension_settings[extensionName];
-            console.log(`[GuidedGenerations][Response] Checking auto-trigger settings:`, settings);
             if (settings.autoTriggerThinking) await thinkingGuide(true); // Pass isAuto=true
             if (settings.autoTriggerState) await stateGuide(true); // Pass isAuto=true
             if (settings.autoTriggerClothes) await clothesGuide(true); // Pass isAuto=true
 
             // Execute the main command
-            console.log(`[GuidedGenerations][Response] Executing stscript: ${stscriptCommand}`);
             await context.executeSlashCommandsWithOptions(stscriptCommand);
             console.log('[GuidedGenerations][Response] Guided Response stscript executed.');
             
@@ -72,9 +65,11 @@ const guidedResponse = async () => {
         } finally {
             // Always restore the input field from the shared state
             const restoredInput = getPreviousImpersonateInput();
-            console.log(`[GuidedGenerations][Response] Restoring input field to: "${restoredInput}"`);
             textarea.value = restoredInput;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            if (typeof SillyTavern === 'undefined' || typeof SillyTavern.getContext !== 'function') {
+                console.log(`[GuidedGenerations][Response] Restoring input field after context error: "${restoredInput}"`);
+            }
         }
     } else {
         console.error('[GuidedGenerations][Response] SillyTavern context is not available.');

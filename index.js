@@ -71,10 +71,8 @@ async function loadSettings() {
     // Check if settings are empty and initialize with defaults
     // This simplified approach assumes defaults are complete.
     if (Object.keys(extension_settings[extensionName]).length === 0) {
-        console.log(`${extensionName}: Initializing settings with defaults.`);
         Object.assign(extension_settings[extensionName], defaultSettings);
     } else {
-         console.log(`${extensionName}: Settings already loaded, ensuring all keys exist.`);
         // Ensure all default keys exist (migration / update handling)
         for (const key in defaultSettings) {
             if (extension_settings[extensionName][key] === undefined) {
@@ -83,30 +81,25 @@ async function loadSettings() {
             }
         }
     }
-
-    console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
-
-    // No need to update UI here, updateSettingsUI will be called separately after template render
 }
 
 function updateSettingsUI() {
     const settingsPanelId = `extension_settings_${extensionName}`;
     const container = document.getElementById(settingsPanelId);
     if (container) {
-        console.log(`${extensionName}: Updating UI elements from settings.`);
         Object.keys(defaultSettings).forEach(key => {
             const checkbox = container.querySelector(`input[name="${key}"]`);
             if (checkbox) {
                 // Check if the setting exists before trying to access it
                 if (extension_settings[extensionName] && extension_settings[extensionName].hasOwnProperty(key)) {
-                     checkbox.checked = extension_settings[extensionName][key];
+                    checkbox.checked = extension_settings[extensionName][key];
                 } else {
                     console.warn(`${extensionName}: Setting key "${key}" not found in loaded settings during UI update. Using default: ${defaultSettings[key]}`);
                     checkbox.checked = defaultSettings[key]; // Use default if missing
                 }
             } else {
-                 // Allow this warning during initial load before template might be ready
-                 // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" during updateSettingsUI.`);
+                // Allow this warning during initial load before template might be ready
+                // console.warn(`${extensionName}: Could not find checkbox for setting "${key}" during updateSettingsUI.`);
             }
         });
 
@@ -123,8 +116,6 @@ function updateSettingsUI() {
         if (injectionRoleSelect && extension_settings[extensionName].injectionEndRole) {
             injectionRoleSelect.value = extension_settings[extensionName].injectionEndRole;
         }
-
-        console.log(`${extensionName}: Settings UI updated.`);
     } else {
         console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
     }
@@ -140,7 +131,6 @@ const addSettingsEventListeners = () => {
     const settingsContainer = document.getElementById(containerId);
 
     if (settingsContainer) {
-        console.log(`[${extensionName}] Adding delegated event listener to #${containerId}`);
         // Remove any potentially existing listener first to avoid duplicates on reload
         settingsContainer.removeEventListener('change', handleSettingsChangeDelegated);
         // Add the delegated listener
@@ -157,7 +147,6 @@ const addSettingsEventListeners = () => {
 const handleSettingsChangeDelegated = (event) => {
     // Check if the changed element has the correct class
     if (event.target.classList.contains('gg-setting-input')) {
-        console.log(`[${extensionName}] Delegated change event detected on:`, event.target);
         handleSettingChange(event); // Call the original handler
 
         // Special handling for button visibility settings after change
@@ -194,12 +183,8 @@ function handleSettingChange(event) {
         return; // Don't save if it's not a recognized type
     }
 
-    console.log(`[${extensionName}] Setting Changed: ${settingName} = ${settingValue} (Type: ${typeof settingValue})`);
-
     if (extension_settings[extensionName]) {
         extension_settings[extensionName][settingName] = settingValue;
-        console.log(`[${extensionName}] > Updated setting: Key='${settingName}', New Value='${settingValue}'`);
-        console.log(`[${extensionName}] > Current extension_settings[${extensionName}]:`, JSON.stringify(extension_settings[extensionName]));
         saveSettingsDebounced(); // Save after updating the specific key
     } else {
         console.error(`[${extensionName}] Error: extension_settings[${extensionName}] is undefined.`);
@@ -213,7 +198,6 @@ function updateExtensionButtons() {
         console.error(`${extensionName}: Settings not loaded, cannot update buttons.`);
         return;
     }
-    console.log(`${extensionName}: Updating extension buttons based on settings...`, settings);
 
     // --- Right Side: Action Buttons (Now in Container Below Input) --- 
     const sendForm = document.getElementById('send_form');
@@ -232,7 +216,6 @@ function updateExtensionButtons() {
         buttonContainer.className = 'gg-action-buttons-container'; // Add class for styling
         // Insert the container AFTER nonQRFormItems within send_form
         nonQRFormItems.parentNode.insertBefore(buttonContainer, nonQRFormItems.nextSibling);
-        console.log(`${extensionName}: Created action button container below input area.`);
     }
 
     // Clear the container before adding/arranging buttons
@@ -272,7 +255,6 @@ function updateExtensionButtons() {
         simpleSendMenuItem.className = 'interactable'; // Use interactable class
         simpleSendMenuItem.innerHTML = '<i class="fa-solid fa-paper-plane fa-fw"></i><span data-i18n="Simple Send">Simple Send</span>'; // Add icon + span
         simpleSendMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Simple Send action clicked.`);
             simpleSend();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -283,7 +265,6 @@ function updateExtensionButtons() {
         recoverInputMenuItem.className = 'interactable'; // Use interactable class
         recoverInputMenuItem.innerHTML = '<i class="fa-solid fa-arrow-rotate-left fa-fw"></i><span data-i18n="Recover Input">Recover Input</span>'; // Add icon + span
         recoverInputMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Recover Input action clicked.`);
             recoverInput();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -296,7 +277,6 @@ function updateExtensionButtons() {
         editIntrosMenuItem.className = 'interactable';
         editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
         editIntrosMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Edit Intros action clicked.`);
             const { default: editIntros } = await import('./scripts/tools/editIntros.js');
             await editIntros();
             ggToolsMenu.classList.remove('shown');
@@ -309,7 +289,6 @@ function updateExtensionButtons() {
         correctionsMenuItem.className = 'interactable';
         correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
         correctionsMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Corrections action clicked.`);
             const { default: corrections } = await import('./scripts/tools/corrections.js');
             await corrections();
             ggToolsMenu.classList.remove('shown');
@@ -322,7 +301,6 @@ function updateExtensionButtons() {
         spellcheckerMenuItem.className = 'interactable';
         spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
         spellcheckerMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Spellchecker action clicked.`);
             const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
             await spellchecker();
             ggToolsMenu.classList.remove('shown');
@@ -335,7 +313,6 @@ function updateExtensionButtons() {
         clearInputMenuItem.className = 'interactable';
         clearInputMenuItem.innerHTML = '<i class="fa-solid fa-trash fa-fw"></i><span data-i18n="Clear Input">Clear Input</span>';
         clearInputMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Clear Input action clicked.`);
             const { default: clearInput } = await import('./scripts/tools/clearInput.js');
             await clearInput();
             ggToolsMenu.classList.remove('shown');
@@ -363,7 +340,6 @@ function updateExtensionButtons() {
         updateCharacterMenuItem.className = 'interactable';
         updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
         updateCharacterMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Update Character action clicked.`);
             updateCharacter();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -375,17 +351,12 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         ggMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: ggMenuButton clicked.`);
-
-            // --- Measure Height Correctly ---
             // Temporarily show the menu off-screen to measure its height
             ggToolsMenu.style.visibility = 'hidden'; 
             ggToolsMenu.style.display = 'block'; // Or the display type it uses when shown
             const menuHeight = ggToolsMenu.offsetHeight; 
             ggToolsMenu.style.display = ''; // Reset display before final positioning
             ggToolsMenu.style.visibility = ''; // Reset visibility
-            // ---------------------------------
-
             // Calculate position before showing
             const buttonRect = ggMenuButton.getBoundingClientRect();
             const gap = 5; // Add a 5px gap above the button
@@ -405,11 +376,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (ggToolsMenu.classList.contains('shown') && !ggMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding menu.`);
                 ggToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created GG Tools menu button.`);
     } 
     // Add menu button to the menu buttons container
     menuButtonsContainer.appendChild(ggMenuButton);
@@ -436,7 +405,6 @@ function updateExtensionButtons() {
             item.className = 'interactable'; // Use interactable class
             item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`; // Add icon + span
             item.addEventListener('click', (event) => {
-                console.log(`${extensionName}: ${name} Guide clicked.`);
                 action();
                 pgToolsMenu.classList.remove('shown');
                 event.stopPropagation();
@@ -467,7 +435,6 @@ function updateExtensionButtons() {
                 .then(module => {
                     const guideItem = createGuideItem(guide.name, guide.icon, module.default);
                     pgToolsMenu.appendChild(guideItem);
-                    console.log(`${extensionName}: Added ${guide.name} guide to menu`);
                 })
                 .catch(error => console.error(`${extensionName}: Error importing ${guide.name} guide:`, error));
         }))
@@ -476,15 +443,13 @@ function updateExtensionButtons() {
             const separator = document.createElement('hr');
             separator.className = 'pg-separator';
             pgToolsMenu.appendChild(separator);
-            console.log(`${extensionName}: Added separator to menu`);
-
+            
             // Then load the tool guides
             return Promise.all(toolGuides.map(guide => {
                 return import(guide.path)
                     .then(module => {
                         const guideItem = createGuideItem(guide.name, guide.icon, module.default);
                         pgToolsMenu.appendChild(guideItem);
-                        console.log(`${extensionName}: Added ${guide.name} tool to menu`);
                     })
                     .catch(error => console.error(`${extensionName}: Error importing ${guide.name} tool:`, error));
             }));
@@ -496,8 +461,6 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         pgMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: pgMenuButton clicked.`);
-
             // Temporarily show the menu off-screen to measure its height
             pgToolsMenu.style.visibility = 'hidden'; 
             pgToolsMenu.style.display = 'block';
@@ -524,11 +487,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (pgToolsMenu.classList.contains('shown') && !pgMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding persistent guides menu.`);
                 pgToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created Persistent Guides menu button.`);
     } 
     // Add Persistent Guides menu button to the menu buttons container
     menuButtonsContainer.appendChild(pgMenuButton);
@@ -595,7 +556,7 @@ async function installPreset() {
         if (!response.ok) {
             console.error(`${extensionName}: Failed to fetch ${presetFileName}. Status: ${response.status}`);
             if (response.status === 404) {
-                 console.error(`${extensionName}: Make sure '${presetFileName}' exists in the '${extensionName}' extension folder.`);
+                console.error(`${extensionName}: Make sure '${presetFileName}' exists in the '${extensionName}' extension folder.`);
             }
             return;
         }
@@ -648,7 +609,7 @@ async function installPreset() {
         if (existingPreset !== undefined && existingPreset !== null) {
             console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
         } else {
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
+            console.info(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Installing...`);
             // Save the entire original presetData object, using the filename-derived name.
             // This matches how performMasterImport handles chat completion presets.
             await presetManager.savePreset(presetName, presetData);
@@ -681,7 +642,7 @@ async function installPreset() {
     } catch (error) {
         console.error(`${extensionName}: Error during preset installation:`, error);
         if (error instanceof SyntaxError) {
-             console.error(`${extensionName}: Check if ${presetFileName} contains valid JSON.`);
+            console.error(`${extensionName}: Check if ${presetFileName} contains valid JSON.`);
         }
     }
 }
@@ -691,7 +652,6 @@ $(document).ready(function() {
     setup();
     // Settings Panel Setup (runs with delay to allow main UI to render)
     setTimeout(() => {
-        console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
         loadSettingsPanel();
     }, 1000); // Increased delay to 1000ms (1 second)
 
@@ -704,18 +664,14 @@ async function loadSettingsPanel() {
     const containerId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
     let container = document.getElementById(containerId);
 
-    // *** ADDED DEBUG LOG ***
-    const parentContainer = document.getElementById('extensions_settings');
-    console.log(`[${extensionName}] Checking parent container #extensions_settings:`, parentContainer ? 'Found' : 'NOT Found');
-
     // Check if container exists, create if not (robustness)
     if (!container) {
         // Use a more reliable selector if possible, or wait longer?
         // Let's assume #extensions_settings is the correct parent for now.
         // const settingsArea = document.getElementById('extensions_settings'); 
         // Use the parentContainer variable we just checked
+        const parentContainer = document.getElementById('extensions_settings'); 
         if (parentContainer) { 
-            console.log(`[${extensionName}] Settings container #${containerId} not initially found. Ensuring it exists...`); 
             container = document.createElement('div');
             container.id = containerId;
             parentContainer.appendChild(container); // Append to the found parent
@@ -725,24 +681,20 @@ async function loadSettingsPanel() {
             return; // Stop if we can't create the container
         }
     } else {
-        console.log(`${extensionName}: Settings container #${containerId} found.`);
         // Clear previous content if any (important for reloads)
         container.innerHTML = ''; 
     }
 
     // Use renderExtensionTemplateAsync instead of manual $.get
     try {
-        console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
         // Use the new extensionName for the template path, assuming the folder was renamed
         const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings');
-        console.log(`${extensionName}: Settings template rendered successfully.`);
         
         // Append the fetched HTML to the container using jQuery
         $(container).html(settingsHtml); // Use jQuery's .html()
         
         // Defer the rest of the logic slightly to allow DOM update
         setTimeout(() => {
-            console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
             // ***** Load settings HERE, right before updating UI *****
             loadSettings(); // Ensure settings are loaded/initialized
 
@@ -751,13 +703,12 @@ async function loadSettingsPanel() {
 
             // Add event listeners AFTER the HTML is loaded AND UI is updated
             addSettingsEventListeners();
-            console.log(`${extensionName}: Settings panel actions complete.`);
         }, 100); // Increase delay slightly to 100ms just in case
 
     } catch (error) {
         console.error(`${extensionName}: Error rendering settings template with renderExtensionTemplateAsync:`, error);
         if (container) { // Check if container exists before modifying
-             container.innerHTML = '<p>Error: Could not render settings template. Check browser console (F12).</p>';
+            container.innerHTML = '<p>Error: Could not render settings template. Check browser console (F12).</p>';
         }
     }
 }
