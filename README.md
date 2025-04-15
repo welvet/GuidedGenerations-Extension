@@ -65,14 +65,9 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 
 ## Installation
 
-1. **Copy the Extension:**
-   - Place the extension folder in SillyTavern's `public/scripts/extensions/` directory.
-2. **Enable the Extension:**
-   - Start/reload SillyTavern. Enable "Guided Generations" in the Extensions menu.
-3. **Dependencies:**
-   - [LALib library extension](https://github.com/LenAnderson/SillyTavern-LALib) is required for some features. Install and enable it.
-4. **Import Presets (Optional):**
-   - Import `GGSytemPrompt.json` via **AI Response Configuration** if you want the matching system prompt.
+1. **Install the Extension:**
+   - In the Extensionmanager click on Install Extension and enter https://github.com/Samueras/GuidedGenerations-Extension/ as the GITHUB
+
 
 ---
 

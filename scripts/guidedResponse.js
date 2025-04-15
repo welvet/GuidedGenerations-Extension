@@ -58,7 +58,8 @@ const guidedResponse = async () => {
 
             // Execute the main command
             await context.executeSlashCommandsWithOptions(stscriptCommand);
-            console.log('[GuidedGenerations][Response] Guided Response stscript executed.');
+
+            console.log('[GuidedGenerations][Response] Executed Command:', stscriptCommand); // Log the command
             
         } catch (error) {
             console.error(`[GuidedGenerations][Response] Error executing Guided Response stscript: ${error}`);

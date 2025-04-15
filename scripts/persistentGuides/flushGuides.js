@@ -78,11 +78,12 @@ const flushGuides = async () => { // Make function async
     const flushLogicScript = `// Display buttons and handle selection |
 /buttons labels=${buttonLabels} "Select an Guide to flush:" |
 /let selected_injection {{pipe}} |
-// Handle selection |
+// Handle "All" selection |
+  /echo {{var::selected_injection}} |
 /if left={{var::selected_injection}} rule=eq right="All" else={:
 /flushinject {{var::selected_injection}} |
-/echo {{var::selected_injection}} Guide flushed. | // Provide feedback
-:} {:
+/echo {{var::selected_injection}} Guide flushed. |
+:}{:
   /flushinjects |
   /echo All Guides have been flushed. |
 :} |`;

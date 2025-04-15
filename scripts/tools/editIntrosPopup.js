@@ -38,6 +38,7 @@ export class EditIntrosPopup {
         this.selectedOption = null;
         this.popupElement = null;
         this.initialized = false;
+        this.lastCustomCommand = sessionStorage.getItem('gg_lastCustomCommand') || ''; // Load last command
     }
 
     /**
@@ -127,6 +128,13 @@ export class EditIntrosPopup {
                                     </div>
                                 </div>
                             </div>
+                            <div class="gg-popup-section gg-custom-command-section">
+                                <h3>Custom Command</h3>
+                                <div class="gg-option gg-custom-option" data-option="custom">
+                                    <span class="gg-option-title">Use Custom Instruction Below</span>
+                                </div>
+                                <textarea id="gg-custom-edit-command" placeholder="Enter custom rewrite instruction here...">${this.lastCustomCommand}</textarea>
+                            </div>
                         </div>
                         <div class="gg-popup-footer">
                             <button id="ggCancelEditIntros" class="gg-button gg-button-secondary">Cancel</button>
@@ -155,60 +163,89 @@ export class EditIntrosPopup {
      * Setup event listeners for the popup
      */
     setupEventListeners() {
-        // Close button
         const closeButton = this.popupElement.querySelector('.gg-popup-close');
-        closeButton.addEventListener('click', () => this.close());
-
-        // Cancel button
         const cancelButton = this.popupElement.querySelector('#ggCancelEditIntros');
-        cancelButton.addEventListener('click', () => this.close());
-
-        // Apply button
         const applyButton = this.popupElement.querySelector('#ggApplyEditIntros');
+        const options = this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option)');
+        const suboptions = this.popupElement.querySelectorAll('.gg-suboption');
+        const customOption = this.popupElement.querySelector('.gg-custom-option');
+        const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
+
+        closeButton.addEventListener('click', () => this.close());
+        cancelButton.addEventListener('click', () => this.close());
         applyButton.addEventListener('click', () => this.applyChanges());
 
-        // Option selections
-        const options = this.popupElement.querySelectorAll('.gg-option');
         options.forEach(option => {
             option.addEventListener('click', () => {
-                // If this option has suboptions, don't select it directly
                 if (option.querySelector('.gg-suboptions')) {
                     return;
                 }
                 
-                // Deselect all options in the same group
-                const group = option.closest('.gg-option-group');
-                group.querySelectorAll('.gg-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
+                this.deselectAllPresets();
+                customOption.classList.remove('selected');
                 
-                // Select this option
                 option.classList.add('selected');
                 this.selectedOption = option.dataset.option;
             });
         });
 
-        // Suboption selections
-        const suboptions = this.popupElement.querySelectorAll('.gg-suboption');
         suboptions.forEach(suboption => {
             suboption.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent bubbling to parent option
+                e.stopPropagation();
                 
-                // Deselect all suboptions in all groups
-                this.popupElement.querySelectorAll('.gg-suboption').forEach(subopt => {
-                    subopt.classList.remove('selected');
-                });
-                
-                // Select this suboption
+                this.deselectAllPresets();
+                customOption.classList.remove('selected');
+
                 suboption.classList.add('selected');
                 this.selectedOption = suboption.dataset.value;
                 
-                // Close submenu after selection
-                setTimeout(() => {
-                    suboption.closest('.gg-suboptions').style.display = 'none';
-                }, 200);
+                // Optional: Close submenu after selection if desired
+                // setTimeout(() => { suboption.closest('.gg-suboptions').style.display = 'none'; }, 200);
             });
         });
+
+        customOption.addEventListener('click', () => {
+            this.deselectAllPresets();
+            customOption.classList.add('selected');
+            this.selectedOption = 'custom';
+        });
+        
+        customCommandTextarea.addEventListener('input', () => {
+            this.lastCustomCommand = customCommandTextarea.value;
+            if (this.lastCustomCommand.trim() !== '') {
+                sessionStorage.setItem('gg_lastCustomCommand', this.lastCustomCommand);
+            } else {
+                sessionStorage.removeItem('gg_lastCustomCommand');
+            }
+        });
+
+        this.restoreSelectionState();
+    }
+
+    deselectAllPresets() {
+        this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option), .gg-suboption').forEach(el => {
+            el.classList.remove('selected');
+        });
+        if (this.selectedOption !== 'custom') { 
+             this.selectedOption = null;
+        }
+    }
+
+    restoreSelectionState() {
+        const customOption = this.popupElement.querySelector('.gg-custom-option');
+        if (this.selectedOption) {
+            if (this.selectedOption === 'custom') {
+                customOption.classList.add('selected');
+            } else {
+                const selectedElement = this.popupElement.querySelector(`[data-option="${this.selectedOption}"], [data-value="${this.selectedOption}"]`);
+                if (selectedElement) {
+                    selectedElement.classList.add('selected');
+                }
+                customOption.classList.remove('selected'); 
+            }
+        } else {
+             customOption.classList.remove('selected'); 
+        }
     }
 
     /**
@@ -240,26 +277,34 @@ export class EditIntrosPopup {
      * Apply the selected changes
      */
     async applyChanges() {
-        // Check if an option is selected
-        if (!this.selectedOption) {
-            // If nothing selected, close without changes
-            this.close();
-            return;
+        let instruction = '';
+        const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
+
+        if (this.selectedOption === 'custom') {
+            const customCommand = customCommandTextarea.value.trim();
+            if (customCommand === '') {
+                alert('Please enter an instruction in the Custom Command text area.');
+                return; 
+            }
+            instruction = customCommand;
+            console.log('[GuidedGenerations] Applying custom instruction.');
+            sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
+        } else if (this.selectedOption) {
+            instruction = EDIT_INTROS_OPTIONS[this.selectedOption];
+            if (!instruction) {
+                console.error(`[GuidedGenerations] No instruction found for preset option: ${this.selectedOption}`);
+                alert('Selected preset option is invalid. Please try again.');
+                return; 
+            }
+             console.log(`[GuidedGenerations] Applying preset: ${this.selectedOption}`);
+        } else {
+            alert('Please select an edit option or choose Custom and enter an instruction.');
+            return; 
         }
 
-        // Get the transformation instruction
-        const instruction = EDIT_INTROS_OPTIONS[this.selectedOption];
-        if (!instruction) {
-            console.error(`[GuidedGenerations] No instruction found for option: ${this.selectedOption}`);
-            this.close();
-            return;
-        }
-
-        // Get the input textarea value or empty string
         const textareaElement = document.getElementById('send_textarea');
-        const customEdit = textareaElement ? textareaElement.value.trim() : '';
+        const customEdit = textareaElement ? textareaElement.value.trim() : ''; 
 
-        // Execute the transformation using either custom edit or selected option
         const scriptPart1 = `
             /qr-update set="Guided Generations" label=SysThinking user=false|
             /qr-update set="Guided Generations" label=SysState user=false|
@@ -302,12 +347,10 @@ export class EditIntrosPopup {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
         }
         
-        // Clear textarea if it was used
         if (customEdit && textareaElement) {
             textareaElement.value = '';
         }
         
-        // Close the popup
         this.close();
     }
 
@@ -316,7 +359,6 @@ export class EditIntrosPopup {
      * @param {string} instruction - The transformation instruction
      */
     executeEditIntros(instruction) {
-        // Disable auto-trigger guides
         const stscript = `
             /qr-update set="Guided Generations" label=SysThinking user=false|
             /qr-update set="Guided Generations" label=SysState user=false|
@@ -340,7 +382,6 @@ export class EditIntrosPopup {
             /cut 0|
         `;
         
-        // Execute the script
         try {
             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
                 const context = SillyTavern.getContext();
