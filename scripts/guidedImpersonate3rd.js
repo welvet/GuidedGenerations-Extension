@@ -23,7 +23,7 @@ const guidedImpersonate3rd = async () => {
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
     // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = `/impersonate 3rd |`;
+    const stscriptCommand = `/impersonate await=true Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}} |`;
 
     try {
         const context = getContext(); 

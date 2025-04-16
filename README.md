@@ -22,17 +22,23 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 *Inject instructions before the AI replies.*
 - Type instructions and press 🐕.
 - Your instructions guide the next AI response.
+- [Video Example](https://youtube.com/shorts/yxdtbF3NxW4?feature=share)
 
 ### 👈 Guided Swipe
 *Regenerate the last AI message with new guidance.*
 - Enter new instructions and press 👈 to generate a new swipe.
 - Only available if the last message is from the AI.
+- [Video Example](https://youtube.com/shorts/GRQ9l_8K6-Y?feature=share)
 
 ### Impersonation (1st: 👤, 2nd: 👥, 3rd: 🗣️)
 *Expand outlines into rich, in-character narratives.*
 - Enter a brief outline, select perspective (toggle in settings), and press the corresponding button (👤/👥/🗣️).
 - Your outline is expanded into a full message from the chosen viewpoint.
 - Can be hidden or displayed individually per settings. 1st Person is displayed by default.
+- Video Examples:
+  - [1st Person](https://youtube.com/shorts/FT5gv3d2kE4?feature=share)
+  - [2nd Person](https://youtube.com/shorts/80l12LrtBpQ?feature=share)
+  - [3rd Person](https://youtube.com/shorts/wWka-1URLPg?feature=share)
 
 ### 📖 Persistent Guides Menu
 *Manage persistent scenario context.*
