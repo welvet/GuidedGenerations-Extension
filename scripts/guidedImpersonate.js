@@ -1,5 +1,7 @@
 // scripts/guidedImpersonate.js
 import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; // Import shared state functions
+import { getContext, extension_settings } from '../../../../extensions.js';
+import { extensionName } from '../index.js';
 
 const guidedImpersonate = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -20,14 +22,27 @@ const guidedImpersonate = async () => {
     // --- If not restoring, proceed with impersonation ---
     setPreviousImpersonateInput(currentInputText); // Use setter
 
+    // Determine target preset from settings
+    const presetKey = 'presetImpersonate1st';
+    const targetPreset = extension_settings[extensionName]?.[presetKey];
+    console.log(`[GuidedGenerations] Using preset for 1st-person impersonate: ${targetPreset || 'none'}`);
+    let presetSwitchStart = '';
+    let presetSwitchEnd = '';
+    if (targetPreset) {
+        // Capture old preset and switch to user-defined preset
+        presetSwitchStart = `/preset|\n/setvar key=oldPreset {{pipe}}|\n/preset ${targetPreset}|\n`;
+        presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
+    }
+
     // Only the core impersonate command remains
     const stscriptCommand = `/impersonate await=true Write in first Person perspective from {{user}}. {{input}} |`;
+    const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
         try {
             // Execute the command and wait for it to complete
-            await context.executeSlashCommandsWithOptions(stscriptCommand); 
+            await context.executeSlashCommandsWithOptions(fullScript); 
             
             // After completion, read the new input and store it using the setter
             setLastImpersonateResult(textarea.value);

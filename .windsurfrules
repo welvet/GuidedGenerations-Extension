@@ -1,2 +1,3 @@
 - the files in the Folder References are just that. It is the source code of SillyTavern for which we are building an extension. And it is the original Guided Generations Quickreply set wich we try to emulate.
-- After each code change, increment the patch version (y in 0.x.y) in manifest.json; increment patch version (y) with each time we are at a point where we test a change. And increment the minor version (x) with each commit to github. Only Increments If we changed anything on any other file then the manifest.json. Never Increment for the manifest.json itself.
+- Before each commit to git, increment the patch version (y in z.x.y) in manifest.json; Only Increments If we changed anything on any other file then the manifest.json. Never Increment for the manifest.json itself.
+- in addition to analizing and editing files always give a short explanation of what you are doing before each step.

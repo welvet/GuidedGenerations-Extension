@@ -47,18 +47,6 @@
                     </div>
                 </div>
                 <hr>
-                <h4>Preset Usage</h4> <!-- New Heading for Preset Setting -->
-                <div class="setting_item"> <!-- Container for the setting -->
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;"> <!-- Flex container for checkbox and label -->
-                        <input type="checkbox" id="gg_useGGSytemPreset" name="useGGSytemPreset" class="gg-setting-input"> <!-- Checkbox - ID matches JS -->
-                        <label for="gg_useGGSytemPreset" style="margin-left: 8px;">Use 'GGSytemPrompt' Preset</label> <!-- Label next to checkbox -->
-                    </div>
-                    <small class="setting_item_description"> <!-- Description below -->
-                        Enables using the specialized 'GGSytemPrompt' preset for certain guides/tools (State, Thinking, Rules, Clothes guides; Spellchecker, Corrections tools). <br>
-                        This preset can improve the quality and relevance of the generated output. However, disabling it might reduce the likelihood of triggering censorship on models with strict filters.
-                    </small>
-                </div>
-                <hr> <!-- Add a separator -->
                 <h4>Injection Settings</h4> <!-- New Heading -->
                 <div class="setting_item"> <!-- Container for the new setting -->
                     <label for="gg_injectionEndRole" style="margin-bottom: 5px; display: block;">Send Injections as:</label> <!-- Label for the dropdown -->
@@ -70,6 +58,93 @@
                     <small class="setting_item_description"> <!-- Description -->
                         Determines the role assigned to the end of injected content (like Describe State/Clothes) before generation. 'System' is often best for guidance, 'Assistant' continues the flow, 'User' can sometimes be useful depending on the model/prompt structure. Default: System.
                     </small>
+                </div>
+                <hr>
+                <h4>Preset Usage</h4>
+                <!-- Preset fields for each guide/tool -->
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetClothes" style="margin-left: 8px; min-width:150px;">Clothes Guide</label>
+                        <input type="text" id="gg_presetClothes" name="presetClothes" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetClothes" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetState" style="margin-left: 8px; min-width:150px;">State Guide</label>
+                        <input type="text" id="gg_presetState" name="presetState" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetState" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetThinking" style="margin-left: 8px; min-width:150px;">Thinking Guide</label>
+                        <input type="text" id="gg_presetThinking" name="presetThinking" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetThinking" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetSituational" style="margin-left: 8px; min-width:150px;">Situational Guide</label>
+                        <input type="text" id="gg_presetSituational" name="presetSituational" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetSituational" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetRules" style="margin-left: 8px; min-width:150px;">Rules Guide</label>
+                        <input type="text" id="gg_presetRules" name="presetRules" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetRules" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetCustom" style="margin-left: 8px; min-width:150px;">Custom Guide</label>
+                        <input type="text" id="gg_presetCustom" name="presetCustom" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetCustom" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetCorrections" style="margin-left: 8px; min-width:150px;">Corrections</label>
+                        <input type="text" id="gg_presetCorrections" name="presetCorrections" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetCorrections" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetSpellchecker" style="margin-left: 8px; min-width:150px;">Spellchecker</label>
+                        <input type="text" id="gg_presetSpellchecker" name="presetSpellchecker" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetSpellchecker" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetEditIntros" style="margin-left: 8px; min-width:150px;">Edit Intros</label>
+                        <input type="text" id="gg_presetEditIntros" name="presetEditIntros" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetEditIntros" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetImpersonate1st" style="margin-left: 8px; min-width:150px;">Impersonate 1st</label>
+                        <input type="text" id="gg_presetImpersonate1st" name="presetImpersonate1st" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetImpersonate1st" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetImpersonate2nd" style="margin-left: 8px; min-width:150px;">Impersonate 2nd</label>
+                        <input type="text" id="gg_presetImpersonate2nd" name="presetImpersonate2nd" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetImpersonate2nd" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_presetImpersonate3rd" style="margin-left: 8px; min-width:150px;">Impersonate 3rd</label>
+                        <input type="text" id="gg_presetImpersonate3rd" name="presetImpersonate3rd" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="presetImpersonate3rd" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
                 </div>
             </div>
         </div>

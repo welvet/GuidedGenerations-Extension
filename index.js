@@ -15,6 +15,7 @@ import { updateCharacter } from './scripts/persistentGuides/updateCharacter.js';
 import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; 
 // Import Preset Manager
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
+import { loadSettingsPanel } from './scripts/settingsPanel.js';
 
 // --- Shared State for Impersonation Input Recovery ---
 let previousImpersonateInput = ''; // Input before the last impersonation
@@ -47,8 +48,19 @@ const defaultSettings = {
     showImpersonate1stPerson: true, // Default on
     showImpersonate2ndPerson: false, // Default on
     showImpersonate3rdPerson: false, // Default off
-    useGGSytemPreset: true, // NEW SETTING: Default to using the preset
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
+    presetClothes: 'GGSytemPrompt',
+    presetState: 'GGSytemPrompt',
+    presetThinking: 'GGSytemPrompt',
+    presetSituational: 'GGSytemPrompt',
+    presetRules: 'GGSytemPrompt',
+    presetCustom: 'GGSytemPrompt',
+    presetCorrections: 'GGSytemPrompt',
+    presetSpellchecker: 'GGSytemPrompt',
+    presetEditIntros: 'GGSytemPrompt',
+    presetImpersonate1st: '',
+    presetImpersonate2nd: '',
+    presetImpersonate3rd: '',
 };
 
 /**
@@ -124,6 +136,17 @@ function updateSettingsUI() {
             injectionRoleSelect.value = extension_settings[extensionName].injectionEndRole;
         }
 
+        // Populate preset text fields
+        ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
+         'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
+         'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd'
+        ].forEach(key => {
+            const input = document.getElementById(`gg_${key}`);
+            if (input) {
+                input.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+            }
+        });
+
         console.log(`${extensionName}: Settings UI updated.`);
     } else {
         console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
@@ -188,6 +211,8 @@ function handleSettingChange(event) {
     if (target.type === 'checkbox') {
         settingValue = target.checked;
     } else if (target.tagName === 'SELECT') { // Handle dropdowns
+        settingValue = target.value;
+    } else if (target.tagName === 'INPUT' && target.type === 'text') {
         settingValue = target.value;
     } else {
         console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);
@@ -696,71 +721,10 @@ $(document).ready(function() {
     setTimeout(() => {
         console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
         loadSettingsPanel();
-    }, 1000); // Increased delay to 1000ms (1 second)
-
+    }, 1000);
     // Attempt to install the preset (can run relatively early)
     installPreset();
 });
 
-// --- Settings Panel Loading --- (Keep existing loadSettingsPanel async function)
-async function loadSettingsPanel() {
-    const containerId = `extension_settings_${extensionName}`; // Use ID based on the new extensionName
-    let container = document.getElementById(containerId);
-
-    // *** ADDED DEBUG LOG ***
-    const parentContainer = document.getElementById('extensions_settings');
-    console.log(`[${extensionName}] Checking parent container #extensions_settings:`, parentContainer ? 'Found' : 'NOT Found');
-
-    // Check if container exists, create if not (robustness)
-    if (!container) {
-        // Use a more reliable selector if possible, or wait longer?
-        // Let's assume #extensions_settings is the correct parent for now.
-        // const settingsArea = document.getElementById('extensions_settings'); 
-        // Use the parentContainer variable we just checked
-        if (parentContainer) { 
-            console.log(`[${extensionName}] Settings container #${containerId} not initially found. Ensuring it exists...`); 
-            container = document.createElement('div');
-            container.id = containerId;
-            parentContainer.appendChild(container); // Append to the found parent
-        } else {
-            // If the main area itself isn't found, log an error and stop.
-            console.error(`${extensionName}: Could not find main settings area (#extensions_settings) to create container.`);
-            return; // Stop if we can't create the container
-        }
-    } else {
-        console.log(`${extensionName}: Settings container #${containerId} found.`);
-        // Clear previous content if any (important for reloads)
-        container.innerHTML = ''; 
-    }
-
-    // Use renderExtensionTemplateAsync instead of manual $.get
-    try {
-        console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
-        // Use the new extensionName for the template path, assuming the folder was renamed
-        const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings');
-        console.log(`${extensionName}: Settings template rendered successfully.`);
-        
-        // Append the fetched HTML to the container using jQuery
-        $(container).html(settingsHtml); // Use jQuery's .html()
-        
-        // Defer the rest of the logic slightly to allow DOM update
-        setTimeout(() => {
-            console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
-            // ***** Load settings HERE, right before updating UI *****
-            loadSettings(); // Ensure settings are loaded/initialized
-
-            // Update the UI elements to reflect loaded settings
-            updateSettingsUI(); 
-
-            // Add event listeners AFTER the HTML is loaded AND UI is updated
-            addSettingsEventListeners();
-            console.log(`${extensionName}: Settings panel actions complete.`);
-        }, 100); // Increase delay slightly to 100ms just in case
-
-    } catch (error) {
-        console.error(`${extensionName}: Error rendering settings template with renderExtensionTemplateAsync:`, error);
-        if (container) { // Check if container exists before modifying
-             container.innerHTML = '<p>Error: Could not render settings template. Check browser console (F12).</p>';
-        }
-    }
-}
+// Export settings helpers for settingsPanel.js import
+export { loadSettings, updateSettingsUI, addSettingsEventListeners };
