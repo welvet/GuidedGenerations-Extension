@@ -11,7 +11,9 @@ import { runGuideScript } from './runGuide.js';
  */
 const rulesGuide = async (isAuto = false) => {
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
-    const genCommandSuffix = `[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] `;
+    // Use user-defined prompt override for Rules Guide
+    const promptTemplate = extension_settings[extensionName]?.promptRules ?? `[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] `;
+    const genCommandSuffix = promptTemplate;
     const label = `Character's rules: {{pipe}}`;
     const finalCommand = `/inject id=rules position=chat depth=0 role=${injectionRole} [${label}] |`;
     return await runGuideScript({
