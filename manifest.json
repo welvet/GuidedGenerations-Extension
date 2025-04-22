@@ -8,5 +8,5 @@
     "css": "style.css",
     "author": "Samuel Eiras",
     "description": "Adds guided generation tools as a native extension.",
-    "version": "1.1.6"
+    "version": "1.2.0"
 }
