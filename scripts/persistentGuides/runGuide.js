@@ -30,7 +30,7 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
  /if left={{getvar::currentPreset}} rule=neq right="${presetValue}" {:
     /setvar key=oldPreset {{getvar::currentPreset}} |
     /preset ${presetValue} |
- }| 
+:}|
 `;
         presetSwitchEnd = `
  /preset {{getvar::oldPreset}} |
