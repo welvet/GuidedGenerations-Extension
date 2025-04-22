@@ -203,6 +203,11 @@
     cursor: pointer;
 }
 
+/* Ensure preset input and buttons wrap on narrow widths */
+.GuidedGenerations-Extension-settingslist .setting_item > div {
+    flex-wrap: wrap;
+}
+
 /* Edit Intros Popup Styles */
 .gg-popup {
     display: none;

@@ -26,46 +26,44 @@ export default async function corrections() {
     setPreviousImpersonateInput(originalInput);
     console.log(`[GuidedGenerations][Corrections] Original input saved: "${originalInput}"`);
 
-    // Get setting (use optional chaining and nullish coalescing for safety)
-    const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[GuidedGenerations][Corrections] useGGSytemPreset setting is ${usePresetSwitching}`);
+    // Use user-defined corrections prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptCorrections ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+
+    // Determine target preset from settings
+    const presetKey = 'presetCorrections';
+    const targetPreset = extension_settings[extensionName]?.[presetKey];
+    console.log(`[GuidedGenerations][Corrections] Using preset: ${targetPreset || 'none'}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStartScript = '';
     let presetSwitchEndScript = '';
 
-    if (usePresetSwitching) {
-        console.log(`[GuidedGenerations][Corrections] Preset switching ENABLED.`);
+    if (targetPreset) {
+        // Store old preset then switch to user-defined preset
         presetSwitchStartScript = `
 // Get the currently active preset|
 /preset|
-/setvar key=currentPreset {{pipe}} |
+/setvar key=oldPreset {{pipe}}|
 
-// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
-   // Store the current preset in oldPreset|
-   /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to GGSytemPrompt|
-   /preset GGSytemPrompt |
-:}| 
-`; // Note the closing pipe
+// Switch to user preset|
+/preset ${targetPreset}|
+`;
+        // Restore previous preset after execution
         presetSwitchEndScript = `
 // Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}} |
-`; // Note the closing pipe
-    } else {
-        console.log(`[GuidedGenerations][Corrections] Preset switching DISABLED.`);
-        presetSwitchStartScript = `// Preset switching disabled by setting|`;
-        presetSwitchEndScript = `// Preset switching disabled by setting|`;
+/preset {{getvar::oldPreset}}|
+`;
     }
 
     // --- Part 1: Execute STscript for Presets and Injections --- 
     const stscriptPart1 = `
         ${presetSwitchStartScript}
 
-        // Inject assistant message to rework and instructions| |
+        // Inject assistant message to rework and instructions|
         /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
-        /inject id=instruct position=chat ephemeral=true depth=0 [OOC: Do not continue the story do not wrote in character, instead write {{char}}'s last response again but change it to reflect the following: ${originalInput}. Don't make any other changes besides this.] |
+        // Inject instructions using user override prompt|
+        /inject id=instruct position=chat ephemeral=true depth=0 [${filledPrompt}]|
     `;
     
     try {

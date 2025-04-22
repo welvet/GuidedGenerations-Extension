@@ -22,45 +22,41 @@ export default async function spellchecker() {
     setPreviousImpersonateInput(originalInput);
     console.log(`[GuidedGenerations][Spellchecker] Original input saved (for potential recovery elsewhere): "${originalInput}"`);
 
-    // Get setting (use optional chaining and nullish coalescing for safety)
-    const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    console.log(`[GuidedGenerations][Spellchecker] useGGSytemPreset setting is ${usePresetSwitching}`);
+    // Determine target preset from settings
+    const presetKey = 'presetSpellchecker';
+    const targetPreset = extension_settings[extensionName]?.[presetKey];
+    console.log(`[GuidedGenerations][Spellchecker] Using preset: ${targetPreset || 'none'}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
     let presetSwitchEnd = '';
 
-    if (usePresetSwitching) {
-        console.log(`[GuidedGenerations][Spellchecker] Preset switching ENABLED.`);
+    if (targetPreset) {
+        // Store old preset then switch to user-defined preset
         presetSwitchStart = `
 // Get the currently active preset|
 /preset|
-/setvar key=currentPreset {{pipe}} |
-
-// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
-   // Store the current preset in oldPreset|
-   /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to GGSytemPrompt|
-   /preset GGSytemPrompt |
-:}| 
-`; // Note the closing pipe
+/setvar key=oldPreset {{pipe}}|
+// Switch to user preset|
+/preset ${targetPreset}|
+`;
+        // Restore previous preset after execution
         presetSwitchEnd = `
 // Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}} |
-`; // Note the closing pipe
-    } else {
-        console.log(`[GuidedGenerations][Spellchecker] Preset switching DISABLED.`);
-        presetSwitchStart = `// Preset switching disabled by setting|`;
-        presetSwitchEnd = `// Preset switching disabled by setting|`;
+/preset {{getvar::oldPreset}}|
+`;
     }
+
+    // Use user-defined spellchecker prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
     // Execute the spellchecker workflow
     const stscript = `
         ${presetSwitchStart}
 
         // Generate correction using the current input|
-        /genraw Without any intro or outro correct the grammar, and punctuation, and improves the paragraph's flow of: {{input}} |
+        /genraw ${filledPrompt} |
         // Replace the input field with the generated correction|
         /setinput {{pipe}}|
 

@@ -1,7 +1,7 @@
-// scripts/guidedimpersonate3rd.js
-import { getContext } from '../../../../extensions.js';
+// scripts/guidedImpersonate3rd.js
+import { getContext, extension_settings } from '../../../../extensions.js';
 // Import shared state functions
-import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; 
+import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; 
 
 const guidedImpersonate3rd = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -22,13 +22,29 @@ const guidedImpersonate3rd = async () => {
     // --- If not restoring, proceed with impersonation ---
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
+    // Use user-defined 3rd-person impersonate prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+
     // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = `/impersonate await=true Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}} |`;
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
+
+    // Determine target preset from settings
+    const presetKey = 'presetImpersonate3rd';
+    const targetPreset = extension_settings[extensionName]?.[presetKey];
+    console.log(`[GuidedGenerations] Using preset for 3rd-person impersonate: ${targetPreset || 'none'}`);
+    let presetSwitchStart = '';
+    let presetSwitchEnd = '';
+    if (targetPreset) {
+        presetSwitchStart = `/preset|\n/setvar key=oldPreset {{pipe}}|\n/preset ${targetPreset}|\n`;
+        presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
+    }
+    const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
 
     try {
         const context = getContext(); 
         if (typeof context.executeSlashCommandsWithOptions === 'function') {
-            await context.executeSlashCommandsWithOptions(stscriptCommand);
+            await context.executeSlashCommandsWithOptions(fullScript);
             
             // After completion, read the new input and store it in shared state
             setLastImpersonateResult(textarea.value); // Use shared setter

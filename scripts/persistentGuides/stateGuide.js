@@ -6,6 +6,7 @@
 // Adjust the path based on your actual file structure if needed
 import { getContext, extension_settings } from '../../../../../extensions.js'; 
 import { extensionName } from '../../index.js'; // Import extensionName from index.js
+import { runGuideScript } from './runGuide.js';
 
 /**
  * Executes the State Guide script to track the physical state and positions of characters.
@@ -14,108 +15,20 @@ import { extensionName } from '../../index.js'; // Import extensionName from ind
  * @returns {Promise<string|null>} The generated state info from the pipe, or null on error.
  */
 const stateGuide = async (isAuto = false) => {
-    // --- Get Settings ---
-    // Use optional chaining and nullish coalescing for safety
-    const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true; 
-    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
 
-    // --- Build Preset Switching Script Parts Conditionally ---
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
+    const genAs = 'as=char';
+    const genCommandSuffix = `[OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.] `;
 
-    if (usePresetSwitching) {
-        presetSwitchStart = `
-// Get the currently active preset|
-/preset|
-/setvar key=currentPreset {{pipe}} |
+    const finalCommand = `/inject id=state position=chat depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
 
-// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
-   // Store the current preset in oldPreset|
-   /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to GGSytemPrompt|
-   /preset GGSytemPrompt |
-:}| 
-`; // Note the closing pipe on the last comment and if block
-        presetSwitchEnd = `
-// Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}} |
-`; // Note the closing pipe
-    } else {
-        presetSwitchStart = `// Preset switching disabled by setting|`;
-        presetSwitchEnd = `// Preset switching disabled by setting|`;
-    }
-
-    // --- Build Main Script ---
-    let stscriptCommand = `// Initial guide setup|
-/listinjects return=object | 
-/let injections {{pipe}} | 
-/let x {{var::injections}} | 
-/var index=state x | 
-/let y {{pipe}} | 
-/var index=value y |
-/inject id=state position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}] |
-
-${presetSwitchStart}
-
-// Generate the state description|
-/gen as=char [OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.]  |
-
-// Inject the generated state|
-/inject id=state position=chat depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |
-
-${presetSwitchEnd}
-`; // Removed extra pipe at the end here, will be added below if needed
-
-    // Only include /listinjects if not auto-triggered
-    if (!isAuto) {
-        stscriptCommand += `
-/listinjects |`; // Add the command and the required pipe
-    } else {
-        // Ensure the script ends with a pipe if no listinjects is added
-        if (!stscriptCommand.trim().endsWith('|')) {
-             stscriptCommand += ' |'; 
-        }
-    }
-
-    // --- Execute Script ---
-    // Use the context executeSlashCommandsWithOptions method
-    // Get context within the function call
-    const context = getContext(); 
-    if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
-        try {
-            // Send the combined script via context and await the result
-            const result = await context.executeSlashCommandsWithOptions(stscriptCommand, {
-                showOutput: false, // Keep output hidden
-                handleExecutionErrors: true // Allow capturing script errors
-            });
-
-            console.log('[GuidedGenerations] State Guide stscript executed. Full Result:', result);
-
-            // Check specifically for STScript execution errors
-            if (result && result.isError) {
-                console.error(`[GuidedGenerations] STScript execution failed: ${result.errorMessage}`, result);
-                return null; // Indicate failure
-            }
-
-            // Check the pipe for the result
-            if (result && result.pipe !== undefined && result.pipe !== null && result.pipe !== '') {
-                if (typeof window !== 'undefined') {
-                    window.ggLastStateGeneratedContent = result.pipe;
-                }
-                return result.pipe; // Return the content from pipe
-            } else {
-                console.warn('[GuidedGenerations] State Guide did not return a value in the pipe. Result:', result);
-                return null; // Indicate failure or no output
-            }
-        } catch (error) {
-            console.error(`[GuidedGenerations] JavaScript error executing State Guide script: ${error}`);
-            return null; // Indicate failure
-        }
-    } else {
-        console.error('[GuidedGenerations] SillyTavern context or executeSlashCommandsWithOptions is not available.');
-        return null; // Indicate failure
-    }
+    return await runGuideScript({
+        guideId: 'state',
+        genAs,
+        genCommandSuffix,
+        isAuto,
+        previousInjectionAction: 'move'
+    });
 };
 
 // Export the function for use in the main extension file

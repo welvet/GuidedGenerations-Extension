@@ -31,6 +31,8 @@ const EDIT_INTROS_OPTIONS = {
 };
 
 import { generateNewSwipe } from '../guidedSwipe.js';
+import { extensionName } from '../../index.js';
+import { getContext, extension_settings } from '../../../../../extensions.js';
 
 // Class to handle the popup functionality
 export class EditIntrosPopup {
@@ -322,19 +324,42 @@ export class EditIntrosPopup {
             /cut 0|
         `;
 
+        // Preset switching logic
+        const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
+        let presetSwitchStart = '';
+        let presetSwitchEnd = '';
+        if (usePresetSwitching) {
+            presetSwitchStart = `
+// Get the currently active preset|
+/preset|
+/setvar key=currentPreset {{pipe}} |
++
+// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
+/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
+   // Store the current preset in oldPreset|
+   /setvar key=oldPreset {{getvar::currentPreset}} |
+   // Now switch to GGSytemPrompt|
+   /preset GGSytemPrompt |
+:}| 
+`;
+            presetSwitchEnd = `
+// Switch back to the original preset if it was stored|
+/preset {{getvar::oldPreset}} |
+`;
+        } else {
+            presetSwitchStart = `// Preset switching disabled by setting|`;
+            presetSwitchEnd = `// Preset switching disabled by setting|`;
+        }
+
         try {
-            if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-                const context = SillyTavern.getContext();
-                await context.executeSlashCommandsWithOptions(scriptPart1);
-                const swipeSuccess = await generateNewSwipe();
-                if (swipeSuccess) {
-                    await context.executeSlashCommandsWithOptions(scriptPart2);
-                    console.log('[GuidedGenerations] Edit Intros script executed successfully.');
-                } else {
-                    console.error('[GuidedGenerations] Failed to generate new swipe.');
-                }
+            const context = getContext();
+            await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
+            const swipeSuccess = await generateNewSwipe();
+            if (swipeSuccess) {
+                await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
+                console.log('[GuidedGenerations] Edit Intros script executed successfully.');
             } else {
-                console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
+                console.error('[GuidedGenerations] Failed to generate new swipe.');
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
