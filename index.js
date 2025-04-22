@@ -61,6 +61,19 @@ const defaultSettings = {
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
+    // Guide prompt overrides
+    promptClothes: 'as=char [OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
+    promptState: 'as=char [OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
+    promptThinking: 'name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}\'s thoughts.] ',
+    promptSituational: '[Analyze the chat history and provide a concise summary of current location, present characters, relevant objects, and recent events. Keep factual and neutral. Format in clear paragraphs.] ',
+    promptRules: '[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
+    promptCorrections: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
+    promptSpellchecker: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
+    promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
+    promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
+    promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
+    promptGuidedResponse: '[Take the following into special consideration for your next message: {{input}}]',
+    promptGuidedSwipe: '[Take the following into special consideration for your next message: {{input}}]',
 };
 
 /**
@@ -147,6 +160,14 @@ function updateSettingsUI() {
             }
         });
 
+        // Populate guide prompt override textareas
+        ['promptClothes','promptState','promptThinking','promptSituational','promptRules','promptCorrections','promptSpellchecker','promptImpersonate1st','promptImpersonate2nd','promptImpersonate3rd','promptGuidedResponse','promptGuidedSwipe'].forEach(key => {
+            const textarea = document.getElementById(`gg_${key}`);
+            if (textarea) {
+                textarea.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+            }
+        });
+
         console.log(`${extensionName}: Settings UI updated.`);
     } else {
         console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
@@ -213,6 +234,8 @@ function handleSettingChange(event) {
     } else if (target.tagName === 'SELECT') { // Handle dropdowns
         settingValue = target.value;
     } else if (target.tagName === 'INPUT' && target.type === 'text') {
+        settingValue = target.value;
+    } else if (target.tagName === 'TEXTAREA') {
         settingValue = target.value;
     } else {
         console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);

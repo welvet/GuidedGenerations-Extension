@@ -10,6 +10,7 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Settings](#settings)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 - [Contributing](#contributing)
@@ -83,6 +84,41 @@ See [`JSDoc.md`](./JSDoc.md) for code-level documentation.
 - Hover tooltips and context menus provide guidance and quick access to advanced features.
 - See in-app settings for feature toggles and auto-guide configuration.
 - For full technical details, see [`JSDoc.md`](./JSDoc.md).
+
+---
+
+## ⚙️ Settings
+
+All extension settings are managed via SillyTavern’s Extension Settings panel:
+
+- **Auto-Trigger**: toggle automatic execution of:
+  - Thinking Guide
+  - State Guide
+  - Clothes Guide
+
+- **Buttons Visibility**: show or hide action buttons:
+  - 1st Person Impersonation (👤)
+  - 2nd Person Impersonation (👥)
+  - 3rd Person Impersonation (🗣️)
+  - Guided Response (🐕)
+  - Guided Swipe (👈)
+  - Persistent Guides Menu (📖)
+
+- **Injection Role**: select the role (`system`, `assistant`, or `user`) used when injecting instructions.
+
+- **Presets**: for each guide/tool (Clothes, State, Thinking, Situational, Rules, Custom, Corrections, Spellchecker, Edit Intros, Impersonation 1st/2nd/3rd), choose any SillyTavern preset. Before running a guide/tool, the extension will switch to that preset (and its configured API/model), execute the action, then restore your previous preset—allowing different models per guide.
+
+- **Prompt Overrides**: customize the raw prompt template for each guide/tool. Use `{{input}}` for your input text and other placeholders as supported. Overrides apply to:
+  - Clothes Guide Prompt
+  - State Guide Prompt
+  - Thinking Guide Prompt
+  - Situational Guide Prompt
+  - Rules Guide Prompt
+  - Corrections Prompt
+  - Spellchecker Prompt
+  - Impersonate 1st/2nd/3rd Person Prompts
+  - Guided Response Prompt
+  - Guided Swipe Prompt
 
 ---
 

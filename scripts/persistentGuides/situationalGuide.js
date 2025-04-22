@@ -10,14 +10,11 @@ import { runGuideScript } from './runGuide.js';
  */
 const situationalGuide = async (isAuto = false) => {
     const genCommandSuffix = `/setvar key=inp {{input}} |
-/flushvar focus |
-/if left={{getvar::inp}} {:/buttons labels=["Yes","No"] "You have text in the Inputfield! Do you want to use it as a Focus for the Guide?:"| /if left={{pipe}} right=Yes /setvar key=focus Focus on {{getvar::inp}}. |:}| |
-/gen [Analyze the chat history and provide a concise summary of:
+[Analyze the chat history and provide a concise summary of:
 1. Current location and setting (indoors/outdoors, time of day, weather if relevant)
 2. Present characters and their current activities
 3. Relevant objects, items, or environmental details that could influence interactions
 4. Recent events or topics of conversation (last 10-20 messages)
-{{getvar::focus}}
 Keep the overview factual and neutral without speculation. Format in clear paragraphs.] |`;
     const finalCommand = `/inject id=situation position=chat depth=3 [Current Situation: {{pipe}}] |`;
     return await runGuideScript({

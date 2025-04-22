@@ -11,7 +11,7 @@ import { runGuideScript } from './runGuide.js';
  */
 const rulesGuide = async (isAuto = false) => {
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
-    const genCommandSuffix = `/gen [Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] |`;
+    const genCommandSuffix = `[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] `;
     const label = `Character's rules: {{pipe}}`;
     const finalCommand = `/inject id=rules position=chat depth=0 role=${injectionRole} [${label}] |`;
     return await runGuideScript({

@@ -22,8 +22,12 @@ const guidedImpersonate3rd = async () => {
     // --- If not restoring, proceed with impersonation ---
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
+    // Use user-defined 3rd-person impersonate prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+
     // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = `/impersonate await=true Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}} |`;
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
 
     // Determine target preset from settings
     const presetKey = 'presetImpersonate3rd';

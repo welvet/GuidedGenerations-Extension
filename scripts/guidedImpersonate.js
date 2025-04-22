@@ -34,8 +34,12 @@ const guidedImpersonate = async () => {
         presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
     }
 
+    // Use user-defined impersonate prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptImpersonate1st ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+
     // Only the core impersonate command remains
-    const stscriptCommand = `/impersonate await=true Write in first Person perspective from {{user}}. {{input}} |`;
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
     const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {

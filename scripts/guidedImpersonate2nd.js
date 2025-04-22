@@ -22,8 +22,12 @@ const guidedImpersonate2nd = async () => {
     // --- If not restoring, proceed with impersonation ---
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
+    // Use user-defined 2nd-person impersonate prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptImpersonate2nd ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+
     // Only the core impersonate command remains (specific 2nd person prompt)
-    const stscriptCommand = `/impersonate await=true Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}} |`;
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
     // Determine target preset from settings
     const presetKey = 'presetImpersonate2nd';
     const targetPreset = extension_settings[extensionName]?.[presetKey];

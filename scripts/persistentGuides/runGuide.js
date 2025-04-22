@@ -5,6 +5,7 @@ import { extensionName } from '../../index.js';
  * Generic runner for Persistent Guides STScript commands.
  * @param {{
  *   guideId: string,
+ *   genAs?: string,
  *   genCommandSuffix?: string,
  *   finalCommand?: string,
  *   isAuto?: boolean,
@@ -12,7 +13,7 @@ import { extensionName } from '../../index.js';
  * }} options
  * @returns {Promise<string|null>} Returns pipe output or null on failure.
  */
-export async function runGuideScript({ guideId, genCommandSuffix = '', finalCommand = '', isAuto = false, previousInjectionAction = 'none' }) {
+export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '', finalCommand = '', isAuto = false, previousInjectionAction = 'none' }) {
     // Determine user-defined preset for this guide
     const presetKey = `preset${guideId.charAt(0).toUpperCase()}${guideId.slice(1)}`;
     const rawPreset = extension_settings[extensionName]?.[presetKey] ?? '';
@@ -52,13 +53,16 @@ export async function runGuideScript({ guideId, genCommandSuffix = '', finalComm
     }
 
     // Assemble STScript
+    const asClause = genAs ? `${genAs} ` : '';
+    // Generate guide content with optional as= clause
+    const genLine = `/gen ${asClause}${genCommandSuffix} |`;
     let script = `// Initial guide setup|
 ${initCmd}
 
 ${presetSwitchStart}
 
 // Generate guide content|
-${genCommandSuffix}
+${genLine}
 ${finalCommand}
 ${presetSwitchEnd}`;
 

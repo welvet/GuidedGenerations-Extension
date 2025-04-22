@@ -27,6 +27,10 @@ const guidedResponse = async () => {
 
     let stscriptCommand;
 
+    // Use user-defined guided response prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptGuidedResponse ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+
     // Check if it's a group chat using the helper function
     if (isGroupChat()) {
         stscriptCommand = 
@@ -35,13 +39,13 @@ const guidedResponse = async () => {
 /setvar key=x {{pipe}} |
 /buttons labels=x "Select members {{group}}" |
 /setglobalvar key=selection {{pipe}} |
-/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special consideration for your next message: ${originalInput}] |
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt} |
 /trigger await=true {{getglobalvar::selection}}|
 `;
     } else {
         stscriptCommand = 
             `// Single character logic|
-/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} [Take the following into special consideration for your next message: ${originalInput}]|
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
 /trigger await=true|
 `;
     }

@@ -92,7 +92,7 @@ const flushGuides = async () => { // Make function async
     // --- Step 3: Execute the second script ---
     try {
         console.log(`[GuidedGenerations] Executing flush logic script with labels: "${buttonLabels}"`);
-        console.log(`[GuidedGenerations] Full script: ${flushLogicScript}`);
+
         await context.executeSlashCommandsWithOptions(flushLogicScript, {
              showOutput: true, // Show the final output/buttons to the user
              handleExecutionErrors: true

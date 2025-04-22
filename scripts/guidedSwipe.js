@@ -170,26 +170,30 @@ const guidedSwipe = async () => {
         // Save the input state using the shared function (imported)
         setPreviousImpersonateInput(originalInput);
 
+        // Use user-defined guided swipe prompt override
+        const promptTemplate = extension_settings[extensionName]?.promptGuidedSwipe ?? '';
+        const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+
         // --- 1. Store Input & Inject Context (if any) --- (Use direct context method)
         if (originalInput.trim()) {
-             // Use the currentInjectionRole retrieved above
-             const injectCommand = `/inject id=gg_instruct position=chat ephemeral=true depth=0 role=${currentInjectionRole} [Take the following into special consideration for your next message: ${originalInput}]`;
-             
-             // Get context and execute directly
-             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-                 const context = SillyTavern.getContext();
-                 if (typeof context.executeSlashCommandsWithOptions === 'function') {
+            // Use the currentInjectionRole retrieved above
+            const injectCommand = `/inject id=gg_instruct position=chat ephemeral=true depth=0 role=${currentInjectionRole} ${filledPrompt}`;
+            
+            // Get context and execute directly
+            if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+                const context = SillyTavern.getContext();
+                if (typeof context.executeSlashCommandsWithOptions === 'function') {
                     await context.executeSlashCommandsWithOptions(injectCommand);
                     console.log('[GuidedGenerations][Swipe] Executed Command:', injectCommand); 
-                 } else {
+                } else {
                     throw new Error("context.executeSlashCommandsWithOptions function not found.");
-                 }
-             } else {
+                }
+            } else {
                 throw new Error("SillyTavern.getContext function not found.");
-             }
-         } else {
-              console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
-         }
+            }
+        } else {
+            console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
+        }
 
         // --- 2. Generate New Swipe using the extracted function ---
         const swipeSuccess = await generateNewSwipe();
@@ -206,7 +210,7 @@ const guidedSwipe = async () => {
         console.error("[GuidedGenerations][Swipe] Error during guided swipe wrapper execution:", error);
         // Avoid duplicate alerts if generateNewSwipe already alerted
         if (!String(error.message).startsWith('Guided Swipe Error:')) {
-             alert(`Guided Swipe Error: ${error.message}`);
+            alert(`Guided Swipe Error: ${error.message}`);
         }
     } finally {
         // Always attempt to restore the input field from the shared state (imported)

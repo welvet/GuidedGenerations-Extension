@@ -26,6 +26,10 @@ export default async function corrections() {
     setPreviousImpersonateInput(originalInput);
     console.log(`[GuidedGenerations][Corrections] Original input saved: "${originalInput}"`);
 
+    // Use user-defined corrections prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptCorrections ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+
     // Determine target preset from settings
     const presetKey = 'presetCorrections';
     const targetPreset = extension_settings[extensionName]?.[presetKey];
@@ -56,9 +60,10 @@ export default async function corrections() {
     const stscriptPart1 = `
         ${presetSwitchStartScript}
 
-        // Inject assistant message to rework and instructions| |
+        // Inject assistant message to rework and instructions|
         /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
-        /inject id=instruct position=chat ephemeral=true depth=0 [OOC: Do not continue the story do not wrote in character, instead write {{char}}'s last response again but change it to reflect the following: ${originalInput}. Don't make any other changes besides this.] |
+        // Inject instructions using user override prompt|
+        /inject id=instruct position=chat ephemeral=true depth=0 [${filledPrompt}]|
     `;
     
     try {

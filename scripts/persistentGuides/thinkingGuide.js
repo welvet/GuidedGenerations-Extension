@@ -29,7 +29,7 @@ const thinkingGuide = async (isAuto = false) => {
         }
         if (!selection) return null;
         // Phase 2: generate and inject thoughts for selected member
-        const genCommandSuffix2 = `/gen name=${selection} [Write what ${selection} is currently thinking, pure thought only.] |`;
+        const genCommandSuffix2 = `name=${selection} [Write what ${selection} is currently thinking, pure thought only.] `;
         const injectLabel2 = `${selection} is currently thinking: {{pipe}}`;
         const finalCommand2 = `/inject id=thinking position=chat depth=0 role=${injectionRole} [${injectLabel2}] |`;
         return await runGuideScript({
@@ -41,7 +41,7 @@ const thinkingGuide = async (isAuto = false) => {
         });
     } else {
         // Single chat: generate and inject directly
-        const genCommandSuffix = `/gen name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}'s thoughts.] |`;
+        const genCommandSuffix = `name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}'s thoughts.] `;
         const injectLabel = `{{char}} is currently thinking: {{pipe}}`;
         const finalCommand = `/inject id=thinking position=chat depth=0 role=${injectionRole} [${injectLabel}] |`;
         return await runGuideScript({

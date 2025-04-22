@@ -47,12 +47,16 @@ export default async function spellchecker() {
 `;
     }
 
+    // Use user-defined spellchecker prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+
     // Execute the spellchecker workflow
     const stscript = `
         ${presetSwitchStart}
 
         // Generate correction using the current input|
-        /genraw Without any intro or outro correct the grammar, and punctuation, and improves the paragraph's flow of: {{input}} |
+        /genraw ${filledPrompt} |
         // Replace the input field with the generated correction|
         /setinput {{pipe}}|
 
