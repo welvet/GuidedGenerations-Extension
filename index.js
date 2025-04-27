@@ -74,6 +74,19 @@ const defaultSettings = {
     promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
     promptGuidedResponse: '[Take the following into special consideration for your next message: {{input}}]',
     promptGuidedSwipe: '[Take the following into special consideration for your next message: {{input}}]',
+    // Raw flags for prompt overrides
+    rawPromptClothes: false,
+    rawPromptState: false,
+    rawPromptThinking: false,
+    rawPromptSituational: false,
+    rawPromptRules: false,
+    rawPromptCorrections: false,
+    rawPromptSpellchecker: false,
+    rawPromptImpersonate1st: false,
+    rawPromptImpersonate2nd: false,
+    rawPromptImpersonate3rd: false,
+    rawPromptGuidedResponse: false,
+    rawPromptGuidedSwipe: false,
 };
 
 /**

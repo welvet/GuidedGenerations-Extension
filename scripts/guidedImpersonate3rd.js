@@ -23,11 +23,12 @@ const guidedImpersonate3rd = async () => {
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
     // Use user-defined 3rd-person impersonate prompt override
+    const isRaw = extension_settings[extensionName]?.rawPromptImpersonate3rd ?? false;
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
     // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
+    const stscriptCommand = isRaw ? `${filledPrompt} |` : `/impersonate await=true ${filledPrompt} |`;
 
     // Determine target preset from settings
     const presetKey = 'presetImpersonate3rd';

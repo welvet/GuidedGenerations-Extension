@@ -21,6 +21,7 @@ const guidedResponse = async () => {
 
     // --- Get Setting ---
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
+    const isRaw = extension_settings[extensionName]?.rawPromptGuidedResponse ?? false;
 
     // Save the input state using the shared function
     setPreviousImpersonateInput(originalInput);
@@ -33,8 +34,11 @@ const guidedResponse = async () => {
 
     // Check if it's a group chat using the helper function
     if (isGroupChat()) {
-        stscriptCommand = 
-            `// Group chat logic|
+        if (isRaw) {
+            stscriptCommand = filledPrompt; // Raw command replaces the default sequence
+        } else {
+            stscriptCommand = 
+                `// Group chat logic|
 /split {{group}} |
 /setvar key=x {{pipe}} |
 /buttons labels=x "Select members {{group}}" |
@@ -42,12 +46,17 @@ const guidedResponse = async () => {
 /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt} |
 /trigger await=true {{getglobalvar::selection}}|
 `;
+        }
     } else {
-        stscriptCommand = 
-            `// Single character logic|
+        if (isRaw) {
+            stscriptCommand = filledPrompt; // Raw command replaces the default sequence
+        } else {
+            stscriptCommand = 
+                `// Single character logic|
 /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
 /trigger await=true|
 `;
+        }
     }
 
     // Execute the main stscript command

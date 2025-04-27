@@ -27,6 +27,7 @@ export default async function corrections() {
     console.log(`[GuidedGenerations][Corrections] Original input saved: "${originalInput}"`);
 
     // Use user-defined corrections prompt override
+    const isRaw = extension_settings[extensionName]?.rawPromptCorrections ?? false;
     const promptTemplate = extension_settings[extensionName]?.promptCorrections ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
@@ -57,13 +58,14 @@ export default async function corrections() {
     }
 
     // --- Part 1: Execute STscript for Presets and Injections --- 
+    const instructionInjection = isRaw ? filledPrompt : `[${filledPrompt}]`;
     const stscriptPart1 = `
         ${presetSwitchStartScript}
 
         // Inject assistant message to rework and instructions|
         /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
         // Inject instructions using user override prompt|
-        /inject id=instruct position=chat ephemeral=true depth=0 [${filledPrompt}]|
+        /inject id=instruct position=chat ephemeral=true depth=0 ${instructionInjection}|
     `;
     
     try {

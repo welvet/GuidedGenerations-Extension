@@ -74,6 +74,8 @@ export async function loadSettingsPanel() {
                 });
             });
 
+            // Static Raw checkboxes are defined in settings.html; dynamic insertion removed
+
             // Set width on preset text inputs
             container.querySelectorAll('.gg-setting-input[type="text"]').forEach(input => {
                 input.style.minWidth = '200px';

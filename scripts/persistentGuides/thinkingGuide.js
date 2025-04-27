@@ -37,11 +37,12 @@ const thinkingGuide = async (isAuto = false) => {
             genCommandSuffix: genCommandSuffix2,
             finalCommand: finalCommand2,
             isAuto,
-            previousInjectionAction: 'flush'
+            previousInjectionAction: 'flush',
+            raw: extension_settings[extensionName]?.rawPromptThinking ?? false
         });
     } else {
         // Single chat: generate and inject directly
-        const genCommandSuffix = `name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}'s thoughts.] `;
+        const genCommandSuffix = extension_settings[extensionName]?.promptThinking ?? `name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}'s thoughts.] `;
         const injectLabel = `{{char}} is currently thinking: {{pipe}}`;
         const finalCommand = `/inject id=thinking position=chat depth=0 role=${injectionRole} [${injectLabel}] |`;
         return await runGuideScript({
@@ -49,7 +50,8 @@ const thinkingGuide = async (isAuto = false) => {
             genCommandSuffix,
             finalCommand,
             isAuto,
-            previousInjectionAction: 'flush'
+            previousInjectionAction: 'flush',
+            raw: extension_settings[extensionName]?.rawPromptThinking ?? false
         });
     }
 };
