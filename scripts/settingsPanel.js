@@ -34,55 +34,63 @@ export async function loadSettingsPanel() {
         console.log(`${extensionName}: Settings template rendered successfully.`);
         $(container).html(settingsHtml);
 
-        setTimeout(() => {
-            console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
-            loadSettings();
-            updateSettingsUI();
-            addSettingsEventListeners();
+            // Remove any manual clear buttons to avoid duplicates
+            container.querySelectorAll('.gg-clear-button').forEach(btn => btn.remove());
 
-            // Setup preset and clear buttons with native event handlers
-            const presetButtons = container.querySelectorAll('.gg-preset-button');
-            presetButtons.forEach(btn => {
-                // Insert clear button
-                const clearBtn = document.createElement('button');
-                clearBtn.type = 'button';
-                clearBtn.className = 'gg-clear-button';
-                clearBtn.setAttribute('data-target', btn.getAttribute('data-target'));
-                clearBtn.textContent = '✖';
-                clearBtn.style.marginLeft = '4px';
-                clearBtn.style.color = 'red';
-                btn.insertAdjacentElement('afterend', clearBtn);
+            setTimeout(() => {
+                console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
+                loadSettings();
+                updateSettingsUI();
+                addSettingsEventListeners();
 
-                // Preset fill click
-                btn.addEventListener('click', () => {
-                    const key = btn.getAttribute('data-target');
-                    const input = document.getElementById(`gg_${key}`);
-                    if (input) {
-                        input.value = 'GGSytemPrompt';
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                // Setup preset and clear buttons with native event handlers
+                const presetButtons = container.querySelectorAll('.gg-preset-button');
+                presetButtons.forEach(btn => {
+                    // Use existing clear button if present, else create one
+                    let clearBtn = btn.nextElementSibling;
+                    if (!clearBtn || !clearBtn.classList.contains('gg-clear-button')) {
+                        clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'gg-clear-button';
+                        clearBtn.setAttribute('data-target', btn.getAttribute('data-target'));
+                        clearBtn.textContent = '✖';
+                        clearBtn.style.marginLeft = '4px';
+                        clearBtn.style.color = 'red';
+                        btn.insertAdjacentElement('afterend', clearBtn);
+                    } else {
+                        clearBtn.setAttribute('data-target', btn.getAttribute('data-target'));
                     }
+
+                    // Preset fill click
+                    btn.addEventListener('click', () => {
+                        const key = btn.getAttribute('data-target');
+                        const input = document.getElementById(`gg_${key}`);
+                        if (input) {
+                            input.value = 'GGSytemPrompt';
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+
+                    // Clear click
+                    clearBtn.addEventListener('click', () => {
+                        const key = clearBtn.getAttribute('data-target');
+                        const input = document.getElementById(`gg_${key}`);
+                        if (input) {
+                            input.value = '';
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
                 });
 
-                // Clear click
-                clearBtn.addEventListener('click', () => {
-                    const key = clearBtn.getAttribute('data-target');
-                    const input = document.getElementById(`gg_${key}`);
-                    if (input) {
-                        input.value = '';
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                // Static Raw checkboxes are defined in settings.html; dynamic insertion removed
+
+                // Set width on preset text inputs
+                container.querySelectorAll('.gg-setting-input[type="text"]').forEach(input => {
+                    input.style.minWidth = '200px';
                 });
-            });
 
-            // Static Raw checkboxes are defined in settings.html; dynamic insertion removed
-
-            // Set width on preset text inputs
-            container.querySelectorAll('.gg-setting-input[type="text"]').forEach(input => {
-                input.style.minWidth = '200px';
-            });
-
-            console.log(`[${extensionName}] Settings panel actions complete.`);
-        }, 100);
+                console.log(`[${extensionName}] Settings panel actions complete.`);
+            }, 100);
     } catch (error) {
         console.error(`[${extensionName}] Error rendering settings template:`, error);
         if (container) {

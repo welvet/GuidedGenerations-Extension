@@ -11,30 +11,25 @@ import editGuidesPopup from './editGuidesPopup.js'; // Import the popup instance
 async function editGuides() {
     try {
         const context = SillyTavern.getContext();
-        if (!context || !context.extensionPrompts) {
-            console.error('[GuidedGenerations] SillyTavern context or extensionPrompts not available.');
+        if (!context || !context.chatMetadata || !context.chatMetadata.script_injects) {
+            console.error('[GuidedGenerations] SillyTavern context or persistent injections not available.');
             // Optionally inform the user via echo
             try {
-                await context.executeSlashCommandsWithOptions('/echo Error: SillyTavern context or extensionPrompts not available.', { showOutput: true });
+                await context.executeSlashCommandsWithOptions('/echo Error: persistent guide injections not available.', { showOutput: true });
             } catch (echoError) {
                 console.error('[GuidedGenerations] Failed to echo error message:', echoError);
             }
             return;
         }
 
-        const allPrompts = context.extensionPrompts;
+        const injections = context.chatMetadata.script_injects;
         const guidePrompts = {};
-
-        // Filter prompts to only include those starting with 'script_inject_'
-        for (const key in allPrompts) {
-            if (key.startsWith('script_inject_')) {
-                // We only need the key, value, and depth for the editor
-                guidePrompts[key] = {
-                    value: allPrompts[key].value,
-                    depth: allPrompts[key].depth
-                    // Add other properties if needed later (e.g., position, role)
-                };
-            }
+        // Map persistent injections into script_inject_ prefixed keys
+        for (const name in injections) {
+            guidePrompts[`script_inject_${name}`] = {
+                value: injections[name].value,
+                depth: injections[name].depth
+            };
         }
 
         if (Object.keys(guidePrompts).length === 0) {

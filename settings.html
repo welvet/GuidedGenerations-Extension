@@ -46,6 +46,13 @@
                         <label for="gg_autoTriggerThinking" style="margin-left: 8px;">Describe Thinking</label>
                     </div>
                 </div>
+                <!-- Custom Auto Guide Auto Trigger -->
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <input type="checkbox" id="gg_enableAutoCustomAutoGuide" name="enableAutoCustomAutoGuide" class="gg-setting-input" title="Trigger this guide automatically before each outgoing message">
+                        <label for="gg_enableAutoCustomAutoGuide" style="margin-left: 8px;">Custom Auto Guide</label>
+                    </div>
+                </div>
                 <hr>
                 <h4>Injection Settings</h4> <!-- New Heading -->
                 <div class="setting_item"> <!-- Container for the new setting -->
@@ -81,6 +88,13 @@
                         <label for="gg_presetThinking" style="margin-left: 8px; min-width:150px;">Thinking Guide</label>
                         <input type="text" id="gg_presetThinking" name="presetThinking" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
                         <button type="button" class="gg-preset-button" data-target="presetThinking" style="margin-left:8px;">GGSystemPrompt</button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label for="gg_customAutoGuidePresetName" style="margin-left: 8px; min-width:150px;">Custom Auto Guide</label>
+                        <input type="text" id="gg_customAutoGuidePresetName" name="customAutoGuidePresetName" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
+                        <button type="button" class="gg-preset-button" data-target="customAutoGuidePresetName" style="margin-left:8px;">GGSystemPrompt</button>
                     </div>
                 </div>
                 <div class="setting_item">
@@ -233,6 +247,14 @@
                     <button type="button" class="gg-default-button" data-target="promptGuidedSwipe" style="margin-top:4px;">Default</button>
                     <input type="checkbox" id="gg_rawPromptGuidedSwipe" name="rawPromptGuidedSwipe" class="gg-setting-input" style="margin-left:8px;">
                     <label for="gg_rawPromptGuidedSwipe" style="margin-left:4px;">Raw</label>
+                </div>
+                <!-- Custom Auto Guide Prompt Override -->
+                <div class="setting_item">
+                    <label for="gg_customAutoGuidePrompt" style="margin-left: 8px; min-width:150px; display:block;">Custom Auto Guide Prompt</label>
+                    <textarea id="gg_customAutoGuidePrompt" name="customAutoGuidePrompt" class="gg-setting-input text_pole" rows="3" placeholder="Enter custom prompt here... (leave empty to disable override)" style="width:100%; margin-left:8px; min-width:200px;"></textarea>
+                    <button type="button" class="gg-default-button" data-target="customAutoGuidePrompt" style="margin-top:4px;">Default (Empty)</button>
+                    <input type="checkbox" id="gg_rawPromptCustomAuto" name="rawPromptCustomAuto" class="gg-setting-input" style="margin-left:8px;">
+                    <label for="gg_rawPromptCustomAuto" style="margin-left:4px;">Raw</label>
                 </div>
             </div>
         </div>

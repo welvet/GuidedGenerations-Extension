@@ -11,6 +11,8 @@ import { guidedImpersonate2nd } from './scripts/guidedImpersonate2nd.js'; // Imp
 import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Import 3rd
 // Import the new Update Character function
 import { updateCharacter } from './scripts/persistentGuides/updateCharacter.js';
+// Import the new Custom Auto Guide
+import customAutoGuide from './scripts/persistentGuides/customAutoGuide.js';
 // Import necessary functions/objects from SillyTavern
 import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; 
 // Import Preset Manager
@@ -45,6 +47,7 @@ const defaultSettings = {
     autoTriggerClothes: false, // Default off
     autoTriggerState: false,   // Default off
     autoTriggerThinking: false, // Default off
+    enableAutoCustomAutoGuide: false, // Default off for auto-triggering the new guide
     showImpersonate1stPerson: true, // Default on
     showImpersonate2ndPerson: false, // Default on
     showImpersonate3rdPerson: false, // Default off
@@ -61,6 +64,9 @@ const defaultSettings = {
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
+    customAutoGuidePreset: '', // Default preset for Custom Auto Guide
+    customAutoGuidePresetName: '', // Default preset name for Custom Auto Guide
+    usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     // Guide prompt overrides
     promptClothes: 'as=char [OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: 'as=char [OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
@@ -74,6 +80,7 @@ const defaultSettings = {
     promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
     promptGuidedResponse: '[Take the following into special consideration for your next message: {{input}}]',
     promptGuidedSwipe: '[Take the following into special consideration for your next message: {{input}}]',
+    customAutoGuidePrompt: '', // Default empty prompt for Custom Auto Guide
     // Raw flags for prompt overrides
     rawPromptClothes: false,
     rawPromptState: false,
@@ -87,6 +94,11 @@ const defaultSettings = {
     rawPromptImpersonate3rd: false,
     rawPromptGuidedResponse: false,
     rawPromptGuidedSwipe: false,
+    rawPromptCustomAuto: false, // Default raw prompt setting for Custom Auto Guide
+    // Trigger Intervals (in number of messages)
+    clothesTriggerInterval: 10, // Default interval for Clothes Guide
+    stateTriggerInterval: 10, // Default interval for State Guide
+    thinkingTriggerInterval: 5, // Default interval for Thinking Guide
 };
 
 /**
@@ -165,7 +177,8 @@ function updateSettingsUI() {
         // Populate preset text fields
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
-         'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd'
+         'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
+         'customAutoGuidePreset', 'customAutoGuidePresetName'
         ].forEach(key => {
             const input = document.getElementById(`gg_${key}`);
             if (input) {
@@ -174,7 +187,7 @@ function updateSettingsUI() {
         });
 
         // Populate guide prompt override textareas
-        ['promptClothes','promptState','promptThinking','promptSituational','promptRules','promptCorrections','promptSpellchecker','promptImpersonate1st','promptImpersonate2nd','promptImpersonate3rd','promptGuidedResponse','promptGuidedSwipe'].forEach(key => {
+        ['promptClothes','promptState','promptThinking','promptSituational','promptRules','promptCorrections','promptSpellchecker','promptImpersonate1st','promptImpersonate2nd','promptImpersonate3rd','promptGuidedResponse','promptGuidedSwipe','customAutoGuidePrompt'].forEach(key => {
             const textarea = document.getElementById(`gg_${key}`);
             if (textarea) {
                 textarea.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
@@ -515,7 +528,8 @@ function updateExtensionButtons() {
             { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js' },
             { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js' },
             { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js' },
-            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' }
+            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' },
+            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js' }
         ];
 
         // Define the order and details for tool guides

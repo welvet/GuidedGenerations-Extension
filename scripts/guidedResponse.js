@@ -8,6 +8,7 @@ import { extension_settings } from '../../../../extensions.js'; // Correct path 
 import thinkingGuide from './persistentGuides/thinkingGuide.js'; // Correct relative path
 import stateGuide from './persistentGuides/stateGuide.js'; // Correct relative path
 import clothesGuide from './persistentGuides/clothesGuide.js'; // Correct relative path
+import customAutoGuide from './persistentGuides/customAutoGuide.js'; // Import the new Custom Auto Guide
 
 const extensionName = "GuidedGenerations-Extension";
 
@@ -68,6 +69,7 @@ const guidedResponse = async () => {
             if (settings.autoTriggerThinking) await thinkingGuide(true); // Pass isAuto=true
             if (settings.autoTriggerState) await stateGuide(true); // Pass isAuto=true
             if (settings.autoTriggerClothes) await clothesGuide(true); // Pass isAuto=true
+            if (settings.enableAutoCustomAutoGuide) await customAutoGuide(true); // Pass isAuto=true
 
             // Execute the main command
             await context.executeSlashCommandsWithOptions(stscriptCommand);
