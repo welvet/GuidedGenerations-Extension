@@ -9,26 +9,33 @@ const guidedImpersonate3rd = async () => {
         console.error('[GuidedGenerations] Textarea #send_textarea not found.');
         return;
     }
-    const currentInputText = textarea.value;
+    const originalInput = textarea.value;
     const lastGeneratedText = getLastImpersonateResult(); // Use shared getter
 
     // Check if the current input matches the last generated text (from any impersonation)
-    if (lastGeneratedText && currentInputText === lastGeneratedText) {
+    if (lastGeneratedText && originalInput === lastGeneratedText) {
         textarea.value = getPreviousImpersonateInput(); // Use shared getter
         textarea.dispatchEvent(new Event('input', { bubbles: true })); 
         return; // Restoration done, exit
     }
 
     // --- If not restoring, proceed with impersonation ---
-    setPreviousImpersonateInput(currentInputText); // Use shared setter
+    setPreviousImpersonateInput(originalInput); // Use shared setter
 
-    // Use user-defined 3rd-person impersonate prompt override
-    const isRaw = extension_settings[extensionName]?.rawPromptImpersonate3rd ?? false;
+    // --- Get Settings ---
+    const presetName = extension_settings[extensionName]?.presetImpersonate3rd ?? '';
+
+    // Save the input state using the shared function
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
-    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
-    // Only the core impersonate command remains (specific 3rd person prompt)
-    const stscriptCommand = isRaw ? `${filledPrompt} |` : `/impersonate await=true ${filledPrompt} |`;
+    // Handle preset logic
+    let stscriptCommand;
+    if (presetName) {
+        stscriptCommand = `/preset name="${presetName}" silent=true | /impersonate await=true persona={{charnames[2]}} ${filledPrompt} |`;
+    } else {
+        stscriptCommand = `/impersonate await=true persona={{charnames[2]}} ${filledPrompt} |`; // No preset
+    }
 
     // Determine target preset from settings
     const presetKey = 'presetImpersonate3rd';

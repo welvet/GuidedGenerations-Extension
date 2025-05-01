@@ -164,7 +164,7 @@ const guidedSwipe = async () => {
     const originalInput = textarea.value; // Get current input
 
     // Get the LATEST injection role setting HERE
-    const currentInjectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
 
     try {
         // Save the input state using the shared function (imported)
@@ -177,14 +177,17 @@ const guidedSwipe = async () => {
         // --- 1. Store Input & Inject Context (if any) --- (Use direct context method)
         if (originalInput.trim()) {
             // Use the currentInjectionRole retrieved above
-            const injectCommand = `/inject id=gg_instruct position=chat ephemeral=true depth=0 role=${currentInjectionRole} ${filledPrompt}`;
+            const stscriptCommand = 
+                `// Guided Swipe logic|
+                /inject id=instruct position=before_char ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
+                `;
             
             // Get context and execute directly
             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
                 const context = SillyTavern.getContext();
                 if (typeof context.executeSlashCommandsWithOptions === 'function') {
-                    await context.executeSlashCommandsWithOptions(injectCommand);
-                    console.log('[GuidedGenerations][Swipe] Executed Command:', injectCommand); 
+                    await context.executeSlashCommandsWithOptions(stscriptCommand);
+                    console.log('[GuidedGenerations][Swipe] Executed Command:', stscriptCommand); 
                 } else {
                     throw new Error("context.executeSlashCommandsWithOptions function not found.");
                 }

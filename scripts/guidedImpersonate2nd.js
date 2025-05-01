@@ -9,29 +9,35 @@ const guidedImpersonate2nd = async () => {
         console.error('[GuidedGenerations] Textarea #send_textarea not found.');
         return;
     }
-    const currentInputText = textarea.value;
+    const originalInput = textarea.value;
     const lastGeneratedText = getLastImpersonateResult(); // Use shared getter
 
     // Check if the current input matches the last generated text (from any impersonation)
-    if (lastGeneratedText && currentInputText === lastGeneratedText) {
+    if (lastGeneratedText && originalInput === lastGeneratedText) {
         textarea.value = getPreviousImpersonateInput(); // Use shared getter
         textarea.dispatchEvent(new Event('input', { bubbles: true })); 
         return; // Restoration done, exit
     }
 
     // --- If not restoring, proceed with impersonation ---
-    setPreviousImpersonateInput(currentInputText); // Use shared setter
+    setPreviousImpersonateInput(originalInput); // Use shared setter
 
-    // Use user-defined 2nd-person impersonate prompt override
-    const isRaw = extension_settings[extensionName]?.rawPromptImpersonate2nd ?? false;
+    // --- Get Settings ---
+    const presetName = extension_settings[extensionName]?.presetImpersonate2nd ?? '';
+
+    // Save the input state using the shared function
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate2nd ?? '';
-    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
-    // Only the core impersonate command remains (specific 2nd person prompt)
-    const stscriptCommand = isRaw ? `${filledPrompt} |` : `/impersonate await=true ${filledPrompt} |`;
+    let stscriptCommand;
+    if (presetName) {
+        stscriptCommand = `/preset name="${presetName}" silent=true | /impersonate await=true persona={{charnames[1]}} ${filledPrompt} |`;
+    } else {
+        stscriptCommand = `/impersonate await=true persona={{charnames[1]}} ${filledPrompt} |`; // No preset
+    }
+
     // Determine target preset from settings
-    const presetKey = 'presetImpersonate2nd';
-    const targetPreset = extension_settings[extensionName]?.[presetKey];
+    const targetPreset = extension_settings[extensionName]?.presetImpersonate2nd;
     console.log(`[GuidedGenerations] Using preset for 2nd-person impersonate: ${targetPreset || 'none'}`);
     let presetSwitchStart = '';
     let presetSwitchEnd = '';

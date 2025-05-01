@@ -19,6 +19,7 @@
 /* Style for the container holding the Guided Generations action buttons (now below input area) */
 .gg-action-buttons-container {
     display: flex; /* Use flex layout */
+    flex-wrap: wrap; /* Allow buttons to wrap */
     justify-content: space-between; /* Space between menu and action buttons */
     gap: 5px; /* Space between buttons */
     padding: 5px; /* Add some padding */
@@ -35,6 +36,7 @@
 /* Container for regular action buttons (right side) */
 .gg-regular-buttons-container {
     display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap */
     gap: 5px;
     align-items: center;
     margin-left: auto; /* Push to the right */
@@ -353,6 +355,7 @@
 
 .gg-popup-footer {
     display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap */
     justify-content: flex-end;
     gap: 10px;
     border-top: 1px solid var(--SmartThemeBorderColor);

@@ -35,12 +35,17 @@ const guidedImpersonate = async () => {
     }
 
     // Use user-defined impersonate prompt override
-    const isRaw = extension_settings[extensionName]?.rawPromptImpersonate1st ?? false;
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate1st ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
     // Only the core impersonate command remains
-    const stscriptCommand = isRaw ? `${filledPrompt} |` : `/impersonate await=true ${filledPrompt} |`;
+    const presetName = extension_settings[extensionName]?.presetImpersonate1st ?? ''; // Get preset setting
+    let stscriptCommand = '';
+    if (presetName) {
+        stscriptCommand = `/preset name="${presetName}" silent=true | /impersonate await=true ${filledPrompt} |`;
+    } else {
+        stscriptCommand = `/impersonate await=true ${filledPrompt} |`; // No preset
+    }
     const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
