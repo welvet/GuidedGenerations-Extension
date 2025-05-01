@@ -22,7 +22,8 @@ Keep the overview factual and neutral without speculation. Format in clear parag
         genCommandSuffix,
         finalCommand,
         isAuto,
-        previousInjectionAction: 'flush'
+        previousInjectionAction: 'flush',
+        raw: extension_settings[extensionName]?.rawPromptSituational ?? false
     });
 };
 

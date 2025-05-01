@@ -10,10 +10,11 @@ import { extensionName } from '../../index.js';
  *   finalCommand?: string,
  *   isAuto?: boolean,
  *   previousInjectionAction?: 'move' | 'flush' | 'none'
+ *   raw?: boolean
  * }} options
  * @returns {Promise<string|null>} Returns pipe output or null on failure.
  */
-export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '', finalCommand = '', isAuto = false, previousInjectionAction = 'none' }) {
+export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '', finalCommand = '', isAuto = false, previousInjectionAction = 'none', raw = false }) {
     // Determine user-defined preset for this guide
     const presetKey = `preset${guideId.charAt(0).toUpperCase()}${guideId.slice(1)}`;
     const rawPreset = extension_settings[extensionName]?.[presetKey] ?? '';
@@ -54,8 +55,8 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
 
     // Assemble STScript
     const asClause = genAs ? `${genAs} ` : '';
-    // Generate guide content with optional as= clause
-    const genLine = `/gen ${asClause}${genCommandSuffix} |`;
+    // Generate guide content: use raw command if requested
+    const genLine = raw ? `${genCommandSuffix} |` : `/gen ${asClause}${genCommandSuffix} |`;
     let script = `// Initial guide setup|
 ${initCmd}
 

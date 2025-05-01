@@ -3,6 +3,9 @@
 /**
  * Edit Guides Popup - Handles UI for editing guide injections.
  */
+import { extension_settings } from '../../../../../extensions.js';
+import { extensionName } from '../../index.js';
+
 export class EditGuidesPopup {
     constructor() {
         this.popupId = 'editGuidesPopup';
@@ -10,6 +13,7 @@ export class EditGuidesPopup {
         this.initialized = false;
         this.injectionData = {}; // To store the {key: {value, depth, ...}} object
         this.selectedGuideKey = null;
+        this.customMode = false; // Flag for custom guide creation
 
         // Define the HTML structure once
         this.popupHtml = `
@@ -31,9 +35,20 @@ export class EditGuidesPopup {
                             <label for="editGuideTextarea">Guide Content:</label>
                             <textarea id="editGuideTextarea" rows="15" placeholder="Select a guide to see its content..."></textarea>
                         </div>
+                        <div class="gg-popup-section custom-create-section" style="display:none;">
+                            <p class="gg-popup-note">"Generate" creates a new Guide by running the Gen Prompt to the Model. <br />"Create" creates a blank template for later editing. <br />Start the Gen Prompt with "OOC: Don't continue the chat. Instead" To avoid a continuation of the chat as the guide.</p>
+                            <label for="newGuideName">Name:</label>
+                            <input id="newGuideName" type="text" placeholder="Guide Name">
+                            <label for="newGuideDepth">Depth:</label>
+                            <input id="newGuideDepth" type="number" value="1" min="1">
+                            <label for="genPromptInput">Gen Prompt:</label>
+                            <input id="genPromptInput" type="text" placeholder="OOC: Don't continue the chat. Instead...">
+                        </div>
                     </div>
                     <div class="gg-popup-footer">
                         <button id="editGuideSaveButton" class="gg-button gg-button-primary">Save Changes</button>
+                        <button id="generateGuideButton" class="gg-button gg-button-secondary">Generate</button>
+                        <button id="createGuideButton" class="gg-button gg-button-primary">Create</button>
                         <button id="editGuideCancelButton" class="gg-button gg-button-secondary">Cancel</button>
                     </div>
                 </div>
@@ -80,6 +95,11 @@ export class EditGuidesPopup {
         const saveButton = this.popupElement.querySelector('#editGuideSaveButton');
         const selectElement = this.popupElement.querySelector('#editGuideSelect');
         const textareaElement = this.popupElement.querySelector('#editGuideTextarea');
+        const nameInput = this.popupElement.querySelector('#newGuideName');
+        const depthInput = this.popupElement.querySelector('#newGuideDepth');
+        const genPromptInput = this.popupElement.querySelector('#genPromptInput');
+        const generateButton = this.popupElement.querySelector('#generateGuideButton');
+        const createButton = this.popupElement.querySelector('#createGuideButton');
 
         // Close functionality
         closeButton?.addEventListener('click', () => this.close());
@@ -100,6 +120,64 @@ export class EditGuidesPopup {
             }
         });
 
+        // Create new custom guide
+        createButton?.addEventListener('click', async () => {
+            const newName = nameInput.value.trim();
+            const newDepth = parseInt(depthInput.value, 10) || 1;
+            if (!newName) { console.error('[GuidedGenerations] Guide name required.'); return; }
+            // Disallow spaces, pipes, slashes in guide ID
+            const validNameRegex = /^[A-Za-z0-9_-]+$/;
+            if (!validNameRegex.test(newName)) {
+                const msg = 'Invalid guide name: Only letters, numbers, underscores, and hyphens allowed.';
+                console.error(`[GuidedGenerations] ${msg}`);
+                // Show warning to user
+                alert(msg);
+                return;
+            }
+            const role = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+            const context = SillyTavern.getContext();
+            try {
+                await context.executeSlashCommandsWithOptions(`/inject id=custom_${newName} position=chat depth=${newDepth} role=${role} .|`, { showOutput: false });
+                const key = `script_inject_custom_${newName}`;
+                this.injectionData[key] = { value: '', depth: newDepth };
+                // Persist new injection
+                if (typeof context.saveMetadata === 'function') { context.saveMetadata(); }
+                // Rebuild dropdown
+                selectElement.innerHTML = '<option value="">-- Select a Guide --</option>';
+                Object.keys(this.injectionData).forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k;
+                    const disp = k.startsWith('script_inject_') ? k.substring('script_inject_'.length) : k;
+                    opt.textContent = disp;
+                    selectElement.appendChild(opt);
+                });
+                selectElement.value = key;
+                selectElement.dispatchEvent(new Event('change'));
+            } catch (error) {
+                console.error(`[GuidedGenerations] Error creating custom guide: ${error}`);
+            }
+        });
+
+        // Generate new custom guide content without saving
+        generateButton?.addEventListener('click', async () => {
+            const newName = nameInput.value.trim();
+            const newDepth = parseInt(depthInput.value, 10) || 1;
+            const genPrompt = genPromptInput.value.trim();
+            if (!newName) { alert('Guide ID required.'); return; }
+            const validNameRegex = /^[A-Za-z0-9_-]+$/;
+            if (!validNameRegex.test(newName)) { alert('Invalid Guide ID. Only letters, numbers, underscores, hyphens allowed.'); return; }
+            if (!genPrompt) { alert('Gen Prompt required.'); return; }
+            const role = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+            const context = SillyTavern.getContext();
+            const script = `/gen ${genPrompt} | /inject id=${newName} position=chat depth=${newDepth} role=${role} [Take into special Consideration: {{pipe}}] | /listinjects |`;
+            try {
+                await context.executeSlashCommandsWithOptions(script, { showOutput: true });
+            } catch (err) {
+                console.error('[GuidedGenerations] Error generating guide:', err);
+                alert('Error during generation. Check console.');
+            }
+        });
+
         // Save functionality
         saveButton?.addEventListener('click', () => this.saveChanges());
 
@@ -110,12 +188,28 @@ export class EditGuidesPopup {
     /**
      * Open the popup and populate it with guide data.
      * @param {object} injectionData - The object containing guide keys and their data ({ value, depth, ... }).
+     * @param {boolean} customMode - Flag for custom guide creation.
      */
-    open(injectionData) {
+    open(injectionData, customMode = false) {
+        this.customMode = customMode;
+        // Refresh context and load persistent injections on every open
+        let dataToShow = {};
+        try {
+            const context = SillyTavern.getContext();
+            const injections = context?.chatMetadata?.script_injects || {};
+            for (const name in injections) {
+                dataToShow[`script_inject_${name}`] = {
+                    value: injections[name].value,
+                    depth: injections[name].depth
+                };
+            }
+        } catch (err) {
+            console.error('[GuidedGenerations] Error loading persistent injections:', err);
+        }
         if (!this.initialized) {
-            this.init().then(() => this._populateAndShow(injectionData));
+            this.init().then(() => this._populateAndShow(dataToShow));
         } else {
-            this._populateAndShow(injectionData);
+            this._populateAndShow(dataToShow);
         }
     }
 
@@ -140,7 +234,9 @@ export class EditGuidesPopup {
             guideKeys.forEach(key => {
                 const option = document.createElement('option');
                 option.value = key;
-                option.textContent = key;
+                // Display without 'script_inject_' prefix
+                const displayKey = key.startsWith('script_inject_') ? key.substring('script_inject_'.length) : key;
+                option.textContent = displayKey;
                 selectElement.appendChild(option);
             });
         } else {
@@ -148,6 +244,9 @@ export class EditGuidesPopup {
              console.log("[GuidedGenerations] No guides found to populate editor.");
         }
 
+        // Show or hide create row for custom mode
+        const createSection = this.popupElement.querySelector('.custom-create-section');
+        createSection.style.display = this.customMode ? 'block' : 'none';
 
         // Reset textarea and button state
         textareaElement.value = 'Select a guide to see its content...';
@@ -180,7 +279,6 @@ export class EditGuidesPopup {
         // and max-height/max-width set in style.css.
         console.log(`[GuidedGenerations] Window size: ${windowWidth}x${windowHeight}. CSS handles popup sizing/positioning.`);
      }
-
 
     /**
      * Close the popup.
@@ -221,7 +319,7 @@ export class EditGuidesPopup {
     }
 
     /**
-     * Directly modifies the SillyTavern context's extensionPrompts object.
+     * Directly modifies the SillyTavern context's data for guide prompts or injections.
      * @param {string} key - The key/ID of the guide prompt to update (e.g., 'script_inject_state').
      * @param {string} content - The new content for the guide prompt.
      * @returns {boolean} - True if successful, false otherwise.
@@ -229,22 +327,34 @@ export class EditGuidesPopup {
     updateGuidePromptDirectly(key, content) {
         try {
             const context = SillyTavern.getContext();
-            if (!context || !context.extensionPrompts || !context.extensionPrompts[key]) {
-                console.error(`[GuidedGenerations] Cannot update prompt: Context or prompt key '${key}' not found.`);
-                return false;
+            // Persistent store: chatMetadata.script_injects (keys without 'script_inject_' prefix)
+            if (context && context.chatMetadata && context.chatMetadata.script_injects) {
+                const guideName = key.startsWith('script_inject_') ? key.substring('script_inject_'.length) : key;
+                const injections = context.chatMetadata.script_injects;
+                if (!(guideName in injections)) {
+                    console.error(`[GuidedGenerations] Cannot update persistent injection: chatMetadata.script_injects['${guideName}'] not found.`);
+                    return false;
+                }
+                injections[guideName].value = content;
+                // Optionally update depth
+                const depth = this.injectionData[key]?.depth;
+                if (typeof depth === 'number') {
+                    injections[guideName].depth = depth;
+                }
+                // Persist updated metadata
+                if (typeof context.saveMetadata === 'function') { context.saveMetadata(); }
+                return true;
             }
-
-            // Directly update the value property
-            context.extensionPrompts[key].value = content;
-            
-            // Optionally update other properties if needed (e.g., depth, though less likely here)
-            // context.extensionPrompts[key].depth = newDepth; 
-
-            return true; // Indicate success
-
+            // Fall back to ephemeral extensionPrompts
+            if (context && context.extensionPrompts && context.extensionPrompts[key]) {
+                context.extensionPrompts[key].value = content;
+                return true;
+            }
+            console.error(`[GuidedGenerations] Cannot update prompt: no data store for key '${key}'.`);
+            return false;
         } catch (error) {
-            console.error(`[GuidedGenerations] Error directly updating guide prompt for key "${key}":`, error);
-            return false; // Indicate failure
+            console.error(`[GuidedGenerations] Error updating prompt for key "${key}":`, error);
+            return false;
         }
     }
 }

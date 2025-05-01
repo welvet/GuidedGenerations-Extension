@@ -26,8 +26,10 @@ const stateGuide = async (isAuto = false) => {
         guideId: 'state',
         genAs,
         genCommandSuffix,
+        finalCommand,
         isAuto,
-        previousInjectionAction: 'move'
+        previousInjectionAction: 'move',
+        raw: extension_settings[extensionName]?.rawPromptState ?? false
     });
 };
 

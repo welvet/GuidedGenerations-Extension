@@ -6,11 +6,14 @@ import { simpleSend } from './scripts/simpleSend.js';
 import { recoverInput } from './scripts/inputRecovery.js';
 import { guidedResponse } from './scripts/guidedResponse.js';
 import { guidedSwipe } from './scripts/guidedSwipe.js';
+import { guidedContinue } from './scripts/guidedContinue.js';
 import { guidedImpersonate } from './scripts/guidedImpersonate.js';
 import { guidedImpersonate2nd } from './scripts/guidedImpersonate2nd.js'; // Import 2nd
 import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Import 3rd
 // Import the new Update Character function
 import { updateCharacter } from './scripts/persistentGuides/updateCharacter.js';
+// Import the new Custom Auto Guide
+import customAutoGuide from './scripts/persistentGuides/customAutoGuide.js';
 // Import necessary functions/objects from SillyTavern
 import { getContext, loadExtensionSettings, extension_settings, renderExtensionTemplateAsync } from '../../../extensions.js'; 
 // Import Preset Manager
@@ -45,9 +48,11 @@ const defaultSettings = {
     autoTriggerClothes: false, // Default off
     autoTriggerState: false,   // Default off
     autoTriggerThinking: false, // Default off
+    enableAutoCustomAutoGuide: false, // Default off for auto-triggering the new guide
     showImpersonate1stPerson: true, // Default on
     showImpersonate2ndPerson: false, // Default on
     showImpersonate3rdPerson: false, // Default off
+    showGuidedContinue: false, // Default off for Guided Continue
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: 'GGSytemPrompt',
     presetState: 'GGSytemPrompt',
@@ -61,10 +66,13 @@ const defaultSettings = {
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
+    customAutoGuidePreset: '', // Default preset for Custom Auto Guide
+    customAutoGuidePresetName: '', // Default preset name for Custom Auto Guide
+    usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: '[OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
-    promptThinking: 'name={{char}} [Write what {{char}} and other characters in the current scene are currently thinking, pure thought only. Do not include the {{user}}\'s thoughts.] ',
+    promptThinking: '[OOC: Answer me out of Character! Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
     promptSituational: '[Analyze the chat history and provide a concise summary of current location, present characters, relevant objects, and recent events. Keep factual and neutral. Format in clear paragraphs.] ',
     promptRules: '[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
     promptCorrections: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
@@ -74,6 +82,20 @@ const defaultSettings = {
     promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
     promptGuidedResponse: '[Take the following into special consideration for your next message: {{input}}]',
     promptGuidedSwipe: '[Take the following into special consideration for your next message: {{input}}]',
+    promptGuidedContinue: '[Continue the story based on the following input: {{input}}]', // Default prompt override for Guided Continue
+    customAutoGuidePrompt: '', // Default empty prompt for Custom Auto Guide
+    // Raw flags for prompt overrides
+    rawPromptClothes: false,
+    rawPromptState: false,
+    rawPromptThinking: false,
+    rawPromptSituational: false,
+    rawPromptRules: false,
+    rawPromptCustom: false,
+    rawPromptCustomAuto: false, // Default raw prompt setting for Custom Auto Guide
+    // Trigger Intervals (in number of messages)
+    clothesTriggerInterval: 10, // Default interval for Clothes Guide
+    stateTriggerInterval: 10, // Default interval for State Guide
+    thinkingTriggerInterval: 5, // Default interval for Thinking Guide
 };
 
 /**
@@ -152,7 +174,8 @@ function updateSettingsUI() {
         // Populate preset text fields
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
-         'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd'
+         'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
+         'customAutoGuidePreset', 'customAutoGuidePresetName'
         ].forEach(key => {
             const input = document.getElementById(`gg_${key}`);
             if (input) {
@@ -161,7 +184,7 @@ function updateSettingsUI() {
         });
 
         // Populate guide prompt override textareas
-        ['promptClothes','promptState','promptThinking','promptSituational','promptRules','promptCorrections','promptSpellchecker','promptImpersonate1st','promptImpersonate2nd','promptImpersonate3rd','promptGuidedResponse','promptGuidedSwipe'].forEach(key => {
+        ['promptClothes','promptState','promptThinking','promptSituational','promptRules','promptCorrections','promptSpellchecker','promptImpersonate1st','promptImpersonate2nd','promptImpersonate3rd','promptGuidedResponse','promptGuidedSwipe','promptGuidedContinue','customAutoGuidePrompt'].forEach(key => {
             const textarea = document.getElementById(`gg_${key}`);
             if (textarea) {
                 textarea.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
@@ -218,6 +241,10 @@ const handleSettingsChangeDelegated = (event) => {
         }
         if (event.target.name === 'showResponseButton') {
             const button = document.getElementById('guided_response_button');
+            if (button) button.style.display = event.target.checked ? '' : 'none';
+        }
+        if (event.target.name === 'showGuidedContinue') {
+            const button = document.getElementById('gg_continue_button');
             if (button) button.style.display = event.target.checked ? '' : 'none';
         }
     }
@@ -502,7 +529,8 @@ function updateExtensionButtons() {
             { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js' },
             { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js' },
             { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js' },
-            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' }
+            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' },
+            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js' }
         ];
 
         // Define the order and details for tool guides
@@ -617,6 +645,11 @@ function updateExtensionButtons() {
     // Guided Response Button (Restore correct icon)
     const guidedResponseButton = createActionButton('gg_response_button', 'Guided Response', 'fa-solid fa-dog', guidedResponse); // Correct icon: fa-dog
     actionButtonsContainer.appendChild(guidedResponseButton);
+
+    if (settings.showGuidedContinue) {
+        const guidedContinueButton = createActionButton('gg_continue_button', 'Guided Continue', 'fa-solid fa-sync-alt', guidedContinue);
+        actionButtonsContainer.appendChild(guidedContinueButton);
+    }
 }
 
 // Initial setup function

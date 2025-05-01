@@ -23,11 +23,12 @@ const guidedImpersonate2nd = async () => {
     setPreviousImpersonateInput(currentInputText); // Use shared setter
 
     // Use user-defined 2nd-person impersonate prompt override
+    const isRaw = extension_settings[extensionName]?.rawPromptImpersonate2nd ?? false;
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate2nd ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
     // Only the core impersonate command remains (specific 2nd person prompt)
-    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
+    const stscriptCommand = isRaw ? `${filledPrompt} |` : `/impersonate await=true ${filledPrompt} |`;
     // Determine target preset from settings
     const presetKey = 'presetImpersonate2nd';
     const targetPreset = extension_settings[extensionName]?.[presetKey];

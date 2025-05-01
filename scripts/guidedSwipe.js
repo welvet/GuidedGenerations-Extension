@@ -194,7 +194,26 @@ const guidedSwipe = async () => {
         } else {
             console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
         }
-
+        
+        // --- Wait for injection to be registered before swiping ---
+        if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+            const injectionKey = 'script_inject_gg_instruct';
+            const maxAttempts = 5;
+            let attempt = 0;
+            while (attempt < maxAttempts) {
+                const ctx = SillyTavern.getContext();
+                if (ctx.extensionPrompts && ctx.extensionPrompts[injectionKey]) {
+                    console.log('[GuidedGenerations][Swipe] Injection found:', injectionKey);
+                    break;
+                }
+                await delay(200);
+                attempt++;
+            }
+            if (attempt === maxAttempts) {
+                console.warn('[GuidedGenerations][Swipe] Injection not found after waiting:', injectionKey);
+            }
+        }
+        
         // --- 2. Generate New Swipe using the extracted function ---
         const swipeSuccess = await generateNewSwipe();
 

@@ -48,6 +48,7 @@ export default async function spellchecker() {
     }
 
     // Use user-defined spellchecker prompt override
+    const isRaw = extension_settings[extensionName]?.rawPromptSpellchecker ?? false;
     const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
@@ -56,7 +57,7 @@ export default async function spellchecker() {
         ${presetSwitchStart}
 
         // Generate correction using the current input|
-        /genraw ${filledPrompt} |
+        ${isRaw ? filledPrompt : `/genraw ${filledPrompt}`} |
         // Replace the input field with the generated correction|
         /setinput {{pipe}}|
 
