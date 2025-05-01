@@ -2,7 +2,7 @@
  * @file Contains the logic for the Guided Response button.
  */
 import { isGroupChat, setPreviousImpersonateInput, getPreviousImpersonateInput } from '../index.js'; // Import group chat checker and shared state functions
-import { extension_settings } from '../../../../extensions.js'; // Correct path to extensions.js
+import { getContext, extension_settings } from '../../../../extensions.js'; // Correct path to extensions.js
 
 // Import the guide scripts for direct execution
 import thinkingGuide from './persistentGuides/thinkingGuide.js'; // Correct relative path
@@ -22,7 +22,6 @@ const guidedResponse = async () => {
 
     // --- Get Setting ---
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
-    const isRaw = extension_settings[extensionName]?.rawPromptGuidedResponse ?? false;
 
     // Save the input state using the shared function
     setPreviousImpersonateInput(originalInput);
@@ -35,29 +34,56 @@ const guidedResponse = async () => {
 
     // Check if it's a group chat using the helper function
     if (isGroupChat()) {
-        if (isRaw) {
-            stscriptCommand = filledPrompt; // Raw command replaces the default sequence
-        } else {
+        const context = getContext();
+        let characterListJson = '[]'; // Default to empty JSON array
+
+        try {
+            // Execute STScript to get comma-separated group members
+            const returnCommand = '/return {{group}}';
+            const result = await context.executeSlashCommandsWithOptions(returnCommand, { showOutput: false });
+            const memberString = result?.pipe?.trim();
+
+            if (memberString) {
+                // Split by comma, trim whitespace, and filter out empty strings
+                const characterNames = memberString.split(',').map(name => name.trim()).filter(name => name);
+                if (characterNames.length > 0) {
+                    // Convert the array to a JSON string for the /buttons command
+                    characterListJson = JSON.stringify(characterNames);
+                    console.log(`[${extensionName}][Response] Generated character list for buttons:`, characterListJson);
+                } else {
+                    console.warn(`[${extensionName}][Response] Processed member string resulted in empty list.`);
+                }
+            } else {
+                console.warn(`[${extensionName}][Response] /return {{group}} script returned empty or invalid result.`);
+            }
+        } catch (error) {
+            console.error(`[${extensionName}][Response] Error executing /return {{group}} script or processing result:`, error);
+        }
+
+        if (characterListJson !== '[]') {
+            // Pass the generated JSON string to the labels parameter
             stscriptCommand = 
-                `// Group chat logic|
-/split {{group}} |
-/setvar key=x {{pipe}} |
-/buttons labels=x "Select members {{group}}" |
+                `// Group chat logic (JS handled selection list via /return)|
+/buttons labels=${characterListJson} "Select member to respond as" |
 /setglobalvar key=selection {{pipe}} |
 /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt} |
 /trigger await=true {{getglobalvar::selection}}|
 `;
-        }
-    } else {
-        if (isRaw) {
-            stscriptCommand = filledPrompt; // Raw command replaces the default sequence
         } else {
+            console.warn(`[${extensionName}][Response] Could not get character list for group chat selection. Falling back to single character logic.`);
+            // Fallback to single character logic if character list is empty or invalid
             stscriptCommand = 
-                `// Single character logic|
+                `// Single character logic (fallback from group)|
 /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
 /trigger await=true|
 `;
         }
+    } else {
+        stscriptCommand = 
+            `// Single character logic|
+/inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
+/trigger await=true|
+`;
     }
 
     // Execute the main stscript command
