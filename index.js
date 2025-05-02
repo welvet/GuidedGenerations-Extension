@@ -90,12 +90,9 @@ const defaultSettings = {
     rawPromptThinking: false,
     rawPromptSituational: false,
     rawPromptRules: false,
-    rawPromptCustom: false,
-    rawPromptCustomAuto: false, // Default raw prompt setting for Custom Auto Guide
-    // Trigger Intervals (in number of messages)
-    clothesTriggerInterval: 10, // Default interval for Clothes Guide
-    stateTriggerInterval: 10, // Default interval for State Guide
-    thinkingTriggerInterval: 5, // Default interval for Thinking Guide
+    rawPromptCorrections: false,
+    rawPromptSpellchecker: false,
+    rawPromptCustomAuto: false // Default raw prompt setting for Custom Auto Guide
 };
 
 /**
