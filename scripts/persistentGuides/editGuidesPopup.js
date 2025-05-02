@@ -224,8 +224,6 @@ export class EditGuidesPopup {
         const selectElement = this.popupElement.querySelector('#editGuideSelect');
         const textareaElement = this.popupElement.querySelector('#editGuideTextarea');
         const saveButton = this.popupElement.querySelector('#editGuideSaveButton');
-        const generateButton = this.popupElement.querySelector('#generateGuideButton');
-        const createButton = this.popupElement.querySelector('#createGuideButton');
 
         // Clear previous options
         selectElement.innerHTML = '<option value="">-- Select a Guide --</option>';
@@ -249,10 +247,6 @@ export class EditGuidesPopup {
         // Show or hide create row for custom mode
         const createSection = this.popupElement.querySelector('.custom-create-section');
         createSection.style.display = this.customMode ? 'block' : 'none';
-
-        // Show or hide Generate and Create buttons based on custom mode
-        generateButton.style.display = this.customMode ? 'inline-flex' : 'none'; // Use inline-flex to match button styling
-        createButton.style.display = this.customMode ? 'inline-flex' : 'none';   // Use inline-flex
 
         // Reset textarea and button state
         textareaElement.value = 'Select a guide to see its content...';

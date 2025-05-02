@@ -19,7 +19,6 @@
 /* Style for the container holding the Guided Generations action buttons (now below input area) */
 .gg-action-buttons-container {
     display: flex; /* Use flex layout */
-    flex-wrap: wrap; /* Allow buttons to wrap */
     justify-content: space-between; /* Space between menu and action buttons */
     gap: 5px; /* Space between buttons */
     padding: 5px; /* Add some padding */
@@ -36,7 +35,6 @@
 /* Container for regular action buttons (right side) */
 .gg-regular-buttons-container {
     display: flex;
-    flex-wrap: wrap; /* Allow buttons to wrap */
     gap: 5px;
     align-items: center;
     margin-left: auto; /* Push to the right */
@@ -210,6 +208,22 @@
     flex-wrap: wrap;
 }
 
+.setting_item {
+    padding-left: 10px; /* Indent items slightly */
+    padding-right: 10px;
+    padding-top: 5px; /* Add some top padding for separation */
+    padding-bottom: 5px; /* Add some bottom padding */
+}
+
+.guide-prompt-overrides-section .setting_item {
+    margin-bottom: 15px;
+}
+
+.setting_item label {
+    margin-left: 8px;
+    cursor: pointer;
+}
+
 /* Edit Intros Popup Styles */
 .gg-popup {
     display: none;
@@ -355,7 +369,6 @@
 
 .gg-popup-footer {
     display: flex;
-    flex-wrap: wrap; /* Allow buttons to wrap */
     justify-content: flex-end;
     gap: 10px;
     border-top: 1px solid var(--SmartThemeBorderColor);
