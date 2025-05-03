@@ -211,8 +211,6 @@
 .setting_item {
     padding-left: 10px; /* Indent items slightly */
     padding-right: 10px;
-    padding-top: 5px; /* Add some top padding for separation */
-    padding-bottom: 5px; /* Add some bottom padding */
 }
 
 .guide-prompt-overrides-section .setting_item {
