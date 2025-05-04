@@ -243,6 +243,7 @@ const guidedSwipe = async () => {
             console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
         }
         
+
         // Wait for the injection to appear in context (with retries and delay)
         let injectionFound = false;
         const maxAttempts = 5; // Keep the number of attempts
@@ -255,6 +256,7 @@ const guidedSwipe = async () => {
                 console.log(`[GuidedGenerations][Swipe] Injection found after attempt ${i + 1}.`);
                 injectionFound = true;
                 break; // Exit loop once found
+
             }
             // If not found, wait before the next check (unless it's the last attempt)
             if (i < maxAttempts - 1) {
