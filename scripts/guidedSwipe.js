@@ -179,7 +179,7 @@ const guidedSwipe = async () => {
             // Use the currentInjectionRole retrieved above
             const stscriptCommand = 
                 `// Guided Swipe logic|
-                /inject id=instruct position=before_char ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
+                /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
                 `;
             
             // Get context and execute directly
@@ -200,7 +200,7 @@ const guidedSwipe = async () => {
         
         // --- Wait for injection to be registered before swiping ---
         if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-            const injectionKey = 'script_inject_gg_instruct';
+            const injectionKey = 'script_inject_instruct';
             const maxAttempts = 5;
             let attempt = 0;
             while (attempt < maxAttempts) {
