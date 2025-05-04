@@ -1,6 +1,6 @@
 // scripts/settingsPanel.js
 
-import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners } from '../index.js';
+import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners, defaultSettings } from '../index.js';
 import { renderExtensionTemplateAsync } from '../../../../extensions.js';
 
 /**
@@ -78,6 +78,22 @@ export async function loadSettingsPanel() {
                         if (input) {
                             input.value = '';
                             input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+
+                // Setup default buttons with native event handlers
+                const defaultButtons = container.querySelectorAll('.gg-default-button');
+                defaultButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const key = btn.getAttribute('data-target'); // e.g., 'promptGuidedSwipe'
+                        const input = document.getElementById(`gg_${key}`); // e.g., '#gg_promptGuidedSwipe'
+                        if (input && defaultSettings.hasOwnProperty(key)) {
+                            input.value = defaultSettings[key];
+                            // Trigger change event to ensure SillyTavern recognizes the update
+                            input.dispatchEvent(new Event('change', { bubbles: true })); 
+                        } else {
+                            console.warn(`[${extensionName}] Could not find input for gg_${key} or default setting for ${key}`);
                         }
                     });
                 });

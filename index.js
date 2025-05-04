@@ -44,7 +44,7 @@ export const extensionName = "GuidedGenerations-Extension"; // Use the simple na
 let isSending = false; 
 // Removed storedInput as recovery now uses stscript global vars
 
-const defaultSettings = {
+export const defaultSettings = {
     autoTriggerClothes: false, // Default off
     autoTriggerState: false,   // Default off
     autoTriggerThinking: false, // Default off

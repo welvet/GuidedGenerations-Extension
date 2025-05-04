@@ -36,9 +36,9 @@ async function executeSTScriptCommand(command) {
 }
 
 /**
- * Finds the last swipe for the last message, swipes to it, and triggers one more swipe (generation).
- * Handles button finding, retries, and potential forcing.
- * Uses local helper functions and correct imports.
+ * Finds the last swipe for the last message, navigates directly to it,
+ * and triggers one more swipe (generation) by clicking the button once.
+ * Uses direct manipulation for navigation and waits for generation end event.
  * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function generateNewSwipe() {
@@ -49,102 +49,147 @@ async function generateNewSwipe() {
         return false;
     }
 
+    // Ensure necessary functions/objects are available from SillyTavern's scope
+    let context = getContext();
+    const expectedContextProps = ['chat', 'messageFormatting', 'eventSource', 'event_types'];
+    const missingProps = expectedContextProps.filter(prop => !(prop in context) || context[prop] === undefined);
+
+    if (missingProps.length > 0) {
+        const errorMessage = `Could not get necessary functions/objects from context. Missing: ${missingProps.join(', ')}`;
+        console.error(`[GuidedGenerations][Swipe] ${errorMessage}`);
+        alert(`Guided Swipe Error: ${errorMessage}`);
+        return false;
+    }
+
+    // Destructure necessary functions and variables from the context *after* validation
+    const { chat, messageFormatting, eventSource, event_types } = context;
+
     try {
-        // --- Get Initial Swipe State --- (Uses imported getContext)
-        let context = getContext();
-        if (!context || !context.chat || context.chat.length === 0) {
-            console.error("[GuidedGenerations][Swipe] Could not get initial chat context for swiping.");
+        // --- 1. Navigate to Last Existing Swipe (Directly) ---
+        context = getContext(); // Get fresh context again before manipulation
+        if (!context || context.chat.length === 0) {
+            console.error("[GuidedGenerations][Swipe] Could not get chat context for swiping.");
             alert("Guided Swipe Error: Cannot access chat context.");
             return false;
         }
         let lastMessageIndex = context.chat.length - 1;
         let messageData = context.chat[lastMessageIndex];
-        if (!messageData || typeof messageData.swipe_id === 'undefined' || !Array.isArray(messageData.swipes)) {
-            console.error("[GuidedGenerations][Swipe] Invalid initial message data for swiping.", messageData);
-            alert("Guided Swipe Error: Cannot read initial swipe data.");
-            return false;
-        }
-        let initialSwipeId = messageData.swipe_id;
-        let initialTotalSwipes = messageData.swipes.length;
+        const mesDom = document.querySelector(`#chat .mes[mesid="${lastMessageIndex}"]`);
 
-        // --- 2. Swipe to Last Existing Swipe --- (Uses local delay)
-        const targetSwipeIndex = Math.max(0, initialTotalSwipes - 1);
-        let clicksToReachLast = Math.max(0, targetSwipeIndex - initialSwipeId);
+        // Check if there are swipes and if navigation is needed
+        if (messageData && Array.isArray(messageData.swipes) && messageData.swipes.length > 1) {
+            const targetSwipeIndex = messageData.swipes.length - 1;
+            if (messageData.swipe_id !== targetSwipeIndex) {
+                console.log(`[GuidedGenerations][Swipe] Navigating directly from swipe ${messageData.swipe_id} to last swipe ${targetSwipeIndex}.`);
+                messageData.swipe_id = targetSwipeIndex;
+                messageData.mes = messageData.swipes[targetSwipeIndex];
+                // Optional: Update extra fields if needed, similar to swipes-go
+                // messageData.extra = structuredClone(messageData.swipe_info?.[targetSwipeIndex]?.extra);
+                // ... other fields
+
+                if (mesDom) {
+                    // Update message text in DOM
+                    const mesTextElement = mesDom.querySelector('.mes_text');
+                    if (mesTextElement) {
+                        mesTextElement.innerHTML = messageFormatting(
+                            messageData.mes, messageData.name, messageData.is_system, messageData.is_user, lastMessageIndex
+                        );
+                    }
+                    // Update swipe counter in DOM
+                    [...mesDom.querySelectorAll('.swipes-counter')].forEach(it => it.textContent = `${messageData.swipe_id + 1}/${messageData.swipes.length}`);
+                } else {
+                    console.warn(`[GuidedGenerations][Swipe] Could not find DOM element for message ${lastMessageIndex} to update UI during direct navigation.`);
+                }
+
+                // Save chat and notify - Removed saveChatConditional() as it's not available
+                eventSource.emit(event_types.MESSAGE_SWIPED, lastMessageIndex);
+                // Update button visibility - Removed showSwipeButtons() as it's not available
+                // showSwipeButtons();
+                // Use standard setTimeout for delay as context.delay is missing
+                await new Promise(resolve => setTimeout(resolve, 150)); // Delay for UI updates/event propagation
+            } else {
+                console.log("[GuidedGenerations][Swipe] Already on the last existing swipe.");
+            }
+        } else {
+            console.log("[GuidedGenerations][Swipe] No existing swipes or only one swipe found. Proceeding to generate first/next swipe.");
+        }
+
+        // --- 2. Trigger the *New* Swipe Generation (Click Button Once) ---
         const selector1 = '#chat .mes:last-child .swipe_right:not(.stus--btn)';
         const selector2 = '#chat .mes:last-child .mes_img_swipe_right';
         let $button = jQueryRef(selector1);
         if ($button.length === 0) $button = jQueryRef(selector2);
+
         if ($button.length === 0) {
-            console.error(`[GuidedGenerations][Swipe] Could not find swipe button.`);
-            alert("Guided Swipe Error: Could not find the swipe button.");
+            console.error(`[GuidedGenerations][Swipe] Could not find the swipe right button to trigger generation.`);
+            alert("Guided Swipe Error: Could not find the swipe button to generate.");
             return false;
         }
-        if (clicksToReachLast > 0) {
-            console.log(`[GuidedGenerations][Swipe] Performing ${clicksToReachLast} clicks to reach the last swipe...`);
-            for (let i = 0; i < clicksToReachLast; i++) {
-                $button.first().trigger('click');
-                await delay(50); // Use local delay
-            }
-            await delay(150); // Use local delay
-        } else {
-            console.log("[GuidedGenerations][Swipe] Already at or beyond the target swipe index. No initial swiping needed.");
-        }
 
-        // --- 3. Verify & Retry --- (Uses imported getContext and local delay)
-        let verificationAttempts = 0;
-        const MAX_VERIFICATION_ATTEMPTS = 3;
-        let finalSwipeIndex = -1;
-        let finalTotalSwipes = -1;
-        while (verificationAttempts < MAX_VERIFICATION_ATTEMPTS) {
-            verificationAttempts++;
-            context = getContext(); // Get fresh context
-            lastMessageIndex = context.chat.length - 1;
-            messageData = context.chat[lastMessageIndex];
-            if (!messageData || typeof messageData.swipe_id === 'undefined' || !Array.isArray(messageData.swipes)) {
-                console.error(`[GuidedGenerations][Swipe] Verification attempt ${verificationAttempts}: Invalid message data. Aborting.`);
-                alert(`Guided Swipe Error: Cannot read swipe data during verification attempt ${verificationAttempts}.`);
-                return false;
-            }
-            finalSwipeIndex = messageData.swipe_id;
-            finalTotalSwipes = messageData.swipes.length;
-            const currentTargetIndex = Math.max(0, finalTotalSwipes - 1);
-            if (finalSwipeIndex >= currentTargetIndex) {
-                console.log(`[GuidedGenerations][Swipe] Successfully on the last swipe.`);
-                break;
-            }
-            if (verificationAttempts < MAX_VERIFICATION_ATTEMPTS) {
-                await delay(100); // Use local delay
-            } else {
-                console.warn(`[GuidedGenerations][Swipe] Still not on last swipe after retries. Forcing...`);
-                const forceClicks = Math.max(0, currentTargetIndex - finalSwipeIndex);
-                console.log(`[GuidedGenerations][Swipe] Force clicks needed: ${forceClicks}`);
-                if (forceClicks > 0) {
-                    for (let i = 0; i < forceClicks; i++) {
-                        $button.first().trigger('click');
-                        await delay(50); // Use local delay
-                    }
-                    await delay(150); // Use local delay
-                    // Re-fetch context one last time after forcing
-                    context = getContext();
-                    lastMessageIndex = context.chat.length - 1;
-                    messageData = context.chat[lastMessageIndex];
-                    finalSwipeIndex = messageData ? messageData.swipe_id : -1;
-                    finalTotalSwipes = messageData && messageData.swipes ? messageData.swipes.length : -1;
-                    console.log(`[GuidedGenerations][Swipe] State after force clicks: Swipe ID: ${finalSwipeIndex}, Total Swipes: ${finalTotalSwipes}`);
+        console.log("[GuidedGenerations][Swipe] Clicking button once to trigger new swipe generation...");
+        $button.first().trigger('click'); // THE VITAL CLICK TO START GENERATION
+
+        // --- 3. Wait for Generation to Finish ---
+        const generationPromise = new Promise((resolve, reject) => {
+            let resolved = false;
+            const timeoutDuration = 120000; // 120 seconds timeout
+            let timeoutId = null;
+
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                eventSource.removeListener(event_types.GENERATION_ENDED, successListener);
+                // TODO: Consider removing potential error listeners here too if added
+            };
+
+            const successListener = () => {
+                if (!resolved) {
+                    resolved = true;
+                    cleanup();
+                    console.log("[GuidedGenerations][Swipe] Generation ended signal received.");
+                    resolve(true);
                 }
-            }
-        }
+            };
 
-        // --- 4. Final Click to Generate --- (Uses local delay)
-        console.log("[GuidedGenerations][Swipe] Performing final click to trigger generation...");
-        $button.first().trigger('click');
-        await delay(100); // Use local delay
-        console.log("[GuidedGenerations][Swipe] New swipe generated successfully.");
+            // Add the success listener
+            eventSource.once(event_types.GENERATION_ENDED, successListener);
+
+            // Set the timeout
+            timeoutId = setTimeout(() => {
+                if (!resolved) {
+                    // Don't set resolved = true here, let the listener handle success if it comes later
+                    cleanup(); // Remove listener even on timeout
+                    console.error(`[GuidedGenerations][Swipe] Swipe generation timed out after ${timeoutDuration / 1000} seconds.`);
+                    // Reject the promise on timeout
+                    reject(new Error(`Swipe generation timed out after ${timeoutDuration / 1000} seconds.`));
+                }
+            }, timeoutDuration);
+
+            // TODO: Add an error listener if SillyTavern provides one
+            // const errorListener = (errorData) => { if (!resolved) { resolved = true; cleanup(); reject(new Error(...)); }};
+            // eventSource.once(event_types.GENERATION_FAILED, errorListener);
+        });
+
+        // Await the generation promise (will throw on timeout/error)
+        await generationPromise;
+        // Use standard setTimeout for delay as context.delay is missing
+        await new Promise(resolve => setTimeout(resolve, 200)); // Small delay after generation finishes
+
+        // Re-check context to confirm swipe count increased (optional but good practice)
+        context = getContext(); // Get latest context
+        const finalMessageData = context.chat[context.chat.length - 1];
+        const finalSwipeCount = finalMessageData?.swipes?.length ?? 0;
+        console.log(`[GuidedGenerations][Swipe] Final swipe count after generation: ${finalSwipeCount}`);
+
         return true; // Indicate success
 
     } catch (error) {
-        console.error("[GuidedGenerations][Swipe] Error during generateNewSwipe execution:", error);
-        alert(`Guided Swipe Error: ${error.message}`);
+        console.error("[GuidedGenerations][Swipe] Error during swipe generation process:", error);
+        // Format error for alert, preventing duplicate prefixes if already formatted
+        const errorMessage = String(error.message || error).startsWith('Guided Swipe Error:')
+            ? String(error.message || error)
+            : `Guided Swipe Error: ${error.message || error}`;
+        // Ensure alert is shown even if error is just a string
+        alert(errorMessage || "Guided Swipe Error: An unknown error occurred.");
         return false; // Indicate failure
     }
 }
@@ -198,30 +243,47 @@ const guidedSwipe = async () => {
             console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
         }
         
-        // --- Wait for injection to be registered before swiping ---
-        if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-            const injectionKey = 'script_inject_instruct';
-            const maxAttempts = 5;
-            let attempt = 0;
-            while (attempt < maxAttempts) {
-                const ctx = SillyTavern.getContext();
-                if (ctx.extensionPrompts && ctx.extensionPrompts[injectionKey]) {
-                    console.log('[GuidedGenerations][Swipe] Injection found:', injectionKey);
-                    break;
-                }
-                await delay(200);
-                attempt++;
+
+        // Wait for the injection to appear in context (with retries and delay)
+        let injectionFound = false;
+        const maxAttempts = 5; // Keep the number of attempts
+        const checkDelay = 150; // Milliseconds to wait between checks
+
+        for (let i = 0; i < maxAttempts; i++) {
+            const currentContext = SillyTavern.getContext(); // Get fresh context each time
+            // Check if the key exists in the extensionPrompts OBJECT - Use the correct key!
+            if (currentContext.extensionPrompts && 'script_inject_instruct' in currentContext.extensionPrompts) {
+                console.log(`[GuidedGenerations][Swipe] Injection found after attempt ${i + 1}.`);
+                injectionFound = true;
+                break; // Exit loop once found
+
             }
-            if (attempt === maxAttempts) {
-                console.warn('[GuidedGenerations][Swipe] Injection not found after waiting:', injectionKey);
+            // If not found, wait before the next check (unless it's the last attempt)
+            if (i < maxAttempts - 1) {
+                console.log(`[GuidedGenerations][Swipe] Injection check ${i + 1} failed, waiting ${checkDelay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, checkDelay));
             }
         }
-        
-        // --- 2. Generate New Swipe using the extracted function ---
+
+        // If injection was never found after all attempts
+        if (!injectionFound) {
+            const errorMsg = "[GuidedGenerations][Swipe] Critical Error: Guided instruction injection ('script_inject_instruct') failed to appear in context after multiple checks.";
+            console.error(errorMsg);
+            alert("Guided Swipe Error: Could not verify instruction injection ('script_inject_instruct'). Aborting swipe generation.");
+            // Clean up potentially failed injection attempt and restore input before returning
+            jQueryRef("#send_textarea").val(originalInput).trigger('input');
+            // Use the correct key for deletion as well
+            await executeSTScriptCommand('/flushinject id=instruct');
+            return; // Stop execution
+        }
+
+        // --- 2. Generate the new swipe --- (This now only runs if injection was found)
+        console.log('[GuidedGenerations][Swipe] Instruction injection confirmed. Proceeding to generate new swipe...');
         const swipeSuccess = await generateNewSwipe();
 
         if (swipeSuccess) {
             console.log("[GuidedGenerations][Swipe] Guided Swipe finished successfully.");
+            await new Promise(resolve => setTimeout(resolve, 3000)); 
         } else {
             console.error("[GuidedGenerations][Swipe] Guided Swipe failed during swipe generation step.");
             // Error likely already alerted within generateNewSwipe
@@ -245,6 +307,9 @@ const guidedSwipe = async () => {
             // This case should ideally not happen if the initial check passed
             console.warn("[GuidedGenerations][Swipe] Textarea was not available for restoration in finally block.");
         }
+        // Clean up injection using the correct key
+        console.log('[GuidedGenerations][Swipe] Cleaning up injection (finally block)');
+        await executeSTScriptCommand('/flushinject id=instruct'); // Already using 'instruct' ID here, which seems correct
     }
 };
 
