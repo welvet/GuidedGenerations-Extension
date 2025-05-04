@@ -37,7 +37,14 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
 // Class to handle the popup functionality
 export class EditIntrosPopup {
     constructor() {
-        this.selectedOption = null;
+        // Initialize state for multiple selections
+        this.selectedOptions = { 
+            perspective: null, 
+            tense: null, 
+            style: null, 
+            gender: null 
+        };
+        this.isCustomSelected = false; // Track if custom option is active
         this.popupElement = null;
         this.initialized = false;
         this.lastCustomCommand = sessionStorage.getItem('gg_lastCustomCommand') || ''; // Load last command
@@ -48,7 +55,18 @@ export class EditIntrosPopup {
      */
     async init() {
         if (this.initialized) return;
-        
+
+        // Helper function to generate option HTML (to reduce repetition)
+        function generateOptionHtml(category, optionKey, title) {
+            return `<div class="gg-option" data-category="${category}" data-option="${optionKey}">
+                        <span class="gg-option-title">${title}</span>
+                    </div>`;
+        }
+
+        function generateSubOptionHtml(category, value, title) {
+            return `<div class="gg-suboption" data-category="${category}" data-value="${value}">${title}</div>`;
+        }
+
         // Create popup container if it doesn't exist
         if (!document.getElementById('editIntrosPopup')) {
             // Create the popup container
@@ -60,79 +78,70 @@ export class EditIntrosPopup {
                             <span class="gg-popup-close">&times;</span>
                         </div>
                         <div class="gg-popup-body">
+                            <!-- Perspective Section -->
                             <div class="gg-popup-section">
                                 <h3>Perspective</h3>
                                 <div class="gg-option-group">
-                                    <div class="gg-option" data-option="first-person">
+                                    <div class="gg-option" data-category="perspective" data-option="first-person"> <!-- Grouping Option -->
                                         <span class="gg-option-title">First Person</span>
                                         <div class="gg-suboptions">
-                                            <div class="gg-suboption" data-value="first-person-standard">I/me (standard 1st person)</div>
-                                            <div class="gg-suboption" data-value="first-person-by-name">{{user}} by name</div>
-                                            <div class="gg-suboption" data-value="first-person-as-you">{{user}} as you</div>
-                                            <div class="gg-suboption" data-value="first-person-he-him">{{user}} as he/him</div>
-                                            <div class="gg-suboption" data-value="first-person-she-her">{{user}} as she/her</div>
-                                            <div class="gg-suboption" data-value="first-person-they-them">{{user}} as they/them</div>
+                                            ${generateSubOptionHtml('perspective', 'first-person-standard', 'I/me (standard 1st person)')}
+                                            ${generateSubOptionHtml('perspective', 'first-person-by-name', '{{user}} by name')}
+                                            ${generateSubOptionHtml('perspective', 'first-person-as-you', '{{user}} as you')}
+                                            ${generateSubOptionHtml('perspective', 'first-person-he-him', '{{user}} as he/him')}
+                                            ${generateSubOptionHtml('perspective', 'first-person-she-her', '{{user}} as she/her')}
+                                            ${generateSubOptionHtml('perspective', 'first-person-they-them', '{{user}} as they/them')}
                                         </div>
                                     </div>
-                                    <div class="gg-option" data-option="second-person">
+                                    <div class="gg-option" data-category="perspective" data-option="second-person"> <!-- Grouping Option -->
                                         <span class="gg-option-title">Second Person</span>
                                         <div class="gg-suboptions">
-                                            <div class="gg-suboption" data-value="second-person-as-you">{{user}} as you</div>
+                                            ${generateSubOptionHtml('perspective', 'second-person-as-you', '{{user}} as you')}
                                         </div>
                                     </div>
-                                    <div class="gg-option" data-option="third-person">
+                                    <div class="gg-option" data-category="perspective" data-option="third-person"> <!-- Grouping Option -->
                                         <span class="gg-option-title">Third Person</span>
                                         <div class="gg-suboptions">
-                                            <div class="gg-suboption" data-value="third-person-by-name">{{user}} by name and pronouns</div>
+                                            ${generateSubOptionHtml('perspective', 'third-person-by-name', '{{user}} by name and pronouns')}
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Tense Section -->
                             <div class="gg-popup-section">
                                 <h3>Tense</h3>
                                 <div class="gg-option-group">
-                                    <div class="gg-option" data-option="past-tense">
-                                        <span class="gg-option-title">Past Tense</span>
-                                    </div>
-                                    <div class="gg-option" data-option="present-tense">
-                                        <span class="gg-option-title">Present Tense</span>
-                                    </div>
+                                    ${generateOptionHtml('tense', 'past-tense', 'Past Tense')}
+                                    ${generateOptionHtml('tense', 'present-tense', 'Present Tense')}
                                 </div>
                             </div>
+
+                            <!-- Style Section -->
                             <div class="gg-popup-section">
                                 <h3>Style</h3>
                                 <div class="gg-option-group">
-                                    <div class="gg-option" data-option="novella-style">
-                                        <span class="gg-option-title">Novella Style</span>
-                                    </div>
-                                    <div class="gg-option" data-option="internet-rp-style">
-                                        <span class="gg-option-title">Internet RP Style</span>
-                                    </div>
-                                    <div class="gg-option" data-option="literary-style">
-                                        <span class="gg-option-title">Literary Style</span>
-                                    </div>
-                                    <div class="gg-option" data-option="script-style">
-                                        <span class="gg-option-title">Script Style</span>
-                                    </div>
+                                    ${generateOptionHtml('style', 'novella-style', 'Novella Style')}
+                                    ${generateOptionHtml('style', 'internet-rp-style', 'Internet RP Style')}
+                                    ${generateOptionHtml('style', 'literary-style', 'Literary Style')}
+                                    ${generateOptionHtml('style', 'script-style', 'Script Style')}
                                 </div>
                             </div>
+
+                            <!-- Gender Section -->
                             <div class="gg-popup-section">
-                                <h3>Gender</h3>
+                                <h3>Gender (for {{user}})</h3>
                                 <div class="gg-option-group">
-                                    <div class="gg-option" data-option="he-him">
-                                        <span class="gg-option-title">He/Him</span>
-                                    </div>
-                                    <div class="gg-option" data-option="she-her">
-                                        <span class="gg-option-title">She/Her</span>
-                                    </div>
-                                    <div class="gg-option" data-option="they-them">
-                                        <span class="gg-option-title">They/Them</span>
-                                    </div>
+                                    ${generateOptionHtml('gender', 'he-him', 'He/Him')}
+                                    ${generateOptionHtml('gender', 'she-her', 'She/Her')}
+                                    ${generateOptionHtml('gender', 'they-them', 'They/Them')}
                                 </div>
                             </div>
+
+                            <!-- Custom Command Section -->
                             <div class="gg-popup-section gg-custom-command-section">
-                                <h3>Custom Command</h3>
-                                <div class="gg-option gg-custom-option" data-option="custom">
+                                <h3>Custom</h3>
+                                <div class="gg-option gg-custom-option" data-category="custom" data-option="custom"> <!-- Added category -->
                                     <span class="gg-option-title">Use Custom Instruction Below</span>
                                 </div>
                                 <textarea id="gg-custom-edit-command" placeholder="Enter custom rewrite instruction here...">${this.lastCustomCommand}</textarea>
@@ -140,114 +149,167 @@ export class EditIntrosPopup {
                         </div>
                         <div class="gg-popup-footer">
                             <button id="ggCancelEditIntros" class="gg-button gg-button-secondary">Cancel</button>
-                            <button id="ggApplyEditIntros" class="gg-button gg-button-primary">Apply</button>
+                            <button id="ggMakeNewIntro" class="gg-button gg-button-primary">Make New Intro</button>
+                            <button id="ggApplyEditIntros" class="gg-button gg-button-primary">Edit Intro</button>
                         </div>
                     </div>
                 </div>
             `;
-            
+
             // Append to body
             const popupContainer = document.createElement('div');
             popupContainer.innerHTML = popupHtml;
             document.body.appendChild(popupContainer.firstElementChild);
         }
-        
+
         // Get the popup element reference
         this.popupElement = document.getElementById('editIntrosPopup');
-        
+
         // Setup event listeners
         this.setupEventListeners();
-        
+
         this.initialized = true;
     }
 
     /**
-     * Setup event listeners for the popup
+     * Setup event listeners for the popup elements
      */
     setupEventListeners() {
+        if (!this.popupElement) return;
+
         const closeButton = this.popupElement.querySelector('.gg-popup-close');
         const cancelButton = this.popupElement.querySelector('#ggCancelEditIntros');
         const applyButton = this.popupElement.querySelector('#ggApplyEditIntros');
-        const options = this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option)');
+        const makeNewIntroButton = this.popupElement.querySelector('#ggMakeNewIntro');
+        const options = this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option)'); // Exclude custom
         const suboptions = this.popupElement.querySelectorAll('.gg-suboption');
         const customOption = this.popupElement.querySelector('.gg-custom-option');
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
+        // Close/Cancel Actions
         closeButton.addEventListener('click', () => this.close());
         cancelButton.addEventListener('click', () => this.close());
+
+        // Apply/Make New Actions
         applyButton.addEventListener('click', () => this.applyChanges());
+        makeNewIntroButton.addEventListener('click', () => this.makeNewIntro());
+
+        // --- Category Option/Suboption Click Logic ---
+        const handleCategorySelection = (element) => {
+            const category = element.dataset.category;
+            const value = element.dataset.value || element.dataset.option; // Use data-value for suboptions, data-option for options
+            
+            // Deselect other options *within the same category*
+            this.popupElement.querySelectorAll(`[data-category="${category}"]`).forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Select the clicked option
+            element.classList.add('selected');
+            // If it's a suboption, also mark its parent option visually (optional, for clarity)
+            if (element.classList.contains('gg-suboption')) {
+                 element.closest('.gg-option')?.classList.add('selected');
+            }
+
+            // Update state
+            this.selectedOptions[category] = value;
+            this.isCustomSelected = false;
+
+            // Deselect custom option visually
+            customOption.classList.remove('selected');
+            console.log('Selected Options:', this.selectedOptions);
+        };
 
         options.forEach(option => {
-            option.addEventListener('click', () => {
-                if (option.querySelector('.gg-suboptions')) {
-                    return;
-                }
-                
-                this.deselectAllPresets();
-                customOption.classList.remove('selected');
-                
-                option.classList.add('selected');
-                this.selectedOption = option.dataset.option;
-            });
+            // Handle clicks on main options that DON'T have suboptions
+            if (!option.querySelector('.gg-suboptions')) {
+                option.addEventListener('click', (event) => {
+                    // Prevent triggering if click was on the suboptions container itself
+                    if (event.target.closest('.gg-suboptions')) return; 
+                    handleCategorySelection(option);
+                 });
+            }
+            // We don't need listeners on parent options with suboptions, only the suboptions themselves
         });
 
         suboptions.forEach(suboption => {
-            suboption.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
-                this.deselectAllPresets();
-                customOption.classList.remove('selected');
-
-                suboption.classList.add('selected');
-                this.selectedOption = suboption.dataset.value;
-                
-                // Optional: Close submenu after selection if desired
-                // setTimeout(() => { suboption.closest('.gg-suboptions').style.display = 'none'; }, 200);
+            suboption.addEventListener('click', () => {
+                handleCategorySelection(suboption);
             });
         });
 
+        // --- Custom Option Click Logic ---
         customOption.addEventListener('click', () => {
-            this.deselectAllPresets();
+            // Deselect all category options
+            this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option), .gg-suboption').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Reset category selections in state
+            Object.keys(this.selectedOptions).forEach(key => {
+                this.selectedOptions[key] = null;
+            });
+
+            // Select custom option
             customOption.classList.add('selected');
-            this.selectedOption = 'custom';
-        });
-        
-        customCommandTextarea.addEventListener('input', () => {
-            this.lastCustomCommand = customCommandTextarea.value;
-            if (this.lastCustomCommand.trim() !== '') {
-                sessionStorage.setItem('gg_lastCustomCommand', this.lastCustomCommand);
-            } else {
-                sessionStorage.removeItem('gg_lastCustomCommand');
-            }
+            this.isCustomSelected = true;
+            console.log('Custom Selected. Options:', this.selectedOptions);
         });
 
-        this.restoreSelectionState();
+        // --- Custom Textarea Input Logic ---
+        customCommandTextarea.addEventListener('input', () => {
+             // Automatically select 'Custom' if the user types in the textarea
+            if (!this.isCustomSelected) {
+                customOption.click(); // Simulate a click on the custom option
+            }
+        });
     }
 
     deselectAllPresets() {
         this.popupElement.querySelectorAll('.gg-option:not(.gg-custom-option), .gg-suboption').forEach(el => {
             el.classList.remove('selected');
         });
-        if (this.selectedOption !== 'custom') { 
-             this.selectedOption = null;
-        }
+        Object.keys(this.selectedOptions).forEach(key => {
+            this.selectedOptions[key] = null;
+        });
+        this.isCustomSelected = false;
     }
 
     restoreSelectionState() {
         const customOption = this.popupElement.querySelector('.gg-custom-option');
-        if (this.selectedOption) {
-            if (this.selectedOption === 'custom') {
-                customOption.classList.add('selected');
-            } else {
-                const selectedElement = this.popupElement.querySelector(`[data-option="${this.selectedOption}"], [data-value="${this.selectedOption}"]`);
+        if (this.isCustomSelected) {
+            customOption.classList.add('selected');
+        } else {
+            Object.keys(this.selectedOptions).forEach(key => {
+                const selectedElement = this.popupElement.querySelector(`[data-option="${key}"], [data-value="${this.selectedOptions[key]}"]`);
                 if (selectedElement) {
                     selectedElement.classList.add('selected');
                 }
-                customOption.classList.remove('selected'); 
-            }
-        } else {
-             customOption.classList.remove('selected'); 
+            });
+            customOption.classList.remove('selected'); 
         }
+    }
+
+    /**
+     * Resets the selection state both visually and in the internal state object,
+     * but preserves the custom command text.
+     */
+    _resetSelections() {
+        // Reset state variables
+        this.isCustomSelected = false;
+        Object.keys(this.selectedOptions).forEach(key => {
+            this.selectedOptions[key] = null;
+        });
+
+        // Reset visual state
+        this.popupElement.querySelectorAll('.gg-option.selected, .gg-suboption.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        // Ensure custom is visually deselected too
+        this.popupElement.querySelector('.gg-custom-option')?.classList.remove('selected');
+        
+        console.log('Selections reset.');
+        // NOTE: We intentionally do NOT clear the custom command textarea here.
     }
 
     /**
@@ -272,7 +334,7 @@ export class EditIntrosPopup {
         if (this.popupElement) {
             this.popupElement.style.display = 'none';
         }
-        this.selectedOption = null;
+        this.deselectAllPresets();
     }
 
     /**
@@ -282,31 +344,39 @@ export class EditIntrosPopup {
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
-        if (this.selectedOption === 'custom') {
+        // --- Build Instruction --- 
+        if (this.isCustomSelected) {
             const customCommand = customCommandTextarea.value.trim();
             if (customCommand === '') {
-                alert('Please enter an instruction in the Custom Command text area.');
-                return; 
+                alert('Custom option is selected, but the instruction text area is empty.');
+                return;
             }
             instruction = customCommand;
             console.log('[GuidedGenerations] Applying custom instruction.');
-            sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
-        } else if (this.selectedOption) {
-            instruction = EDIT_INTROS_OPTIONS[this.selectedOption];
-            if (!instruction) {
-                console.error(`[GuidedGenerations] No instruction found for preset option: ${this.selectedOption}`);
-                alert('Selected preset option is invalid. Please try again.');
-                return; 
-            }
-             console.log(`[GuidedGenerations] Applying preset: ${this.selectedOption}`);
+            // Keep last custom command saving logic if desired
+             sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
         } else {
-            alert('Please select an edit option or choose Custom and enter an instruction.');
-            return; 
+            const selectedInstructions = [];
+            // Combine instructions from selected categories
+            Object.keys(this.selectedOptions).forEach(category => {
+                const selectedKey = this.selectedOptions[category];
+                if (selectedKey && EDIT_INTROS_OPTIONS[selectedKey]) {
+                    selectedInstructions.push(EDIT_INTROS_OPTIONS[selectedKey]);
+                }
+            });
+            
+            if (selectedInstructions.length === 0) {
+                 alert('Please select at least one category option, or choose Custom and enter an instruction.');
+                 return; 
+            }
+            instruction = selectedInstructions.join('. '); // Join instructions with a period and space
+            console.log(`[GuidedGenerations] Applying combined presets: ${instruction}`);
         }
 
         const textareaElement = document.getElementById('send_textarea');
-        const customEdit = textareaElement ? textareaElement.value.trim() : ''; 
+        const customEdit = textareaElement ? textareaElement.value.trim() : '';
 
+        // --- Construct Script (Existing logic, using the new 'instruction') ---
         const scriptPart1 = `
 
             // Editing Intro messages |
@@ -324,7 +394,7 @@ export class EditIntrosPopup {
             /cut 0|
         `;
 
-        // Preset switching logic
+        // --- Preset Switching Logic (Existing logic) ---
         const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
         let presetSwitchStart = '';
         let presetSwitchEnd = '';
@@ -351,24 +421,138 @@ export class EditIntrosPopup {
             presetSwitchEnd = `// Preset switching disabled by setting|`;
         }
 
+        // --- Execute Script (Existing logic) ---
         try {
             const context = getContext();
             await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
             const swipeSuccess = await generateNewSwipe();
             if (swipeSuccess) {
+                // Wait a short moment before executing the final part
+                await new Promise(resolve => setTimeout(resolve, 3000)); 
                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
                 console.log('[GuidedGenerations] Edit Intros script executed successfully.');
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe.');
+                 // Still switch back preset on failure?
+                 await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
+            // Ensure preset is switched back even on error
+            await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
         }
-        
+
+        // Reset selections before closing, preserving custom text
+        this._resetSelections();
+
         if (customEdit && textareaElement) {
             textareaElement.value = '';
         }
         
+        this.close();
+    }
+
+    /**
+     * Creates a new intro based on the selected option or custom instruction.
+     */
+    async makeNewIntro() {
+        console.log('Make New Intro button clicked');
+        let instruction = '';
+        const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
+
+        // --- Build Instruction (Same logic as applyChanges) --- 
+        if (this.isCustomSelected) {
+            const customCommand = customCommandTextarea.value.trim();
+            if (customCommand === '') {
+                alert('Custom option is selected, but the instruction text area is empty.');
+                return;
+            }
+            instruction = customCommand;
+            console.log('[GuidedGenerations] Making new intro with custom instruction.');
+             sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
+        } else {
+            const selectedInstructions = [];
+            // Combine instructions from selected categories
+            Object.keys(this.selectedOptions).forEach(category => {
+                const selectedKey = this.selectedOptions[category];
+                if (selectedKey && EDIT_INTROS_OPTIONS[selectedKey]) {
+                    selectedInstructions.push(EDIT_INTROS_OPTIONS[selectedKey]);
+                }
+            });
+            
+            if (selectedInstructions.length === 0) {
+                 alert('Please select at least one category option, or choose Custom and enter an instruction.');
+                 return; 
+            }
+            instruction = selectedInstructions.join('. '); // Join instructions with a period and space
+            console.log(`[GuidedGenerations] Making new intro with combined presets: ${instruction}`);
+        }
+
+        // --- Construct Modified Script (Existing logic, using new 'instruction') ---
+        const scriptPart1 = `
+            // Making New Intro message |
+            /sys at=0 Making New Intro message |
+
+            // Set the instruction |
+            /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
+
+            // Generate the new intro |
+            /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
+
+        // --- Preset Switching Logic (Existing logic) ---
+        const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
+        let presetSwitchStart = '';
+        let presetSwitchEnd = '';
+        if (usePresetSwitching) {
+            presetSwitchStart = `
+// Get the currently active preset|
+/preset|
+/setvar key=currentPreset {{pipe}} |
++
+// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
+/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
+   // Store the current preset in oldPreset|
+   /setvar key=oldPreset {{getvar::currentPreset}} |
+   // Now switch to GGSytemPrompt|
+   /preset GGSytemPrompt |
+:}| 
+`;
+            presetSwitchEnd = `
+// Switch back to the original preset if it was stored|
+/preset {{getvar::oldPreset}} |
+`;
+        } else {
+            presetSwitchStart = `// Preset switching disabled by setting|`;
+            presetSwitchEnd = `// Preset switching disabled by setting|`;
+        }
+
+        // --- Execute Script (Existing logic) ---
+        try {
+            const context = getContext();
+            await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
+            // Wait a short moment *after* initial commands before generating
+            await new Promise(resolve => setTimeout(resolve, 300)); 
+            const swipeSuccess = await generateNewSwipe();
+            if (swipeSuccess) {
+                // Wait a short moment before switching preset back
+                await new Promise(resolve => setTimeout(resolve, 300)); 
+                // Only need to switch preset back
+                await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+                console.log('[GuidedGenerations] Make New Intro script executed successfully.');
+            } else {
+                console.error('[GuidedGenerations] Failed to generate new swipe for Make New Intro.');
+                // Still switch back preset on failure?
+                 await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+            }
+        } catch (error) {
+            console.error('[GuidedGenerations] Error executing Make New Intro script:', error);
+            // Ensure preset is switched back even on error
+             await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+        }
+
+        // Reset selections before closing, preserving custom text
+        this._resetSelections();
+
         this.close();
     }
 

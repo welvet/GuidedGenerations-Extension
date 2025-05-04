@@ -211,8 +211,6 @@
 .setting_item {
     padding-left: 10px; /* Indent items slightly */
     padding-right: 10px;
-    padding-top: 5px; /* Add some top padding for separation */
-    padding-bottom: 5px; /* Add some bottom padding */
 }
 
 .guide-prompt-overrides-section .setting_item {
@@ -292,22 +290,22 @@
 }
 
 .gg-popup-section {
-    margin-bottom: 20px;
+    margin-bottom: 15px; /* Space between sections */
 }
 
 .gg-popup-section h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.2em;
-    color: var(--SmartThemeEmColor);
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    padding-bottom: 5px;
+    margin-bottom: 8px; /* Space below heading */
+    margin-top: 0; /* Remove default top margin */
+    font-size: 1.1em; /* Slightly larger heading */
+    color: var(--SmartThemeBodyColor); /* Use theme color */
+    border-bottom: 1px solid var(--SmartThemeBorderColor); /* Optional separator */
+    padding-bottom: 4px; /* Space above border */
 }
 
 .gg-option-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    display: flex; /* Arrange options in a row */
+    flex-wrap: wrap; /* Allow options to wrap */
+    gap: 8px; /* Space between options */
 }
 
 .gg-option {
