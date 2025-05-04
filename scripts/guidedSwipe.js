@@ -224,7 +224,7 @@ const guidedSwipe = async () => {
             // Use the currentInjectionRole retrieved above
             const stscriptCommand = 
                 `// Guided Swipe logic|
-                /inject id=instruct position=before_char ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
+                /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
                 `;
             
             // Get context and execute directly
@@ -271,7 +271,7 @@ const guidedSwipe = async () => {
             // Clean up potentially failed injection attempt and restore input before returning
             jQueryRef("#send_textarea").val(originalInput).trigger('input');
             // Use the correct key for deletion as well
-            await executeSTScriptCommand('/inject id=instruct delete');
+            await executeSTScriptCommand('/flushinject id=instruct');
             return; // Stop execution
         }
 
@@ -307,7 +307,7 @@ const guidedSwipe = async () => {
         }
         // Clean up injection using the correct key
         console.log('[GuidedGenerations][Swipe] Cleaning up injection (finally block)');
-        await executeSTScriptCommand('/inject id=instruct delete'); // Already using 'instruct' ID here, which seems correct
+        await executeSTScriptCommand('/flushinject id=instruct'); // Already using 'instruct' ID here, which seems correct
     }
 };
 
