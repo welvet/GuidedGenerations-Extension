@@ -378,6 +378,9 @@ export class EditIntrosPopup {
                 this._setLoading(false);
                 return;
             }
+            instruction = customCommand;
+            console.log('[GuidedGenerations] Applying custom instruction.');
+            sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
             // Combine instructions from selected categories
@@ -393,6 +396,8 @@ export class EditIntrosPopup {
                  this._setLoading(false);
                  return; 
             }
+            instruction = selectedInstructions.join('. '); // Join instructions with a period and space
+            console.log(`[GuidedGenerations] Applying combined presets: ${instruction}`);
         }
 
         const textareaElement = document.getElementById('send_textarea');
@@ -492,6 +497,9 @@ export class EditIntrosPopup {
                 this._setLoading(false);
                 return;
             }
+            instruction = customCommand;
+            console.log('[GuidedGenerations] Making new intro with custom instruction.');
+            sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
             // Combine instructions from selected categories
@@ -507,6 +515,8 @@ export class EditIntrosPopup {
                  this._setLoading(false);
                  return; 
             }
+            instruction = selectedInstructions.join('. '); // Join instructions with a period and space
+            console.log(`[GuidedGenerations] Making new intro with combined presets: ${instruction}`);
         }
 
         // --- Construct Modified Script (Existing logic, using new 'instruction') ---
@@ -518,8 +528,7 @@ export class EditIntrosPopup {
             /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
 
             // Generate the new intro |
-            /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | 
-            /listinjects|`;
+            /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
         const scriptPart2 = `/cut 0|`;
 
         // --- Preset Switching Logic (Existing logic) ---
