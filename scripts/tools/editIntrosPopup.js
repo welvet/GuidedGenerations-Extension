@@ -48,6 +48,8 @@ export class EditIntrosPopup {
         this.popupElement = null;
         this.initialized = false;
         this.lastCustomCommand = sessionStorage.getItem('gg_lastCustomCommand') || ''; // Load last command
+        // Track how many times applyChanges is called
+        this.applyChangesCount = 0;
     }
 
     /**
@@ -313,6 +315,26 @@ export class EditIntrosPopup {
     }
 
     /**
+     * Show or hide loading indicator by disabling buttons and updating text.
+     */
+    _setLoading(isLoading) {
+        const applyBtn = this.popupElement.querySelector('#ggApplyEditIntros');
+        const makeBtn = this.popupElement.querySelector('#ggMakeNewIntro');
+        const cancelBtn = this.popupElement.querySelector('#ggCancelEditIntros');
+        if (applyBtn) {
+            applyBtn.disabled = isLoading;
+            applyBtn.textContent = isLoading ? 'Loading...' : 'Edit Intro';
+        }
+        if (makeBtn) {
+            makeBtn.disabled = isLoading;
+            makeBtn.textContent = isLoading ? 'Loading...' : 'Make New Intro';
+        }
+        if (cancelBtn) {
+            cancelBtn.disabled = isLoading;
+        }
+    }
+
+    /**
      * Open the popup
      */
     open() {
@@ -341,6 +363,10 @@ export class EditIntrosPopup {
      * Apply the selected changes
      */
     async applyChanges() {
+        // Increment and log invocation count
+        this.applyChangesCount++;
+        console.log(`[GuidedGenerations] applyChanges invocation #${this.applyChangesCount}`);
+        this._setLoading(true);
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
@@ -349,12 +375,12 @@ export class EditIntrosPopup {
             const customCommand = customCommandTextarea.value.trim();
             if (customCommand === '') {
                 alert('Custom option is selected, but the instruction text area is empty.');
+                this._setLoading(false);
                 return;
             }
             instruction = customCommand;
             console.log('[GuidedGenerations] Applying custom instruction.');
-            // Keep last custom command saving logic if desired
-             sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
+            sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
             // Combine instructions from selected categories
@@ -367,6 +393,7 @@ export class EditIntrosPopup {
             
             if (selectedInstructions.length === 0) {
                  alert('Please select at least one category option, or choose Custom and enter an instruction.');
+                 this._setLoading(false);
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
@@ -390,9 +417,7 @@ export class EditIntrosPopup {
             /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
             /inject id=instruct position=chat ephemeral=true depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] | `;
 
-        const scriptPart2 = `
-            /cut 0|
-        `;
+        const scriptPart2 = `/cut 0|`;
 
         // --- Preset Switching Logic (Existing logic) ---
         const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
@@ -424,6 +449,8 @@ export class EditIntrosPopup {
         // --- Execute Script (Existing logic) ---
         try {
             const context = getContext();
+            // Log the outgoing Editing Intro script for debugging
+            console.log('[GuidedGenerations] Sending Editing Intro scriptPart1:', scriptPart1);
             await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
             const swipeSuccess = await generateNewSwipe();
             if (swipeSuccess) {
@@ -434,16 +461,17 @@ export class EditIntrosPopup {
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe.');
                  // Still switch back preset on failure?
-                 await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
             // Ensure preset is switched back even on error
-            await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+            await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
         }
 
         // Reset selections before closing, preserving custom text
         this._resetSelections();
+        this._setLoading(false);
 
         if (customEdit && textareaElement) {
             textareaElement.value = '';
@@ -456,6 +484,7 @@ export class EditIntrosPopup {
      * Creates a new intro based on the selected option or custom instruction.
      */
     async makeNewIntro() {
+        this._setLoading(true);
         console.log('Make New Intro button clicked');
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
@@ -465,11 +494,12 @@ export class EditIntrosPopup {
             const customCommand = customCommandTextarea.value.trim();
             if (customCommand === '') {
                 alert('Custom option is selected, but the instruction text area is empty.');
+                this._setLoading(false);
                 return;
             }
             instruction = customCommand;
             console.log('[GuidedGenerations] Making new intro with custom instruction.');
-             sessionStorage.setItem('gg_lastCustomCommand', customCommand); 
+            sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
             // Combine instructions from selected categories
@@ -482,6 +512,7 @@ export class EditIntrosPopup {
             
             if (selectedInstructions.length === 0) {
                  alert('Please select at least one category option, or choose Custom and enter an instruction.');
+                 this._setLoading(false);
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
@@ -498,6 +529,7 @@ export class EditIntrosPopup {
 
             // Generate the new intro |
             /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
+        const scriptPart2 = `/cut 0|`;
 
         // --- Preset Switching Logic (Existing logic) ---
         const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
@@ -529,6 +561,8 @@ export class EditIntrosPopup {
         // --- Execute Script (Existing logic) ---
         try {
             const context = getContext();
+            // Debug: log outgoing Make New Intro script for clarity
+            console.log('[GuidedGenerations] Sending Make New Intro scriptPart1:', scriptPart1);
             await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
             // Wait a short moment *after* initial commands before generating
             await new Promise(resolve => setTimeout(resolve, 300)); 
@@ -537,21 +571,22 @@ export class EditIntrosPopup {
                 // Wait a short moment before switching preset back
                 await new Promise(resolve => setTimeout(resolve, 300)); 
                 // Only need to switch preset back
-                await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+                await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
                 console.log('[GuidedGenerations] Make New Intro script executed successfully.');
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe for Make New Intro.');
                 // Still switch back preset on failure?
-                 await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Make New Intro script:', error);
             // Ensure preset is switched back even on error
-             await context.executeSlashCommandsWithOptions(presetSwitchEnd, { showOutput: false });
+             await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
         }
 
         // Reset selections before closing, preserving custom text
         this._resetSelections();
+        this._setLoading(false);
 
         this.close();
     }

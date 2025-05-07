@@ -273,7 +273,7 @@ const guidedSwipe = async () => {
             // Clean up potentially failed injection attempt and restore input before returning
             jQueryRef("#send_textarea").val(originalInput).trigger('input');
             // Use the correct key for deletion as well
-            await executeSTScriptCommand('/flushinject id=instruct');
+            await executeSTScriptCommand('/flushinject instruct');
             return; // Stop execution
         }
 
@@ -309,7 +309,7 @@ const guidedSwipe = async () => {
         }
         // Clean up injection using the correct key
         console.log('[GuidedGenerations][Swipe] Cleaning up injection (finally block)');
-        await executeSTScriptCommand('/flushinject id=instruct'); // Already using 'instruct' ID here, which seems correct
+        await executeSTScriptCommand('/flushinject instruct'); // Already using 'instruct' ID here, which seems correct
     }
 };
 
