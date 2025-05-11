@@ -208,6 +208,18 @@ const guidedSwipe = async () => {
     }
     const originalInput = textarea.value; // Get current input
 
+    // If no input, skip injection and do a plain swipe
+    if (!originalInput.trim()) {
+        console.log("[GuidedGenerations][Swipe] No input detected, performing plain swipe.");
+        const swipeSuccess = await generateNewSwipe();
+        if (swipeSuccess) {
+            console.log("[GuidedGenerations][Swipe] Swipe finished successfully.");
+        } else {
+            console.error("[GuidedGenerations][Swipe] Swipe failed.");
+        }
+        return;
+    }
+
     // Get the LATEST injection role setting HERE
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system'; // Get the role setting
 
@@ -251,8 +263,7 @@ const guidedSwipe = async () => {
 
         for (let i = 0; i < maxAttempts; i++) {
             const currentContext = SillyTavern.getContext(); // Get fresh context each time
-            // Check if the key exists in the extensionPrompts OBJECT - Use the correct key!
-            if (currentContext.extensionPrompts && 'script_inject_instruct' in currentContext.extensionPrompts) {
+            if (currentContext.chatMetadata?.script_injects?.instruct) {
                 console.log(`[GuidedGenerations][Swipe] Injection found after attempt ${i + 1}.`);
                 injectionFound = true;
                 break; // Exit loop once found
@@ -267,9 +278,9 @@ const guidedSwipe = async () => {
 
         // If injection was never found after all attempts
         if (!injectionFound) {
-            const errorMsg = "[GuidedGenerations][Swipe] Critical Error: Guided instruction injection ('script_inject_instruct') failed to appear in context after multiple checks.";
+            const errorMsg = "[GuidedGenerations][Swipe] Critical Error: Guided instruction injection ('instruct') failed to appear in chatMetadata.script_injects after multiple checks.";
             console.error(errorMsg);
-            alert("Guided Swipe Error: Could not verify instruction injection ('script_inject_instruct'). Aborting swipe generation.");
+            alert("Guided Swipe Error: Could not verify instruction injection ('instruct'). Aborting swipe generation.");
             // Clean up potentially failed injection attempt and restore input before returning
             jQueryRef("#send_textarea").val(originalInput).trigger('input');
             // Use the correct key for deletion as well
