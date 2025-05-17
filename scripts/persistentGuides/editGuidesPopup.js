@@ -137,7 +137,7 @@ export class EditGuidesPopup {
             const role = extension_settings[extensionName]?.injectionEndRole ?? 'system';
             const context = SillyTavern.getContext();
             try {
-                await context.executeSlashCommandsWithOptions(`/inject id=custom_${newName} position=chat depth=${newDepth} role=${role} .|`, { showOutput: false });
+                await context.executeSlashCommandsWithOptions(`/inject id=custom_${newName} position=chat scan=true depth=${newDepth} role=${role} .|`, { showOutput: false });
                 const key = `script_inject_custom_${newName}`;
                 this.injectionData[key] = { value: '', depth: newDepth };
                 // Persist new injection
@@ -169,7 +169,7 @@ export class EditGuidesPopup {
             if (!genPrompt) { alert('Gen Prompt required.'); return; }
             const role = extension_settings[extensionName]?.injectionEndRole ?? 'system';
             const context = SillyTavern.getContext();
-            const script = `/gen ${genPrompt} | /inject id=${newName} position=chat depth=${newDepth} role=${role} [Take into special Consideration: {{pipe}}] | /listinjects |`;
+            const script = `/gen ${genPrompt} | /inject id=${newName} position=chat scan=true depth=${newDepth} role=${role} [Take into special Consideration: {{pipe}}] | /listinjects |`;
             try {
                 await context.executeSlashCommandsWithOptions(script, { showOutput: true });
             } catch (err) {

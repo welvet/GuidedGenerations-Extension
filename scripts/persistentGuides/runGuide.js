@@ -48,7 +48,7 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
 /var index=${guideId} x |
 /let y {{pipe}} |
 /var index=value y |
-/inject id=${guideId} position=chat depth=4 [Relevant Informations for portraying characters {{pipe}}] |`;
+/inject id=${guideId} position=chat scan=true depth=4 [Relevant Informations for portraying characters {{pipe}}] |`;
     } else if (previousInjectionAction === 'flush') {
         initCmd = `/flushinject ${guideId} |`;
     }

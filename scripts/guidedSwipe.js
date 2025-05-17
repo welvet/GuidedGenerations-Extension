@@ -236,7 +236,7 @@ const guidedSwipe = async () => {
             // Use the currentInjectionRole retrieved above
             const stscriptCommand = 
                 `// Guided Swipe logic|
-                /inject id=instruct position=chat ephemeral=true depth=0 role=${injectionRole} ${filledPrompt}|
+                /inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}|
                 `;
             
             // Get context and execute directly

@@ -16,7 +16,7 @@ const situationalGuide = async (isAuto = false) => {
 3. Relevant objects, items, or environmental details that could influence interactions
 4. Recent events or topics of conversation (last 10-20 messages)
 Keep the overview factual and neutral without speculation. Format in clear paragraphs.] |`;
-    const finalCommand = `/inject id=situation position=chat depth=3 [Current Situation: {{pipe}}] |`;
+    const finalCommand = `/inject id=situation position=chat scan=true depth=3 [Current Situation: {{pipe}}] |`;
     return await runGuideScript({
         guideId: 'situational',
         genCommandSuffix,

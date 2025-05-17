@@ -414,8 +414,8 @@ export class EditIntrosPopup {
             /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
 
             // Rewrite the intro |
-            /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
-            /inject id=instruct position=chat ephemeral=true depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] | `;
+            /inject id=msgtorework position=chat ephemeral=true scan=true depth=0 role=assistant {{lastMessage}}|
+            /inject id=instruct position=chat ephemeral=true scan=true depth=0 [Write msgtorework again but correct it to reflect the following: {{getvar::inp}}. Don't cut the message or make changes besides that.] | `;
 
         const scriptPart2 = `/cut 0|`;
 
@@ -532,7 +532,7 @@ export class EditIntrosPopup {
             /setvar key=inp "${instruction.replace(/"/g, '\\"')}" |
 
             // Generate the new intro |
-            /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
+            /inject id=newIntro position=chat ephemeral=true scan=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
         const scriptPart2 = `/cut 0|`;
 
         // --- Preset Switching Logic ---

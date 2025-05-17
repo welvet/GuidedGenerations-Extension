@@ -14,7 +14,7 @@ const clothesGuide = async (isAuto = false) => {
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
     const genAs = 'as=char';
     const genCommandSuffix = `[OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don't mention People or clothing pieces who are no longer relevant to the ongoing scene.] `;
-    const finalCommand = `/inject id=clothes position=chat depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
+    const finalCommand = `/inject id=clothes position=chat scan=true depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
     return await runGuideScript({
         guideId: 'clothes',
         genAs,
