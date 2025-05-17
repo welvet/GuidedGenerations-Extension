@@ -50,9 +50,17 @@ export const defaultSettings = {
     autoTriggerThinking: false, // Default off
     enableAutoCustomAutoGuide: false, // Default off for auto-triggering the new guide
     showImpersonate1stPerson: true, // Default on
-    showImpersonate2ndPerson: false, // Default on
+    showImpersonate2ndPerson: false, // Default off
     showImpersonate3rdPerson: false, // Default off
     showGuidedContinue: false, // Default off for Guided Continue
+    showGuidedResponse: true, // Default on for Guided Response
+    showGuidedSwipe: true, // Default on for Guided Swipe
+    showSimpleSendButton: false, // Individual tool button toggles
+    showRecoverInputButton: false,
+    showEditIntrosButton: false,
+    showCorrectionsButton: false,
+    showSpellcheckerButton: false,
+    showClearInputButton: false,
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: 'GGSytemPrompt',
     presetState: 'GGSytemPrompt',
@@ -323,9 +331,24 @@ function updateExtensionButtons() {
     actionButtonsContainer.id = 'gg-regular-buttons-container';
     actionButtonsContainer.className = 'gg-regular-buttons-container';
     
-    // Add both containers to the main button container
+    // Create a spacer/QR container that will either hold QR buttons or just provide spacing
+    const qrContainer = document.createElement('div');
+    qrContainer.id = 'gg-qr-container';
+    qrContainer.className = 'gg-qr-container';
+    
+    // Add all three containers to the main button container in the correct order
     buttonContainer.appendChild(menuButtonsContainer);
+    buttonContainer.appendChild(qrContainer);
     buttonContainer.appendChild(actionButtonsContainer);
+    
+    // Check if QR bar exists and move it immediately if possible
+    const qrBar = document.getElementById('qr--bar');
+    if (qrBar) {
+        qrContainer.appendChild(qrBar);
+        console.log(`${extensionName}: QR Bar immediately integrated.`);
+    } else {
+        console.log(`${extensionName}: QR Bar not found, but container is ready.`);
+    }
 
     // --- Create GG Tools Menu Button (Wand) --- 
     let ggMenuButton = document.getElementById('gg_menu_button');
@@ -614,47 +637,238 @@ function updateExtensionButtons() {
     const createActionButton = (id, title, iconClass, actionFunc) => {
         const button = document.createElement('div');
         button.id = id;
-        button.className = `gg-action-button ${iconClass}`;
+        button.className = 'gg-action-button'; // Base class
+        
+        // Split the icon class string by spaces and add each class separately
+        if (iconClass) {
+            const iconClasses = iconClass.split(' ');
+            iconClasses.forEach(cls => {
+                if (cls) button.classList.add(cls);
+            });
+        }
+        
+        button.classList.add('interactable'); // Add interactable class
         button.title = title;
-        button.classList.add('interactable'); // Add interactable class for consistent styling/behavior
-        button.addEventListener('click', actionFunc);
+        
+        button.addEventListener('click', (event) => {
+            actionFunc(event);
+        });
+        
         return button;
     };
-
-    // Conditionally create and add buttons
+    
+    // Create an array to store all buttons that will go in the regular buttons container
+    // We'll add the buttons in the desired order and then add them to the container
+    const regularButtons = [];
+    
+    // Add individual tool buttons first (left side)
+    
+    // Simple Send button
+    if (settings.showSimpleSendButton) {
+        const simpleSendButton = createActionButton('gg_simple_send_button', 'Simple Send', 'fa-solid fa-paper-plane', simpleSend);
+        regularButtons.push(simpleSendButton);
+    }
+    
+    // Recover Input button
+    if (settings.showRecoverInputButton) {
+        const recoverInputButton = createActionButton('gg_recover_input_button', 'Recover Input', 'fa-solid fa-arrow-rotate-left', recoverInput);
+        regularButtons.push(recoverInputButton);
+    }
+    
+    // Edit Intros button
+    if (settings.showEditIntrosButton) {
+        const editIntrosButton = createActionButton('gg_edit_intros_button', 'Edit Intros', 'fa-solid fa-user-edit', async () => {
+            const { default: editIntros } = await import('./scripts/tools/editIntros.js');
+            await editIntros();
+        });
+        regularButtons.push(editIntrosButton);
+    }
+    
+    // Corrections button
+    if (settings.showCorrectionsButton) {
+        const correctionsButton = createActionButton('gg_corrections_button', 'Corrections', 'fa-solid fa-file-alt', async () => {
+            const { default: corrections } = await import('./scripts/tools/corrections.js');
+            await corrections();
+        });
+        regularButtons.push(correctionsButton);
+    }
+    
+    // Spellchecker button
+    if (settings.showSpellcheckerButton) {
+        const spellcheckerButton = createActionButton('gg_spellchecker_button', 'Spellchecker', 'fa-solid fa-spell-check', async () => {
+            const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
+            await spellchecker();
+        });
+        regularButtons.push(spellcheckerButton);
+    }
+    
+    // Clear Input button
+    if (settings.showClearInputButton) {
+        const clearInputButton = createActionButton('gg_clear_input_button', 'Clear Input', 'fa-solid fa-trash', async () => {
+            const { default: clearInput } = await import('./scripts/tools/clearInput.js');
+            await clearInput();
+        });
+        regularButtons.push(clearInputButton);
+    }
+    
+    // Add standard buttons after tool buttons (right side)
+    
+    // Add impersonate buttons
     if (settings.showImpersonate1stPerson) {
         const btn1 = createActionButton('gg_impersonate_button', 'Guided Impersonate (1st Person)', 'fa-solid fa-user', guidedImpersonate);
-        actionButtonsContainer.appendChild(btn1); // Add directly to action buttons container
+        regularButtons.push(btn1);
     }
+    
     if (settings.showImpersonate2ndPerson) {
         const btn2 = createActionButton('gg_impersonate_button_2nd', 'Guided Impersonate (2nd Person)', 'fa-solid fa-user-group', guidedImpersonate2nd);
-        actionButtonsContainer.appendChild(btn2);
+        regularButtons.push(btn2);
     }
+    
     if (settings.showImpersonate3rdPerson) {
         const btn3 = createActionButton('gg_impersonate_button_3rd', 'Guided Impersonate (3rd Person)', 'fa-solid fa-users', guidedImpersonate3rd);
-        actionButtonsContainer.appendChild(btn3);
+        regularButtons.push(btn3);
     }
 
-    // Guided Swipe Button (Restore correct icon)
-    const guidedSwipeButton = createActionButton('gg_swipe_button', 'Guided Swipe', 'fa-solid fa-forward', guidedSwipe); // Correct icon: fa-forward
-    actionButtonsContainer.appendChild(guidedSwipeButton);
+    // Add Guided Swipe Button
+    if (settings.showGuidedSwipe) {
+        const guidedSwipeButton = createActionButton('gg_swipe_button', 'Guided Swipe', 'fa-solid fa-forward', guidedSwipe);
+        regularButtons.push(guidedSwipeButton);
+    }
 
-    // Guided Response Button (Restore correct icon)
-    const guidedResponseButton = createActionButton('gg_response_button', 'Guided Response', 'fa-solid fa-dog', guidedResponse); // Correct icon: fa-dog
-    actionButtonsContainer.appendChild(guidedResponseButton);
+    // Add Guided Response Button
+    if (settings.showGuidedResponse) {
+        const guidedResponseButton = createActionButton('gg_response_button', 'Guided Response', 'fa-solid fa-dog', guidedResponse);
+        regularButtons.push(guidedResponseButton);
+    }
 
+    // Add Guided Continue Button
     if (settings.showGuidedContinue) {
-        const guidedContinueButton = createActionButton('gg_continue_button', 'Guided Continue', 'fa-solid fa-sync-alt', guidedContinue);
-        actionButtonsContainer.appendChild(guidedContinueButton);
+        const guidedContinueButton = createActionButton('gg_continue_button', 'Guided Continue', 'fa-solid fa-arrow-right', guidedContinue);
+        regularButtons.push(guidedContinueButton);
     }
+    
+    // Append all buttons to the container in the correct order
+    regularButtons.forEach(button => {
+        actionButtonsContainer.appendChild(button);
+    });
+}
+
+// Function to integrate QR Bar from other extensions into our container
+function integrateQRBar() {
+    // Since we now always create the container, just focus on moving the QR bar if it exists
+    const qrBar = document.getElementById('qr--bar');
+    if (!qrBar) {
+        // QR Bar doesn't exist yet, will keep checking
+        return false;
+    }
+
+    // Check if QR Bar is already in our container
+    const qrContainer = document.getElementById('gg-qr-container');
+    if (!qrContainer) {
+        console.log(`${extensionName}: QR container not found, this shouldn't happen.`);
+        return false;
+    }
+    
+    // If the QR bar is already in our container, we're done
+    if (qrBar.parentElement === qrContainer) {
+        // Already integrated
+        return true;
+    }
+
+    try {
+        // Move the QR Bar to our container
+        qrContainer.appendChild(qrBar);
+        console.log(`${extensionName}: Successfully moved QR Bar into our container.`);
+        return true;
+    } catch (error) {
+        console.error(`${extensionName}: Error moving QR Bar:`, error);
+        return false;
+    }
+}
+
+// Setup a polling mechanism to integrate QR Bar when it appears
+function startQRBarIntegration() {
+    console.log(`${extensionName}: Starting QR Bar integration monitor...`);
+    
+    // Try to integrate immediately
+    let integrated = integrateQRBar();
+    
+    // If not successful, set up a polling mechanism
+    if (!integrated) {
+        const integrationInterval = setInterval(() => {
+            integrated = integrateQRBar();
+            if (integrated) {
+                clearInterval(integrationInterval);
+                console.log(`${extensionName}: QR Bar integration complete, stopping monitor.`);
+            }
+        }, 1000); // Check every second
+        
+        // Stop checking after 30 seconds if not found
+        setTimeout(() => {
+            if (!integrated) {
+                clearInterval(integrationInterval);
+                console.log(`${extensionName}: QR Bar integration timed out after 30 seconds.`);
+            }
+        }, 30000);
+    }
+}
+
+// Set up a more aggressive and robust mutation observer to detect when the QR bar appears
+function setupQRMutationObserver() {
+    console.log(`${extensionName}: Setting up enhanced QR Bar integration observer...`);
+    
+    // Create a timer that will periodically try to integrate the QR bar
+    const integrationTimer = setInterval(() => {
+        const integrated = integrateQRBar();
+        // Stop the timer after 30 seconds regardless to avoid ongoing polling
+        setTimeout(() => {
+            clearInterval(integrationTimer);
+            console.log(`${extensionName}: Stopping automatic QR integration attempts.`);
+        }, 30000);
+    }, 1000); // Try every second
+    
+    // Set up a document-wide mutation observer to catch the QR bar whenever it appears
+    setTimeout(() => {
+        // Watch the entire document for changes
+        const observer = new MutationObserver((mutations) => {
+            // Check if any of the mutations involve the qr--bar being added
+            const shouldTryIntegrate = mutations.some(mutation => {
+                // Check added nodes
+                if (mutation.addedNodes.length) {
+                    return Array.from(mutation.addedNodes).some(node => {
+                        if (node.id === 'qr--bar') return true;
+                        if (node.querySelector && node.querySelector('#qr--bar')) return true;
+                        return false;
+                    });
+                }
+                return false;
+            });
+            
+            if (shouldTryIntegrate) {
+                integrateQRBar();
+            }
+        });
+        
+        // Observe the whole document with a focus on childList and subtree
+        observer.observe(document.body, { 
+            childList: true, 
+            subtree: true 
+        });
+        
+        console.log(`${extensionName}: Set up enhanced mutation observer for QR Bar integration.`);
+    }, 1000); // Start observing after a short delay to allow the page to load
 }
 
 // Initial setup function
 function setup() {
-    // No need to call loadSettings here, loadSettingsPanel handles it
-
-    // Add Guide Buttons
+    // Load extension settings
+    loadSettings();
+    // Initial UI update - executes after settings are verified loaded
     updateExtensionButtons(); // Initial button creation/update
+    // Start the QR Bar integration
+    startQRBarIntegration();
+    // Setup mutation observer
+    setupQRMutationObserver();
 }
 
 // --- Preset Installation ---
@@ -777,6 +991,20 @@ $(document).ready(function() {
     }, 1000);
     // Attempt to install the preset (can run relatively early)
     installPreset();
+    
+    // Also set up a mutation observer to detect when the QR bar might be added/removed
+    const observer = new MutationObserver(() => {
+        integrateQRBar();
+    });
+    
+    // Start observing after a delay to ensure main UI is loaded
+    setTimeout(() => {
+        const sendForm = document.getElementById('send_form');
+        if (sendForm) {
+            observer.observe(sendForm, { childList: true, subtree: true });
+            console.log(`${extensionName}: Set up mutation observer for QR Bar integration.`);
+        }
+    }, 2000);
 });
 
 // Export settings helpers for settingsPanel.js import

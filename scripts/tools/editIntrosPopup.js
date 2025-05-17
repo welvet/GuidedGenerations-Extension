@@ -419,22 +419,26 @@ export class EditIntrosPopup {
 
         const scriptPart2 = `/cut 0|`;
 
-        // --- Preset Switching Logic (Existing logic) ---
-        const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
+        // --- Preset Switching Logic ---
+        const introPresetSettingKey = 'presetEditIntros'; // CORRECTED: Setting key for the Edit Intros preset
+        const targetPresetNameRaw = extension_settings[extensionName]?.[introPresetSettingKey] ?? '';
+        const targetPresetName = targetPresetNameRaw.trim();
+
         let presetSwitchStart = '';
         let presetSwitchEnd = '';
-        if (usePresetSwitching) {
+
+        if (targetPresetName) { // Only switch if a target preset name is configured and not empty
             presetSwitchStart = `
 // Get the currently active preset|
 /preset|
 /setvar key=currentPreset {{pipe}} |
 +
-// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
+// If current preset is already ${targetPresetName}, do NOT overwrite oldPreset|
+/if left={{getvar::currentPreset}} rule=neq right="${targetPresetName}" {: 
    // Store the current preset in oldPreset|
    /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to GGSytemPrompt|
-   /preset GGSytemPrompt |
+   // Now switch to ${targetPresetName}|
+   /preset ${targetPresetName} |
 :}| 
 `;
             presetSwitchEnd = `
@@ -442,8 +446,8 @@ export class EditIntrosPopup {
 /preset {{getvar::oldPreset}} |
 `;
         } else {
-            presetSwitchStart = `// Preset switching disabled by setting|`;
-            presetSwitchEnd = `// Preset switching disabled by setting|`;
+            presetSwitchStart = `// No preset configured for Edit Intros or preset switching disabled.|`;
+            presetSwitchEnd = `// No preset configured for Edit Intros or preset switching disabled.|`;
         }
 
         // --- Execute Script (Existing logic) ---
@@ -531,22 +535,26 @@ export class EditIntrosPopup {
             /inject id=newIntro position=chat ephemeral=true depth=0 [Write the intro based on the following description: {{getvar::inp}}] | `;
         const scriptPart2 = `/cut 0|`;
 
-        // --- Preset Switching Logic (Existing logic) ---
-        const usePresetSwitching = extension_settings[extensionName]?.useGGSytemPreset ?? true;
+        // --- Preset Switching Logic ---
+        const introPresetSettingKey = 'presetEditIntros'; // CORRECTED: Setting key for the Edit Intros preset
+        const targetPresetNameRaw = extension_settings[extensionName]?.[introPresetSettingKey] ?? '';
+        const targetPresetName = targetPresetNameRaw.trim();
+
         let presetSwitchStart = '';
         let presetSwitchEnd = '';
-        if (usePresetSwitching) {
+
+        if (targetPresetName) { // Only switch if a target preset name is configured and not empty
             presetSwitchStart = `
 // Get the currently active preset|
 /preset|
 /setvar key=currentPreset {{pipe}} |
 +
-// If current preset is already GGSytemPrompt, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="GGSytemPrompt" {: 
+// If current preset is already ${targetPresetName}, do NOT overwrite oldPreset|
+/if left={{getvar::currentPreset}} rule=neq right="${targetPresetName}" {: 
    // Store the current preset in oldPreset|
    /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to GGSytemPrompt|
-   /preset GGSytemPrompt |
+   // Now switch to ${targetPresetName}|
+   /preset ${targetPresetName} |
 :}| 
 `;
             presetSwitchEnd = `
@@ -554,8 +562,8 @@ export class EditIntrosPopup {
 /preset {{getvar::oldPreset}} |
 `;
         } else {
-            presetSwitchStart = `// Preset switching disabled by setting|`;
-            presetSwitchEnd = `// Preset switching disabled by setting|`;
+            presetSwitchStart = `// No preset configured for Edit Intros or preset switching disabled.|`;
+            presetSwitchEnd = `// No preset configured for Edit Intros or preset switching disabled.|`;
         }
 
         // --- Execute Script (Existing logic) ---
