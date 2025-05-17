@@ -83,7 +83,7 @@ export const defaultSettings = {
     promptThinking: '[OOC: Answer me out of Character! Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
     promptSituational: '[Analyze the chat history and provide a concise summary of current location, present characters, relevant objects, and recent events. Keep factual and neutral. Format in clear paragraphs.] ',
     promptRules: '[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
-    promptCorrections: '[OOC: Do not continue the story do not wrote in character, instead write {{char}}\'s last response again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
+    promptCorrections: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
     promptSpellchecker: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
     promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
     promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
@@ -369,7 +369,6 @@ function updateExtensionButtons() {
         simpleSendMenuItem.href = '#';
         simpleSendMenuItem.className = 'interactable'; // Use interactable class
         simpleSendMenuItem.innerHTML = '<i class="fa-solid fa-paper-plane fa-fw"></i><span data-i18n="Simple Send">Simple Send</span>'; // Add icon + span
-        simpleSendMenuItem.title = "Sends the current input directly to the Chat without triggering a response from the Chatbot.";
         simpleSendMenuItem.addEventListener('click', (event) => {
             console.log(`${extensionName}: Simple Send action clicked.`);
             simpleSend();
@@ -381,7 +380,6 @@ function updateExtensionButtons() {
         recoverInputMenuItem.href = '#';
         recoverInputMenuItem.className = 'interactable'; // Use interactable class
         recoverInputMenuItem.innerHTML = '<i class="fa-solid fa-arrow-rotate-left fa-fw"></i><span data-i18n="Recover Input">Recover Input</span>'; // Add icon + span
-        recoverInputMenuItem.title = "Restores your previously typed input if it was accidentally cleared or overwritten.";
         recoverInputMenuItem.addEventListener('click', (event) => {
             console.log(`${extensionName}: Recover Input action clicked.`);
             recoverInput();
@@ -395,7 +393,6 @@ function updateExtensionButtons() {
         editIntrosMenuItem.href = '#';
         editIntrosMenuItem.className = 'interactable';
         editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
-        editIntrosMenuItem.title = "Opens a popup to edit or regenerate character introductions based on various criteria.";
         editIntrosMenuItem.addEventListener('click', async (event) => {
             console.log(`${extensionName}: Edit Intros action clicked.`);
             const { default: editIntros } = await import('./scripts/tools/editIntros.js');
@@ -409,7 +406,6 @@ function updateExtensionButtons() {
         correctionsMenuItem.href = '#';
         correctionsMenuItem.className = 'interactable';
         correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
-        correctionsMenuItem.title = "Instructs the AI to rewrite its last message, incorporating the corrections or changes you provide in the input field.";
         correctionsMenuItem.addEventListener('click', async (event) => {
             console.log(`${extensionName}: Corrections action clicked.`);
             const { default: corrections } = await import('./scripts/tools/corrections.js');
@@ -423,7 +419,6 @@ function updateExtensionButtons() {
         spellcheckerMenuItem.href = '#';
         spellcheckerMenuItem.className = 'interactable';
         spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
-        spellcheckerMenuItem.title = "Checks and corrects the grammar, punctuation, and flow of the text currently in your input field.";
         spellcheckerMenuItem.addEventListener('click', async (event) => {
             console.log(`${extensionName}: Spellchecker action clicked.`);
             const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
@@ -533,12 +528,11 @@ function updateExtensionButtons() {
         pgToolsMenu.className = 'gg-tools-menu'; // Use same dropdown menu styling
 
         // Add menu items for each persistent guide
-        const createGuideItem = (name, icon, action, description) => { 
+        const createGuideItem = (name, icon, action) => {
             const item = document.createElement('a');
             item.href = '#';
             item.className = 'interactable'; // Use interactable class
             item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`; // Add icon + span
-            item.title = description; 
             item.addEventListener('click', (event) => {
                 console.log(`${extensionName}: ${name} Guide clicked.`);
                 action();
@@ -550,27 +544,27 @@ function updateExtensionButtons() {
 
         // Define the order and details for content guides
         const contentGuides = [
-            { name: 'Situational', icon: 'fa-location-dot', path: './scripts/persistentGuides/situationalGuide.js', description: "Provides a summary of the current location, present characters, relevant objects, and recent events." },
-            { name: 'Thinking', icon: 'fa-brain', path: './scripts/persistentGuides/thinkingGuide.js', description: "Reveals the inner thoughts and motivations of characters in the current scene." },
-            { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js', description: "Generates a description of what each character in the current scene is wearing." },
-            { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js', description: "Describes the current physical state, position, and actions of characters in the scene." },
-            { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js', description: "Lists explicit rules or established facts that characters have learned or follow in the story." },
-            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js', description: "Runs a specific, user-defined custom guide script." },
-            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js', description: "Runs a user-defined custom guide automatically based on triggers or conditions." }
+            { name: 'Situational', icon: 'fa-location-dot', path: './scripts/persistentGuides/situationalGuide.js' },
+            { name: 'Thinking', icon: 'fa-brain', path: './scripts/persistentGuides/thinkingGuide.js' },
+            { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js' },
+            { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js' },
+            { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js' },
+            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js' },
+            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js' }
         ];
 
         // Define the order and details for tool guides
         const toolGuides = [
-            { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js', description: "Displays the content of currently active persistent guides." },
-            { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js', description: "Opens a popup to create, edit, or delete custom persistent guides and their prompts." },
-            { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." }
+            { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js' },
+            { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js' },
+            { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js' }
         ];
 
         // Load the content guides in sequence
         Promise.all(contentGuides.map(guide => {
             return import(guide.path)
                 .then(module => {
-                    const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
+                    const guideItem = createGuideItem(guide.name, guide.icon, module.default);
                     pgToolsMenu.appendChild(guideItem);
                     console.log(`${extensionName}: Added ${guide.name} guide to menu`);
                 })
@@ -587,7 +581,7 @@ function updateExtensionButtons() {
             return Promise.all(toolGuides.map(guide => {
                 return import(guide.path)
                     .then(module => {
-                        const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
+                        const guideItem = createGuideItem(guide.name, guide.icon, module.default);
                         pgToolsMenu.appendChild(guideItem);
                         console.log(`${extensionName}: Added ${guide.name} tool to menu`);
                     })

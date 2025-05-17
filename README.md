@@ -141,3 +141,9 @@ This project is licensed under the GNU General Public License v3.0. See the [LIC
 Contributions are welcome! Submit pull requests or open issues for improvements, features, or documentation. For questions or feedback, open an issue in this repository.
 
 ---
+
+## ❤️ Support the Project
+
+If you find this extension helpful, please consider supporting my work:
+
+- [☕ Buy me a coffee on Ko-fi](https://ko-fi.com/samueras)
