@@ -43,8 +43,8 @@ async function editGuides() {
         // Ensure the popup is initialized (awaits if first time)
         await editGuidesPopup.init(); 
 
-        // Open the popup with the fetched data
-        editGuidesPopup.open(guidePrompts);
+        // Open the popup with the fetched data, explicitly setting customMode to false
+        editGuidesPopup.open(guidePrompts, false);
 
     } catch (error) {
         console.error('[GuidedGenerations] Error in editGuides function:', error);

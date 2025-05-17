@@ -388,10 +388,14 @@
 
 .gg-popup-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-    padding-top: 15px;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
+    justify-content: flex-end; /* Aligns buttons to the right, adjust as needed */
+    gap: 10px; /* Adds some space between buttons */
+    padding-top: 10px; /* Add some space above the buttons */
+}
+
+.gg-popup-footer .gg-button {
+    min-width: 100px; /* Adjust as needed */
 }
 
 .gg-button {

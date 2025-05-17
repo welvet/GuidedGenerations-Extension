@@ -191,26 +191,35 @@ export class EditGuidesPopup {
      * @param {boolean} customMode - Flag for custom guide creation.
      */
     open(injectionData, customMode = false) {
-        this.customMode = customMode;
-        // Refresh context and load persistent injections on every open
-        let dataToShow = {};
-        try {
-            const context = SillyTavern.getContext();
-            const injections = context?.chatMetadata?.script_injects || {};
-            for (const name in injections) {
-                dataToShow[`script_inject_${name}`] = {
-                    value: injections[name].value,
-                    depth: injections[name].depth
-                };
-            }
-        } catch (err) {
-            console.error('[GuidedGenerations] Error loading persistent injections:', err);
-        }
         if (!this.initialized) {
-            this.init().then(() => this._populateAndShow(dataToShow));
-        } else {
-            this._populateAndShow(dataToShow);
+            console.error('[GuidedGenerations] Popup not initialized. Call init() first.');
+            // Optionally, try to initialize now
+            // await this.init(); // This would make open async
+            return;
         }
+        this.customMode = customMode; // Store the mode
+
+        // Populate and show
+        this._populateAndShow(injectionData); 
+
+        // Get references to the elements after _populateAndShow might have created/ensured them
+        const generateButton = this.popupElement.querySelector('#generateGuideButton');
+        const createButton = this.popupElement.querySelector('#createGuideButton');
+        const customCreateSection = this.popupElement.querySelector('.custom-create-section');
+
+        if (generateButton && createButton && customCreateSection) {
+            const displayStyle = this.customMode ? 'inline-block' : 'none'; // For buttons
+            const sectionDisplayStyle = this.customMode ? 'block' : 'none'; // For the section
+
+            generateButton.style.display = displayStyle;
+            createButton.style.display = displayStyle;
+            customCreateSection.style.display = sectionDisplayStyle;
+        } else {
+            console.error('[GuidedGenerations] Critical error: Could not find custom mode UI elements in editGuidesPopup.');
+        }
+
+        this.popupElement.style.display = 'block'; // Show the popup itself
+        this.adjustPopupPosition(); // Adjust position when opened
     }
 
     /**
@@ -244,21 +253,14 @@ export class EditGuidesPopup {
              console.log("[GuidedGenerations] No guides found to populate editor.");
         }
 
-        // Show or hide create row for custom mode
-        const createSection = this.popupElement.querySelector('.custom-create-section');
-        createSection.style.display = this.customMode ? 'block' : 'none';
-
         // Reset textarea and button state
         textareaElement.value = 'Select a guide to see its content...';
         textareaElement.disabled = true;
         saveButton.disabled = true;
 
-        // Show the popup
-        if (this.popupElement) {
-            this.popupElement.style.display = 'block';
-            // Add logic here to check window size and adjust position/size if needed
-            this.adjustPopupPosition();
-        }
+        // Show or hide create row for custom mode
+        const createSection = this.popupElement.querySelector('.custom-create-section');
+        createSection.style.display = this.customMode ? 'block' : 'none';
     }
 
     /**
