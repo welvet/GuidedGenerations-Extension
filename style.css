@@ -19,10 +19,10 @@
 /* Style for the container holding the Guided Generations action buttons (now below input area) */
 .gg-action-buttons-container {
     display: flex; /* Use flex layout */
-    justify-content: space-between; /* Space between menu and action buttons */
     gap: 5px; /* Space between buttons */
     padding: 5px; /* Add some padding */
     width: 100%;
+    flex-wrap: nowrap; /* Prevent wrapping */
 }
 
 /* Container for menu buttons (left side) */
@@ -30,6 +30,9 @@
     display: flex;
     gap: 5px;
     align-items: center;
+    order: 0; /* Place before QR container */
+    flex-shrink: 0; /* Prevent menu buttons from shrinking */
+    flex-grow: 0; /* Prevent menu buttons from growing */
 }
 
 /* Container for regular action buttons (right side) */
@@ -37,7 +40,25 @@
     display: flex;
     gap: 5px;
     align-items: center;
-    margin-left: auto; /* Push to the right */
+    order: 2; /* Place after QR container */
+    flex-shrink: 0; /* Prevent regular buttons from shrinking */
+    flex-grow: 0; /* Prevent regular buttons from growing */
+}
+
+/* Container for the QR bar integration */
+#gg-qr-container {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    margin-right: 10px;
+    order: 1; /* Place after menu buttons */
+    flex-grow: 1; /* Make the QR container fill available space */
+    justify-content: flex-start; /* Align QR items to the left */
+}
+
+/* QR bar styling adjustments */
+#qr--bar {
+    margin-top: 0 !important;
 }
 
 /* Common style for Action Buttons and Menu Button */
@@ -367,10 +388,14 @@
 
 .gg-popup-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-    padding-top: 15px;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
+    justify-content: flex-end; /* Aligns buttons to the right, adjust as needed */
+    gap: 10px; /* Adds some space between buttons */
+    padding-top: 10px; /* Add some space above the buttons */
+}
+
+.gg-popup-footer .gg-button {
+    min-width: 100px; /* Adjust as needed */
 }
 
 .gg-button {

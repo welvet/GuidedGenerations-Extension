@@ -63,9 +63,9 @@ export default async function corrections() {
         ${presetSwitchStartScript}
 
         // Inject assistant message to rework and instructions|
-        /inject id=msgtorework position=chat ephemeral=true depth=0 role=assistant {{lastMessage}}|
+        /inject id=msgtorework position=chat ephemeral=true scan=true depth=0 role=assistant {{lastMessage}}|
         // Inject instructions using user override prompt|
-        /inject id=instruct position=chat ephemeral=true depth=0 ${instructionInjection}|
+        /inject id=instruct position=chat ephemeral=true scan=true depth=0 ${instructionInjection}|
     `;
     
     try {
