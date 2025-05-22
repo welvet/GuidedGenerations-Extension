@@ -38,32 +38,38 @@ const guidedResponse = async () => {
         let characterListJson = '[]'; // Default to empty JSON array
 
         try {
-            // Execute STScript to get comma-separated group members
-            const returnCommand = '/return {{group}}';
-            const result = await context.executeSlashCommandsWithOptions(returnCommand, { showOutput: false });
-            const memberString = result?.pipe?.trim();
+            const currentGroupId = context?.groupId; // Optional chaining for safety
+            const groups = context?.groups;         // Optional chaining for safety
+            let characterNames = [];
 
-            if (memberString) {
-                // Split by comma, trim whitespace, and filter out empty strings
-                const characterNames = memberString.split(',').map(name => name.trim()).filter(name => name);
-                if (characterNames.length > 0) {
-                    // Convert the array to a JSON string for the /buttons command
-                    characterListJson = JSON.stringify(characterNames);
-                    console.log(`[${extensionName}][Response] Generated character list for buttons:`, characterListJson);
-                } else {
-                    console.warn(`[${extensionName}][Response] Processed member string resulted in empty list.`);
+            if (currentGroupId && groups && Array.isArray(groups)) {
+                const currentGroup = groups.find(group => group.id === currentGroupId);
+
+                if (currentGroup && currentGroup.members && Array.isArray(currentGroup.members)) {
+                    characterNames = currentGroup.members.map(member => {
+                        // Remove .png from the end of the member name if present
+                        if (typeof member === 'string' && member.toLowerCase().endsWith('.png')) {
+                            return member.slice(0, -4);
+                        }
+                        return member;
+                    }).filter(name => name); // Filter out any empty names after processing
                 }
+            }
+
+            if (characterNames.length > 0) {
+                // Convert the array to a JSON string for the /buttons command
+                characterListJson = JSON.stringify(characterNames);
             } else {
-                console.warn(`[${extensionName}][Response] /return {{group}} script returned empty or invalid result.`);
+                console.warn(`[${extensionName}][Response] Processed group members resulted in empty list or group not found.`);
             }
         } catch (error) {
-            console.error(`[${extensionName}][Response] Error executing /return {{group}} script or processing result:`, error);
+            console.error(`[${extensionName}][Response] Error processing group members from context:`, error);
         }
 
         if (characterListJson !== '[]') {
             // Pass the generated JSON string to the labels parameter
             stscriptCommand = 
-                `// Group chat logic (JS handled selection list via /return)|
+                `// Group chat logic (JS handled selection list via context)|
 /buttons labels=${characterListJson} "Select member to respond as" |
 /setglobalvar key=selection {{pipe}} |
 /inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt} |
