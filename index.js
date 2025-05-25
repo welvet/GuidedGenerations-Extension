@@ -6,7 +6,7 @@ import { simpleSend } from './scripts/simpleSend.js';
 import { recoverInput } from './scripts/inputRecovery.js';
 import { guidedResponse } from './scripts/guidedResponse.js';
 import { guidedSwipe } from './scripts/guidedSwipe.js';
-import { guidedContinue } from './scripts/guidedContinue.js';
+import { guidedContinue, undoLastGuidedAddition, revertToOriginalGuidedContinue, initGuidedContinueListeners } from './scripts/guidedContinue.js'; // Added initGuidedContinueListeners, undoLastGuidedAddition, revertToOriginalGuidedContinue
 import { guidedImpersonate } from './scripts/guidedImpersonate.js';
 import { guidedImpersonate2nd } from './scripts/guidedImpersonate2nd.js'; // Import 2nd
 import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Import 3rd
@@ -61,6 +61,8 @@ export const defaultSettings = {
     showCorrectionsButton: false,
     showSpellcheckerButton: false,
     showClearInputButton: false,
+    showUndoButton: false, // Default off for Undo Last Addition button
+    showRevertButton: false, // Default off for Revert to Original button
     integrateQrBar: true, // Default on: Toggle for QR bar integration
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: 'GGSytemPrompt',
@@ -437,6 +439,36 @@ function updateExtensionButtons() {
             event.stopPropagation();
         });
 
+        // Add Undo Last Addition menu item
+        const undoMenuItem = document.createElement('a');
+        undoMenuItem.href = '#';
+        undoMenuItem.className = 'interactable';
+        undoMenuItem.innerHTML = '<i class="fa-solid fa-rotate-left fa-fw"></i><span data-i18n="Undo Last Addition">Undo Last Addition</span>';
+        undoMenuItem.title = 'Removes the last segment added by a guided continue action.';
+        undoMenuItem.addEventListener('click', (event) => {
+            console.log(`${extensionName}: Undo Last Addition clicked.`);
+            if (window.GuidedGenerations && typeof window.GuidedGenerations.undoLastGuidedAddition === 'function') {
+                window.GuidedGenerations.undoLastGuidedAddition();
+            }
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // Add Revert to Original Message menu item
+        const revertMenuItem = document.createElement('a');
+        revertMenuItem.href = '#';
+        revertMenuItem.className = 'interactable';
+        revertMenuItem.innerHTML = '<i class="fa-solid fa-history fa-fw"></i><span data-i18n="Revert to Original">Revert to Original</span>';
+        revertMenuItem.title = 'Restores the message to its state before any guided continues were applied.';
+        revertMenuItem.addEventListener('click', (event) => {
+            console.log(`${extensionName}: Revert to Original clicked.`);
+            if (window.GuidedGenerations && typeof window.GuidedGenerations.revertToOriginalGuidedContinue === 'function') {
+                window.GuidedGenerations.revertToOriginalGuidedContinue();
+            }
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
         // Add original items first
         ggToolsMenu.appendChild(simpleSendMenuItem);
         ggToolsMenu.appendChild(recoverInputMenuItem);
@@ -445,6 +477,13 @@ function updateExtensionButtons() {
         const separator = document.createElement('hr');
         separator.className = 'pg-separator';
         ggToolsMenu.appendChild(separator);
+
+        ggToolsMenu.appendChild(undoMenuItem);
+        ggToolsMenu.appendChild(revertMenuItem);
+        // Add a separator
+        const separator2 = document.createElement('hr');
+        separator2.className = 'pg-separator';
+        ggToolsMenu.appendChild(separator2);
         
         // Add new items after the separator
         ggToolsMenu.appendChild(editIntrosMenuItem);
@@ -745,6 +784,18 @@ function updateExtensionButtons() {
         regularButtons.push(guidedContinueButton);
     }
     
+    // Add Undo Last Addition button
+    if (settings.showUndoButton) {
+        const undoButton = createActionButton('gg_undo_button', 'Undo Last Addition', 'fa-solid fa-rotate-left', undoLastGuidedAddition);
+        regularButtons.push(undoButton);
+    }
+    
+    // Add Revert to Original button
+    if (settings.showRevertButton) {
+        const revertButton = createActionButton('gg_revert_button', 'Revert to Original', 'fa-solid fa-history', revertToOriginalGuidedContinue);
+        regularButtons.push(revertButton);
+    }
+    
     // Append all buttons to the container in the correct order
     regularButtons.forEach(button => {
         actionButtonsContainer.appendChild(button);
@@ -897,6 +948,8 @@ function setup() {
     startQRBarIntegration();
     // Setup mutation observer
     setupQRMutationObserver();
+    // Initialize listeners for guided continue functionality
+    initGuidedContinueListeners();
 }
 
 // --- Preset Installation ---
@@ -1011,15 +1064,19 @@ async function installPreset() {
 
 // Run setup after page load
 $(document).ready(function() {
+    const context = getContext(); // Get the context here
+
     setup();
     // Settings Panel Setup (runs with delay to allow main UI to render)
     setTimeout(() => {
         console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
-        loadSettingsPanel();
+        loadSettingsPanel(context); // Pass context
     }, 1000);
     // Attempt to install the preset (can run relatively early)
     installPreset();
     
+    // Initialize other scripts that need context or should run on ready
+    initGuidedSwipe(context); // Pass context
     // Also set up a mutation observer to detect when the QR bar might be added/removed
     const observer = new MutationObserver(() => {
         integrateQRBar();
@@ -1037,3 +1094,13 @@ $(document).ready(function() {
 
 // Export settings helpers for settingsPanel.js import
 export { loadSettings, updateSettingsUI, addSettingsEventListeners };
+
+// Expose functions to the global scope for buttons or STScripts
+window.GuidedGenerations = {
+    simpleSend,
+    guidedSwipe,
+    guidedContinue,
+    undoLastGuidedAddition, // Expose new function
+    revertToOriginalGuidedContinue, // Expose new function
+    guidedResponse,
+};
