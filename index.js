@@ -61,6 +61,7 @@ export const defaultSettings = {
     showCorrectionsButton: false,
     showSpellcheckerButton: false,
     showClearInputButton: false,
+    integrateQrBar: true, // Default on: Toggle for QR bar integration
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: 'GGSytemPrompt',
     presetState: 'GGSytemPrompt',
@@ -341,15 +342,6 @@ function updateExtensionButtons() {
     buttonContainer.appendChild(qrContainer);
     buttonContainer.appendChild(actionButtonsContainer);
     
-    // Check if QR bar exists and move it immediately if possible
-    const qrBar = document.getElementById('qr--bar');
-    if (qrBar) {
-        qrContainer.appendChild(qrBar);
-        console.log(`${extensionName}: QR Bar immediately integrated.`);
-    } else {
-        console.log(`${extensionName}: QR Bar not found, but container is ready.`);
-    }
-
     // --- Create GG Tools Menu Button (Wand) --- 
     let ggMenuButton = document.getElementById('gg_menu_button');
     if (!ggMenuButton) {
@@ -757,39 +749,69 @@ function updateExtensionButtons() {
     regularButtons.forEach(button => {
         actionButtonsContainer.appendChild(button);
     });
+
+    integrateQRBar(); // Ensure QR bar is correctly placed after UI update
 }
 
 // Function to integrate QR Bar from other extensions into our container
 function integrateQRBar() {
-    // Since we now always create the container, just focus on moving the QR bar if it exists
     const qrBar = document.getElementById('qr--bar');
-    if (!qrBar) {
-        // QR Bar doesn't exist yet, will keep checking
-        return false;
-    }
-
-    // Check if QR Bar is already in our container
     const qrContainer = document.getElementById('gg-qr-container');
-    if (!qrContainer) {
-        console.log(`${extensionName}: QR container not found, this shouldn't happen.`);
-        return false;
-    }
-    
-    // If the QR bar is already in our container, we're done
-    if (qrBar.parentElement === qrContainer) {
-        // Already integrated
-        return true;
+    const sendForm = document.getElementById('send_form'); // Common parent for QR bar
+
+    if (!qrBar || !qrContainer) {
+        // QR Bar or our container doesn't exist yet, will keep checking or log error
+        if (!qrBar) return false; // Keep polling if QR bar not found
+        if (!qrContainer) {
+            console.log(`${extensionName}: QR container (gg-qr-container) not found. This shouldn't happen.`);
+            return false;
+        }
     }
 
-    try {
-        // Move the QR Bar to our container
-        qrContainer.appendChild(qrBar);
-        console.log(`${extensionName}: Successfully moved QR Bar into our container.`);
-        return true;
-    } catch (error) {
-        console.error(`${extensionName}: Error moving QR Bar:`, error);
-        return false;
+    const currentSettings = extension_settings[extensionName];
+    if (!currentSettings) {
+        console.log(`${extensionName}: Extension settings not found.`);
+        return false; // Cannot determine integration preference
     }
+
+    if (currentSettings.integrateQrBar) {
+        // Setting wants QR bar IN our container
+        if (qrBar.parentElement !== qrContainer) {
+            try {
+                qrContainer.appendChild(qrBar);
+                console.log(`${extensionName}: Successfully moved QR Bar into gg-qr-container.`);
+            } catch (error) {
+                console.error(`${extensionName}: Error moving QR Bar into gg-qr-container:`, error);
+                return false;
+            }
+        }
+        // Else: it's already in our container, do nothing
+    } else {
+        // Setting wants QR bar OUT of our container
+        if (qrBar.parentElement === qrContainer) {
+            if (sendForm) {
+                try {
+                    // Attempt to move it back to a common parent like send_form
+                    // This might not be its exact original parent, but a sensible default
+                    sendForm.appendChild(qrBar); 
+                    console.log(`${extensionName}: Successfully moved QR Bar out of gg-qr-container (to send_form).`);
+                } catch (error) {
+                    console.error(`${extensionName}: Error moving QR Bar out of gg-qr-container:`, error);
+                    // Fallback: if send_form append fails, at least remove from our container if possible
+                    // though this might leave it orphaned if not handled carefully.
+                    // For now, we'll rely on appendChild to handle reparenting.
+                    return false;
+                }
+            } else {
+                console.warn(`${extensionName}: Could not find 'send_form' to move QR bar back.`);
+                // If send_form doesn't exist, we can't reliably move it back. 
+                // Leaving it in qrContainer might be the lesser evil than orphaning it.
+                // Or, we could try qrContainer.removeChild(qrBar) but this needs a defined destination.
+            }
+        }
+        // Else: it's not in our container, do nothing (it's already where it should be according to this setting)
+    }
+    return true; // Indicates an attempt was made or state is correct
 }
 
 // Setup a polling mechanism to integrate QR Bar when it appears
@@ -862,7 +884,7 @@ function setupQRMutationObserver() {
         });
         
         console.log(`${extensionName}: Set up enhanced mutation observer for QR Bar integration.`);
-    }, 1000); // Start observing after a short delay to allow the page to load
+    }, 1000); // Start observing after a short delay to ensure main UI is loaded
 }
 
 // Initial setup function
