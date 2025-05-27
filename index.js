@@ -365,7 +365,6 @@ function updateExtensionButtons() {
         simpleSendMenuItem.innerHTML = '<i class="fa-solid fa-paper-plane fa-fw"></i><span data-i18n="Simple Send">Simple Send</span>'; // Add icon + span
         simpleSendMenuItem.title = "Sends the current input directly to the Chat without triggering a response from the Chatbot.";
         simpleSendMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Simple Send action clicked.`);
             simpleSend();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -377,7 +376,6 @@ function updateExtensionButtons() {
         recoverInputMenuItem.innerHTML = '<i class="fa-solid fa-arrow-rotate-left fa-fw"></i><span data-i18n="Recover Input">Recover Input</span>'; // Add icon + span
         recoverInputMenuItem.title = "Restores your previously typed input if it was accidentally cleared or overwritten.";
         recoverInputMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Recover Input action clicked.`);
             recoverInput();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -391,7 +389,6 @@ function updateExtensionButtons() {
         editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
         editIntrosMenuItem.title = "Opens a popup to edit or regenerate character introductions based on various criteria.";
         editIntrosMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Edit Intros action clicked.`);
             const { default: editIntros } = await import('./scripts/tools/editIntros.js');
             await editIntros();
             ggToolsMenu.classList.remove('shown');
@@ -405,7 +402,6 @@ function updateExtensionButtons() {
         correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
         correctionsMenuItem.title = "Instructs the AI to rewrite its last message, incorporating the corrections or changes you provide in the input field.";
         correctionsMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Corrections action clicked.`);
             const { default: corrections } = await import('./scripts/tools/corrections.js');
             await corrections();
             ggToolsMenu.classList.remove('shown');
@@ -419,7 +415,6 @@ function updateExtensionButtons() {
         spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
         spellcheckerMenuItem.title = "Checks and corrects the grammar, punctuation, and flow of the text currently in your input field.";
         spellcheckerMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Spellchecker action clicked.`);
             const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
             await spellchecker();
             ggToolsMenu.classList.remove('shown');
@@ -432,7 +427,6 @@ function updateExtensionButtons() {
         clearInputMenuItem.className = 'interactable';
         clearInputMenuItem.innerHTML = '<i class="fa-solid fa-trash fa-fw"></i><span data-i18n="Clear Input">Clear Input</span>';
         clearInputMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Clear Input action clicked.`);
             const { default: clearInput } = await import('./scripts/tools/clearInput.js');
             await clearInput();
             ggToolsMenu.classList.remove('shown');
@@ -446,7 +440,6 @@ function updateExtensionButtons() {
         undoMenuItem.innerHTML = '<i class="fa-solid fa-rotate-left fa-fw"></i><span data-i18n="Undo Last Addition">Undo Last Addition</span>';
         undoMenuItem.title = 'Removes the last segment added by a guided continue action.';
         undoMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Undo Last Addition clicked.`);
             if (window.GuidedGenerations && typeof window.GuidedGenerations.undoLastGuidedAddition === 'function') {
                 window.GuidedGenerations.undoLastGuidedAddition();
             }
@@ -461,7 +454,6 @@ function updateExtensionButtons() {
         revertMenuItem.innerHTML = '<i class="fa-solid fa-history fa-fw"></i><span data-i18n="Revert to Original">Revert to Original</span>';
         revertMenuItem.title = 'Restores the message to its state before any guided continues were applied.';
         revertMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Revert to Original clicked.`);
             if (window.GuidedGenerations && typeof window.GuidedGenerations.revertToOriginalGuidedContinue === 'function') {
                 window.GuidedGenerations.revertToOriginalGuidedContinue();
             }
@@ -497,7 +489,6 @@ function updateExtensionButtons() {
         updateCharacterMenuItem.className = 'interactable';
         updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
         updateCharacterMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Update Character action clicked.`);
             updateCharacter();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -509,7 +500,6 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         ggMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: ggMenuButton clicked.`);
 
             // --- Measure Height Correctly ---
             // Temporarily show the menu off-screen to measure its height
@@ -539,11 +529,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (ggToolsMenu.classList.contains('shown') && !ggMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding menu.`);
                 ggToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created GG Tools menu button.`);
     } 
     // Add menu button to the menu buttons container
     menuButtonsContainer.appendChild(ggMenuButton);
@@ -557,7 +545,6 @@ function updateExtensionButtons() {
         pgMenuButton.className = 'gg-menu-button fa-solid fa-book-open-reader'; // Thinking icon
         pgMenuButton.classList.add('interactable'); // Make sure it has interactable styles
         pgMenuButton.title = 'Persistent Guides';
-        pgMenuButton.style.marginLeft = '5px'; // Add some spacing from the GG Tools button
 
         const pgToolsMenu = document.createElement('div');
         pgToolsMenu.id = 'pg_tools_menu';
@@ -571,7 +558,6 @@ function updateExtensionButtons() {
             item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`; // Add icon + span
             item.title = description; 
             item.addEventListener('click', (event) => {
-                console.log(`${extensionName}: ${name} Guide clicked.`);
                 action();
                 pgToolsMenu.classList.remove('shown');
                 event.stopPropagation();
@@ -603,7 +589,6 @@ function updateExtensionButtons() {
                 .then(module => {
                     const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
                     pgToolsMenu.appendChild(guideItem);
-                    console.log(`${extensionName}: Added ${guide.name} guide to menu`);
                 })
                 .catch(error => console.error(`${extensionName}: Error importing ${guide.name} guide:`, error));
         }))
@@ -612,7 +597,6 @@ function updateExtensionButtons() {
             const separator = document.createElement('hr');
             separator.className = 'pg-separator';
             pgToolsMenu.appendChild(separator);
-            console.log(`${extensionName}: Added separator to menu`);
 
             // Then load the tool guides
             return Promise.all(toolGuides.map(guide => {
@@ -620,7 +604,6 @@ function updateExtensionButtons() {
                     .then(module => {
                         const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
                         pgToolsMenu.appendChild(guideItem);
-                        console.log(`${extensionName}: Added ${guide.name} tool to menu`);
                     })
                     .catch(error => console.error(`${extensionName}: Error importing ${guide.name} tool:`, error));
             }));
@@ -632,7 +615,6 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         pgMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: pgMenuButton clicked.`);
 
             // Temporarily show the menu off-screen to measure its height
             pgToolsMenu.style.visibility = 'hidden'; 
@@ -660,11 +642,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (pgToolsMenu.classList.contains('shown') && !pgMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding persistent guides menu.`);
                 pgToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created Persistent Guides menu button.`);
     } 
     // Add Persistent Guides menu button to the menu buttons container
     menuButtonsContainer.appendChild(pgMenuButton);
@@ -802,6 +782,7 @@ function updateExtensionButtons() {
     });
 
     integrateQRBar(); // Ensure QR bar is correctly placed after UI update
+    updatePersistentGuideCounter(); // Update counter after buttons are set up
 }
 
 // Function to integrate QR Bar from other extensions into our container
@@ -830,7 +811,6 @@ function integrateQRBar() {
         if (qrBar.parentElement !== qrContainer) {
             try {
                 qrContainer.appendChild(qrBar);
-                console.log(`${extensionName}: Successfully moved QR Bar into gg-qr-container.`);
             } catch (error) {
                 console.error(`${extensionName}: Error moving QR Bar into gg-qr-container:`, error);
                 return false;
@@ -845,7 +825,6 @@ function integrateQRBar() {
                     // Attempt to move it back to a common parent like send_form
                     // This might not be its exact original parent, but a sensible default
                     sendForm.appendChild(qrBar); 
-                    console.log(`${extensionName}: Successfully moved QR Bar out of gg-qr-container (to send_form).`);
                 } catch (error) {
                     console.error(`${extensionName}: Error moving QR Bar out of gg-qr-container:`, error);
                     // Fallback: if send_form append fails, at least remove from our container if possible
@@ -867,8 +846,6 @@ function integrateQRBar() {
 
 // Setup a polling mechanism to integrate QR Bar when it appears
 function startQRBarIntegration() {
-    console.log(`${extensionName}: Starting QR Bar integration monitor...`);
-    
     // Try to integrate immediately
     let integrated = integrateQRBar();
     
@@ -878,7 +855,6 @@ function startQRBarIntegration() {
             integrated = integrateQRBar();
             if (integrated) {
                 clearInterval(integrationInterval);
-                console.log(`${extensionName}: QR Bar integration complete, stopping monitor.`);
             }
         }, 1000); // Check every second
         
@@ -886,7 +862,6 @@ function startQRBarIntegration() {
         setTimeout(() => {
             if (!integrated) {
                 clearInterval(integrationInterval);
-                console.log(`${extensionName}: QR Bar integration timed out after 30 seconds.`);
             }
         }, 30000);
     }
@@ -894,15 +869,12 @@ function startQRBarIntegration() {
 
 // Set up a more aggressive and robust mutation observer to detect when the QR bar appears
 function setupQRMutationObserver() {
-    console.log(`${extensionName}: Setting up enhanced QR Bar integration observer...`);
-    
     // Create a timer that will periodically try to integrate the QR bar
     const integrationTimer = setInterval(() => {
         const integrated = integrateQRBar();
         // Stop the timer after 30 seconds regardless to avoid ongoing polling
         setTimeout(() => {
             clearInterval(integrationTimer);
-            console.log(`${extensionName}: Stopping automatic QR integration attempts.`);
         }, 30000);
     }, 1000); // Try every second
     
@@ -933,8 +905,6 @@ function setupQRMutationObserver() {
             childList: true, 
             subtree: true 
         });
-        
-        console.log(`${extensionName}: Set up enhanced mutation observer for QR Bar integration.`);
     }, 1000); // Start observing after a short delay to ensure main UI is loaded
 }
 
@@ -963,7 +933,6 @@ async function installPreset() {
     const presetApiId = 'openai'; 
     // Construct the path relative to the SillyTavern root
     const presetPath = `scripts/extensions/third-party/${extensionName}/${presetFileName}`;
-    console.log(`${extensionName}: Attempting to install ${presetApiId} preset "${presetName}" from ${presetPath}`);
 
     try {
         const response = await fetch(presetPath);
@@ -988,9 +957,6 @@ async function installPreset() {
             return;
         }
 
-        // Use the filename-derived name for checking and saving.
-        console.log(`${extensionName}: Validated internal structure of ${presetFileName} for preset "${presetName}"`);
-
         const presetManager = getPresetManager(presetApiId);
 
         if (!presetManager) {
@@ -1012,8 +978,6 @@ async function installPreset() {
                 // For indexed APIs, we need to get the text of the selected option
                 currentPresetName = $select.find('option:selected').text();
             }
-            
-            console.log(`${extensionName}: Current ${presetApiId} preset: "${currentPresetName}"`);
         } catch(err) {
             console.warn(`${extensionName}: Could not determine current preset: ${err}`);
         }
@@ -1022,13 +986,13 @@ async function installPreset() {
         const existingPreset = presetManager.findPreset(presetName);
 
         if (existingPreset !== undefined && existingPreset !== null) {
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
         } else {
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
             // Save the entire original presetData object, using the filename-derived name.
             // This matches how performMasterImport handles chat completion presets.
             await presetManager.savePreset(presetName, presetData);
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) successfully saved (using full data structure and filename).`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) successfully saved (using full data structure and filename).`);
             
             // If we had a previously selected preset, switch back to it
             if (currentPresetName && currentPresetName !== presetName) {
@@ -1046,7 +1010,7 @@ async function installPreset() {
                                 $select.val($option.val()).trigger('change');
                             }
                         }
-                        console.log(`${extensionName}: Restored previous ${presetApiId} preset: "${currentPresetName}"`);
+                        // console.log(`${extensionName}: Restored previous ${presetApiId} preset: "${currentPresetName}"`);
                     }, 100); // Small delay to ensure the DOM has updated
                 } catch(err) {
                     console.warn(`${extensionName}: Could not restore previous preset: ${err}`);
@@ -1063,13 +1027,17 @@ async function installPreset() {
 }
 
 // Run setup after page load
-$(document).ready(function() {
+$(document).ready(async function () {
     const context = getContext(); // Get the context here
 
     setup();
+    // Delayed initial counter update to allow metadata to populate
+    setTimeout(() => {
+        console.log(`${extensionName}: Performing DELAYED initial update of persistent guide counter.`);
+        updatePersistentGuideCounter();
+    }, 5000); // Delay by 5 seconds
     // Settings Panel Setup (runs with delay to allow main UI to render)
     setTimeout(() => {
-        console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
         loadSettingsPanel(context); // Pass context
     }, 1000);
     // Attempt to install the preset (can run relatively early)
@@ -1087,7 +1055,27 @@ $(document).ready(function() {
         const sendForm = document.getElementById('send_form');
         if (sendForm) {
             observer.observe(sendForm, { childList: true, subtree: true });
-            console.log(`${extensionName}: Set up mutation observer for QR Bar integration.`);
+        }
+    }, 2000);
+
+    // Delayed check for QR bar integration
+    setTimeout(() => {
+        const sendForm = document.getElementById('send_form');
+        if (sendForm && !document.getElementById('gg-qr-container')) {
+            integrateQRBar(sendForm);
+        }
+        // Fallback if send_form is not immediately available
+        else if (!sendForm) {
+            const observer = new MutationObserver((mutationsList, observer) => {
+                const sendForm = document.getElementById('send_form');
+                if (sendForm) {
+                    if (!document.getElementById('gg-qr-container')) {
+                        integrateQRBar(sendForm);
+                    }
+                    observer.disconnect(); // Stop observing once found and integrated
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
         }
     }, 2000);
 });
@@ -1103,4 +1091,45 @@ window.GuidedGenerations = {
     undoLastGuidedAddition, // Expose new function
     revertToOriginalGuidedContinue, // Expose new function
     guidedResponse,
+    updatePersistentGuideCounter, // Expose counter update function
 };
+
+/**
+ * Counts the number of active persistent guides.
+ * @param {object} context The SillyTavern context object.
+ * @returns {number} The number of active persistent guides.
+ */
+function countActiveGuides(context) {
+    if (context && context.chatMetadata && context.chatMetadata.script_injects) {
+        return Object.keys(context.chatMetadata.script_injects).length;
+    }
+    return 0;
+}
+
+/**
+ * Updates the display of the persistent guide counter on the pg_menu_button.
+ */
+function updatePersistentGuideCounter() {
+    const context = getContext(); 
+    if (!context) {
+        console.warn(`${extensionName}: Context not available, cannot update persistent guide counter.`);
+        return;
+    }
+
+    const count = countActiveGuides(context);
+    const pgMenuButton = document.getElementById('pg_menu_button');
+
+    if (pgMenuButton) {
+        let counterSpan = pgMenuButton.querySelector('#pg_guide_counter_span');
+        if (!counterSpan) {
+            counterSpan = document.createElement('span');
+            counterSpan.id = 'pg_guide_counter_span';
+            counterSpan.className = 'pg-guide-counter'; // For styling
+            pgMenuButton.appendChild(counterSpan);
+        }
+        counterSpan.textContent = ` ${count}`; // Display count without parentheses, e.g., " 0"
+        pgMenuButton.title = `Persistent Guides: ${count} Injections active.`; // Update the title attribute (mouseover text)
+    } else {
+        console.warn(`${extensionName}: pg_menu_button NOT found. Counter cannot be displayed.`);
+    } 
+}

@@ -314,6 +314,10 @@ export class EditGuidesPopup {
             // Update the internal data cache if needed, although reopening will refresh it
             this.injectionData[this.selectedGuideKey].value = newContent;
             this.close();
+            // Update the counter on the main UI
+            if (window.GuidedGenerations && typeof window.GuidedGenerations.updatePersistentGuideCounter === 'function') {
+                window.GuidedGenerations.updatePersistentGuideCounter();
+            }
         } else {
             console.error(`[GuidedGenerations] Failed to update guide "${this.selectedGuideKey}" directly.`);
             // Optionally show an error message to the user
