@@ -37,18 +37,11 @@ async function executeSTScriptCommand(command) {
 
 /**
  * Finds the last swipe for the last message, navigates directly to it,
- * and triggers one more swipe (generation) by clicking the button once.
+ * and triggers one more swipe (generation) by calling context.swipe.right().
  * Uses direct manipulation for navigation and waits for generation end event.
  * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function generateNewSwipe() {
-    const jQueryRef = (typeof $ !== 'undefined') ? $ : jQuery;
-    if (!jQueryRef) {
-        console.error("[GuidedGenerations][Swipe] jQuery not found for generateNewSwipe.");
-        alert("Guided Swipe Error: jQuery not available.");
-        return false;
-    }
-
     // Ensure necessary functions/objects are available from SillyTavern's scope
     let context = getContext();
     const expectedContextProps = ['chat', 'messageFormatting', 'eventSource', 'event_types'];
@@ -114,20 +107,16 @@ async function generateNewSwipe() {
             console.log("[GuidedGenerations][Swipe] No existing swipes or only one swipe found. Proceeding to generate first/next swipe.");
         }
 
-        // --- 2. Trigger the *New* Swipe Generation (Click Button Once) ---
-        const selector1 = '#chat .mes:last-child .swipe_right:not(.stus--btn)';
-        const selector2 = '#chat .mes:last-child .mes_img_swipe_right';
-        let $button = jQueryRef(selector1);
-        if ($button.length === 0) $button = jQueryRef(selector2);
-
-        if ($button.length === 0) {
-            console.error(`[GuidedGenerations][Swipe] Could not find the swipe right button to trigger generation.`);
-            alert("Guided Swipe Error: Could not find the swipe button to generate.");
+        // --- 2. Trigger the *New* Swipe Generation (Using context.swipe.right()) ---
+        context = getContext(); // Get fresh context again before calling swipe.right
+        if (!context || !context.swipe || typeof context.swipe.right !== 'function') {
+            console.error("[GuidedGenerations][Swipe] context.swipe.right() is not available.");
+            alert("Guided Swipe Error: Swipe function (context.swipe.right) not available in current SillyTavern context.");
             return false;
         }
 
-        console.log("[GuidedGenerations][Swipe] Clicking button once to trigger new swipe generation...");
-        $button.first().trigger('click'); // THE VITAL CLICK TO START GENERATION
+        console.log("[GuidedGenerations][Swipe] Calling context.swipe.right() to trigger new swipe generation...");
+        context.swipe.right(); // THE VITAL CALL TO START GENERATION
 
         // --- 3. Wait for Generation to Finish ---
         const generationPromise = new Promise((resolve, reject) => {
@@ -282,7 +271,7 @@ const guidedSwipe = async () => {
             console.error(errorMsg);
             alert("Guided Swipe Error: Could not verify instruction injection ('instruct'). Aborting swipe generation.");
             // Clean up potentially failed injection attempt and restore input before returning
-            jQueryRef("#send_textarea").val(originalInput).trigger('input');
+            textarea.value = originalInput;
             // Use the correct key for deletion as well
             await executeSTScriptCommand('/flushinject instruct');
             return; // Stop execution
