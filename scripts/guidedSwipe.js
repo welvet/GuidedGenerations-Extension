@@ -110,8 +110,9 @@ async function generateNewSwipe() {
         // --- 2. Trigger the *New* Swipe Generation (Using context.swipe.right()) ---
         context = getContext(); // Get fresh context again before calling swipe.right
         if (!context || !context.swipe || typeof context.swipe.right !== 'function') {
-            console.error("[GuidedGenerations][Swipe] context.swipe.right() is not available.");
-            alert("Guided Swipe Error: Swipe function (context.swipe.right) not available in current SillyTavern context.");
+            const warningMessage = "Guided Generations Feature Error: Core functionality (like SillyTavern.getContext().swipe.right) is missing. Please update SillyTavern to version 1.13.0 or newer for Swipe, Correction, and Edit Intro features to work correctly.";
+            console.error(`[GuidedGenerations][Swipe] ${warningMessage}`);
+            alert(warningMessage);
             return false;
         }
 
