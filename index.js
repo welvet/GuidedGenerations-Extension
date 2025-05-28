@@ -270,8 +270,14 @@ function handleSettingChange(event) {
         settingValue = target.value;
     } else if (target.tagName === 'INPUT' && target.type === 'text') {
         settingValue = target.value;
+        if (typeof settingValue === 'string') {
+            settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+        }
     } else if (target.tagName === 'TEXTAREA') {
         settingValue = target.value;
+        if (typeof settingValue === 'string') {
+            settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+        }
     } else {
         console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);
         return; // Don't save if it's not a recognized type
