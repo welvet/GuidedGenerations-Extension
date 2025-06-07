@@ -103,7 +103,17 @@ export const defaultSettings = {
     rawPromptRules: false,
     rawPromptCorrections: false,
     rawPromptSpellchecker: false,
-    rawPromptCustomAuto: false // Default raw prompt setting for Custom Auto Guide
+    rawPromptCustomAuto: false, // Default raw prompt setting for Custom Auto Guide
+    // Depth settings for prompt overrides
+    depthPromptClothes: 1,
+    depthPromptState: 1,
+    depthPromptThinking: 0,
+    depthPromptSituational: 3,
+    depthPromptRules: 0,
+    depthPromptCorrections: 0,
+    depthPromptGuidedResponse: 0,
+    depthPromptGuidedSwipe: 0,
+    depthPromptCustomAuto: 1 // Default depth for Custom Auto Guide
 };
 
 /**
@@ -196,6 +206,14 @@ function updateSettingsUI() {
             const textarea = document.getElementById(`gg_${key}`);
             if (textarea) {
                 textarea.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+            }
+        });
+
+        // Populate depth number input fields
+        ['depthPromptClothes', 'depthPromptState', 'depthPromptThinking', 'depthPromptCustomAuto', 'depthPromptSituational', 'depthPromptRules', 'depthPromptCorrections', 'depthPromptGuidedResponse', 'depthPromptGuidedSwipe'].forEach(key => {
+            const input = document.getElementById(`gg_${key}`);
+            if (input) {
+                input.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? 0; // Default to 0 if undefined
             }
         });
 
@@ -1032,25 +1050,78 @@ async function installPreset() {
     }
 }
 
+// Debounced version of the counter update function
+let updatePersistentGuideCounterDebounced;
+
+
 // Run setup after page load
 $(document).ready(async function () {
     const context = getContext(); // Get the context here
 
-    setup();
+    setup(); // Initial setup of settings, UI elements etc.
+
     // Delayed initial counter update to allow metadata to populate
     setTimeout(() => {
         console.log(`${extensionName}: Performing DELAYED initial update of persistent guide counter.`);
         updatePersistentGuideCounter();
     }, 5000); // Delay by 5 seconds
+
+    // Initialize the debounced function for counter updates from ST events
+    if (SillyTavern && SillyTavern.libs && SillyTavern.libs.lodash && SillyTavern.libs.lodash.debounce) {
+        updatePersistentGuideCounterDebounced = SillyTavern.libs.lodash.debounce(() => {
+            console.log(`${extensionName}: Debounced updatePersistentGuideCounter executing due to ST event.`);
+            updatePersistentGuideCounter();
+        }, 300); // 300ms debounce interval
+        console.log(`${extensionName}: Initialized debounced version of updatePersistentGuideCounter for ST events.`);
+    } else {
+        console.warn(`${extensionName}: Lodash debounce not found. Counter updates from ST events will not be debounced.`);
+        updatePersistentGuideCounterDebounced = () => { // Fallback to immediate call
+            console.log(`${extensionName}: updatePersistentGuideCounter (non-debounced fallback) executing due to ST event.`);
+            updatePersistentGuideCounter();
+        };
+    }
+
+    // Add SillyTavern event listeners for counter updates
+    const eventsToUpdateCounter = [
+        context.eventTypes.APP_READY,
+        context.eventTypes.CHAT_CREATED,
+        context.eventTypes.CHAT_CHANGED,
+        context.eventTypes.CHARACTER_MESSAGE_RENDERED,
+        context.eventTypes.USER_MESSAGE_RENDERED,
+        context.eventTypes.GROUP_MEMBER_DRAFTED,
+        context.eventTypes.WORLD_INFO_ACTIVATED,
+        context.eventTypes.GENERATION_STARTED,
+        context.eventTypes.GENERATION_ENDED,
+        context.eventTypes.GENERATION_STOPPED,
+        context.eventTypes.GENERATION_AFTER_COMMANDS,
+    ];
+
+    console.log(`${extensionName}: Registering SillyTavern event listeners for persistent guide counter updates.`);
+    for (const eventName of eventsToUpdateCounter) {
+        if (eventName && typeof eventName === 'string') { // Ensure eventName is a valid string
+            context.eventSource.makeLast(eventName, () => {
+                console.log(`${extensionName}: SillyTavern Event '${eventName}' received. Queuing debounced update for persistent guide counter.`);
+                if (updatePersistentGuideCounterDebounced) {
+                    updatePersistentGuideCounterDebounced();
+                }
+            });
+        } else {
+            console.warn(`${extensionName}: An event type in eventsToUpdateCounter was undefined or not a string. Skipping listener registration for it. Event: `, eventName);
+        }
+    }
+    console.log(`${extensionName}: Finished registering SillyTavern event listeners for counter.`);
+
     // Settings Panel Setup (runs with delay to allow main UI to render)
     setTimeout(() => {
         loadSettingsPanel(context); // Pass context
     }, 1000);
+
     // Attempt to install the preset (can run relatively early)
     installPreset();
     
     // Initialize other scripts that need context or should run on ready
     initGuidedSwipe(context); // Pass context
+
     // Also set up a mutation observer to detect when the QR bar might be added/removed
     const observer = new MutationObserver(() => {
         integrateQRBar();
@@ -1072,19 +1143,20 @@ $(document).ready(async function () {
         }
         // Fallback if send_form is not immediately available
         else if (!sendForm) {
-            const observer = new MutationObserver((mutationsList, observer) => {
-                const sendForm = document.getElementById('send_form');
-                if (sendForm) {
+            const qrObserver = new MutationObserver((mutationsList, obs) => { // Renamed observer to avoid conflict
+                const sendFormElement = document.getElementById('send_form'); // Renamed variable
+                if (sendFormElement) {
                     if (!document.getElementById('gg-qr-container')) {
-                        integrateQRBar(sendForm);
+                        integrateQRBar(sendFormElement);
                     }
-                    observer.disconnect(); // Stop observing once found and integrated
+                    obs.disconnect(); // Stop observing once found and integrated
                 }
             });
-            observer.observe(document.body, { childList: true, subtree: true });
+            qrObserver.observe(document.body, { childList: true, subtree: true });
         }
     }, 2000);
-});
+
+}); // END OF $(document).ready()
 
 // Export settings helpers for settingsPanel.js import
 export { loadSettings, updateSettingsUI, addSettingsEventListeners };

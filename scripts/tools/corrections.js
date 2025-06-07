@@ -59,13 +59,14 @@ export default async function corrections() {
 
     // --- Part 1: Execute STscript for Presets and Injections --- 
     const instructionInjection = isRaw ? filledPrompt : `[${filledPrompt}]`;
+    const depth = extension_settings[extensionName]?.depthPromptCorrections ?? 0;
     const stscriptPart1 = `
         ${presetSwitchStartScript}
 
         // Inject assistant message to rework and instructions|
-        /inject id=msgtorework position=chat ephemeral=true scan=true depth=0 role=assistant {{lastMessage}}|
+        /inject id=msgtorework position=chat ephemeral=true scan=true depth=${depth} role=assistant {{lastMessage}}|
         // Inject instructions using user override prompt|
-        /inject id=instruct position=chat ephemeral=true scan=true depth=0 ${instructionInjection}|
+        /inject id=instruct position=chat ephemeral=true scan=true depth=${depth} ${instructionInjection}|
     `;
     
     try {

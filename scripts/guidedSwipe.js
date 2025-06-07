@@ -198,6 +198,8 @@ const guidedSwipe = async () => {
     }
     const originalInput = textarea.value; // Get current input
 
+    const depth = extension_settings[extensionName]?.depthPromptGuidedSwipe ?? 0;
+
     // If no input, skip injection and do a plain swipe
     if (!originalInput.trim()) {
         console.log("[GuidedGenerations][Swipe] No input detected, performing plain swipe.");
@@ -222,12 +224,9 @@ const guidedSwipe = async () => {
         const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
         // --- 1. Store Input & Inject Context (if any) --- (Use direct context method)
-        if (originalInput.trim()) {
+        if (originalInput.trim() || (promptTemplate.trim() !== '' && promptTemplate.trim() !== '{{input}}')) {
             // Use the currentInjectionRole retrieved above
-            const stscriptCommand = 
-                `// Guided Swipe logic|
-                /inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}|
-                `;
+            const stscriptCommand = `/inject id=instruct position=chat ephemeral=true scan=true depth=${depth} role=${injectionRole} ${filledPrompt} |`;
             
             // Get context and execute directly
             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {

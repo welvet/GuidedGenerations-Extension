@@ -17,7 +17,8 @@ const situationalGuide = async (isAuto = false) => {
 4. Recent events or topics of conversation (last 10-20 messages)
 Keep the overview factual and neutral without speculation. Format in clear paragraphs.] |`;
     const genCommandSuffix = `/setvar key=inp {{input}} | ${extension_settings[extensionName]?.promptSituational ?? defaultPrompt}`;
-    const finalCommand = `/inject id=situation position=chat scan=true depth=3 [Current Situation: {{pipe}}] |`;
+    const depth = extension_settings[extensionName]?.depthPromptSituational ?? 3;
+    const finalCommand = `/inject id=situational position=chat scan=true depth=${depth} [Current Situation: {{pipe}}] |`;
     return await runGuideScript({
         guideId: 'situational',
         genCommandSuffix,
