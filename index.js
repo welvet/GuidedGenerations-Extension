@@ -86,7 +86,7 @@ export const defaultSettings = {
     promptThinking: '[OOC: Answer me out of Character! Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
     promptSituational: '[Analyze the chat history and provide a concise summary of current location, present characters, relevant objects, and recent events. Keep factual and neutral. Format in clear paragraphs.] ',
     promptRules: '[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
-    promptCorrections: '[OOC: Do not continue the story do not wrote in character, instead write {{char}}\'s last response again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
+    promptCorrections: '[OOC: Do not continue the story do not wrote in character, instead write {{char}}\'s last response (msgtorework) again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
     promptSpellchecker: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
     promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
     promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
@@ -113,7 +113,8 @@ export const defaultSettings = {
     depthPromptCorrections: 0,
     depthPromptGuidedResponse: 0,
     depthPromptGuidedSwipe: 0,
-    depthPromptCustomAuto: 1 // Default depth for Custom Auto Guide
+    depthPromptCustomAuto: 1, // Default depth for Custom Auto Guide
+    LastPatchNoteVersion: '1.4.0' // Default extension version for patch notes
 };
 
 /**
@@ -1120,7 +1121,6 @@ $(document).ready(async function () {
     installPreset();
     
     // Initialize other scripts that need context or should run on ready
-    initGuidedSwipe(context); // Pass context
 
     // Also set up a mutation observer to detect when the QR bar might be added/removed
     const observer = new MutationObserver(() => {
@@ -1156,10 +1156,39 @@ $(document).ready(async function () {
         }
     }, 2000);
 
+    // Check extension version and notify if updated
+    checkVersionAndNotify();
 }); // END OF $(document).ready()
 
 // Export settings helpers for settingsPanel.js import
 export { loadSettings, updateSettingsUI, addSettingsEventListeners };
+
+// Function to check version and show notification popup
+async function checkVersionAndNotify() {
+    if (!extension_settings[extensionName]) {
+        console.warn(`${extensionName}: Extension settings not found, skipping version check.`);
+        return;
+    }
+
+    const currentVersionInSettings = extension_settings[extensionName].LastPatchNoteVersion;
+    const defaultVersion = defaultSettings.LastPatchNoteVersion;
+
+    // If version in settings is undefined, null, empty, or older than default
+    if (!currentVersionInSettings || currentVersionInSettings < defaultVersion) {
+        // For simplicity, using confirm dialog. Can be replaced with a custom modal later.
+        const message = `Welcome to ${extensionName} v${defaultVersion}!\n\nThis update includes several enhancements and bug fixes. For detailed information, please check the changelog.\n\nClick 'OK' to acknowledge this update (this message won't show again until the next version).\nClick 'Cancel' to see this message again next time.`;
+        
+        const userAcknowledged = confirm(message);
+
+        if (userAcknowledged) {
+            extension_settings[extensionName].LastPatchNoteVersion = defaultVersion;
+            await saveSettingsDebounced();
+            console.log(`${extensionName}: Version updated to ${defaultVersion} in settings.`);
+        } else {
+            console.log(`${extensionName}: User chose to show version notification again.`);
+        }
+    }
+}
 
 // Expose functions to the global scope for buttons or STScripts
 window.GuidedGenerations = {
