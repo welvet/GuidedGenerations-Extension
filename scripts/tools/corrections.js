@@ -59,13 +59,14 @@ export default async function corrections() {
 
     // --- Part 1: Execute STscript for Presets and Injections --- 
     const instructionInjection = isRaw ? filledPrompt : `[${filledPrompt}]`;
+    const depth = extension_settings[extensionName]?.depthPromptCorrections ?? 0;
     const stscriptPart1 = `
         ${presetSwitchStartScript}
 
         // Inject assistant message to rework and instructions|
-        /inject id=msgtorework position=chat ephemeral=true scan=true depth=0 role=assistant {{lastMessage}}|
+        /inject id=msgtorework position=chat ephemeral=true scan=true depth=${depth} role=assistant {{lastMessage}}|
         // Inject instructions using user override prompt|
-        /inject id=instruct position=chat ephemeral=true scan=true depth=0 ${instructionInjection}|
+        /inject id=instruct position=chat ephemeral=true scan=true depth=${depth} ${instructionInjection}|
     `;
     
     try {
@@ -84,72 +85,25 @@ export default async function corrections() {
             return; 
         }
 
-        // Get Initial Swipe State
-        let context = getContext(); 
-        if (!context || !context.chat || context.chat.length === 0) {
-            console.error("[GuidedGenerations][Corrections] Could not get initial chat context for swiping.");
-            alert("Corrections Tool Error: Cannot access chat context.");
-             await executeSTScript(presetSwitchEndScript);
-            return; 
-        }
-        let lastMessageIndex = context.chat.length - 1;
-        let messageData = context.chat[lastMessageIndex];
-         if (!messageData || typeof messageData.swipe_id === 'undefined' || !Array.isArray(messageData.swipes)) {
-            console.error("[GuidedGenerations][Corrections] Invalid initial message data for swiping.", messageData);
-            alert("Corrections Tool Error: Cannot read initial swipe data.");
-             await executeSTScript(presetSwitchEndScript);
-            return; 
-        }
-        let initialSwipeId = messageData.swipe_id;
-        let initialTotalSwipes = messageData.swipes.length;
-        console.log(`[GuidedGenerations][Corrections] Initial state: Message ${lastMessageIndex}, Swipe ID: ${initialSwipeId}, Total Swipes: ${initialTotalSwipes}`);
-
-        // Swipe to Last Existing Swipe
-        const targetSwipeIndex = Math.max(0, initialTotalSwipes - 1);
-        let clicksToReachLast = Math.max(0, targetSwipeIndex - initialSwipeId);
-        console.log(`[GuidedGenerations][Corrections] Target swipe index: ${targetSwipeIndex}. Clicks needed to reach target: ${clicksToReachLast}`);
-
-        // Find the swipe button
-        const selector1 = '#chat .mes:last-child .swipe_right:not(.stus--btn)';
-        const selector2 = '#chat .mes:last-child .mes_img_swipe_right';
-        let $button = jQueryRef(selector1);
-        if ($button.length === 0) $button = jQueryRef(selector2);
-
-        if ($button.length === 0) {
-            console.error(`[GuidedGenerations][Corrections] Could not find swipe button.`);
-            alert("Corrections Tool Error: Could not find the swipe button.");
-             await executeSTScript(presetSwitchEndScript);
-            return; 
-        }
-
-        if (clicksToReachLast > 0) {
-            console.log(`[GuidedGenerations][Corrections] Performing ${clicksToReachLast} clicks to reach the last swipe...`);
-            for (let i = 0; i < clicksToReachLast; i++) {
-                console.log(`[GuidedGenerations][Corrections] Clicking swipe (${i + 1}/${clicksToReachLast})...`);
-                $button.first().trigger('click');
-                await delay(50); // Small delay
-            }
-            console.log("[GuidedGenerations][Corrections] Finished initial swiping.");
-            await delay(150); // Longer delay after bulk swiping
-        } else {
-             console.log("[GuidedGenerations][Corrections] Already at or beyond the target swipe index. No initial swiping needed.");
-        }
-
-        // Verification Step (Optional but recommended)
-        // Add verification logic here if needed, similar to guidedSwipe.js, 
-        // but maybe simpler if just ensuring we are ready for final click.
-        console.log('[GuidedGenerations][Corrections] Skipping verification step for now.');
-
-        // Final Click to Generate
-        console.log("[GuidedGenerations][Corrections] Attempting to generate new swipe after correction...");
+        console.log("[GuidedGenerations][Corrections] Attempting to generate new swipe using generateNewSwipe()...");
         const swipeSuccess = await generateNewSwipe(); // Call the imported function
 
         if (swipeSuccess) {
-            console.log("[GuidedGenerations][Corrections] New swipe generated successfully. Executing final click to trigger generation...");
-            $button.first().trigger('click');
-            console.log("[GuidedGenerations][Corrections] Final click performed.");
+            console.log("[GuidedGenerations][Corrections] generateNewSwipe() reported success.");
         } else {
-            console.error("[GuidedGenerations][Corrections] Failed to generate new swipe after correction.");
+            console.error("[GuidedGenerations][Corrections] generateNewSwipe() reported failure or an issue occurred. Attempting to run preset end script.");
+            // generateNewSwipe() itself often alerts on failure. If it throws, the main catch block will also alert.
+            // We run the end script here for cases where it returns false without throwing, to ensure cleanup.
+            if (presetSwitchEndScript && typeof executeSTScript === 'function') { // Ensure dependencies are available
+                try {
+                    await executeSTScript(presetSwitchEndScript);
+                } catch (scriptError) {
+                    console.error("[GuidedGenerations][Corrections] Error executing presetSwitchEndScript after generateNewSwipe failure:", scriptError);
+                    // Optionally alert here too, or rely on main catch if this rethrows.
+                }
+            }
+            // Note: The function will continue to the final log and exit the try block.
+            // The outer catch in correctionsTool handles broader errors.
         }
 
         console.log('[GuidedGenerations][Corrections] JS Swipe Logic finished.');

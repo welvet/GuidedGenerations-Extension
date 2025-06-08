@@ -31,6 +31,7 @@ const guidedResponse = async () => {
     // Use user-defined guided response prompt override
     const promptTemplate = extension_settings[extensionName]?.promptGuidedResponse ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+    const depth = extension_settings[extensionName]?.depthPromptGuidedResponse ?? 0;
 
     // Check if it's a group chat using the helper function
     if (isGroupChat()) {
@@ -72,7 +73,7 @@ const guidedResponse = async () => {
                 `// Group chat logic (JS handled selection list via context)|
 /buttons labels=${characterListJson} "Select member to respond as" |
 /setglobalvar key=selection {{pipe}} |
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt} |
+/inject id=instruct position=chat ephemeral=true scan=true depth=${depth} role=${injectionRole} ${filledPrompt} |
 /trigger await=true {{getglobalvar::selection}}|
 `;
         } else {
@@ -80,14 +81,14 @@ const guidedResponse = async () => {
             // Fallback to single character logic if character list is empty or invalid
             stscriptCommand = 
                 `// Single character logic (fallback from group)|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}|
+/inject id=instruct position=chat ephemeral=true scan=true depth=${depth} role=${injectionRole} ${filledPrompt}|
 /trigger await=true|
 `;
         }
     } else {
         stscriptCommand = 
             `// Single character logic|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}|
+/inject id=instruct position=chat ephemeral=true scan=true depth=${depth} role=${injectionRole} ${filledPrompt}|
 /trigger await=true|
 `;
     }

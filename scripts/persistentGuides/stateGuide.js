@@ -18,9 +18,11 @@ const stateGuide = async (isAuto = false) => {
     const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
 
     const genAs = 'as=char';
-    const genCommandSuffix = `[OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.] `;
+    const defaultPrompt = `[OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don't describe their clothes or how they are dressed. Don't mention People who are no longer relevant to the ongoing scene.] `;
+    const genCommandSuffix = extension_settings[extensionName]?.promptState ?? defaultPrompt;
 
-    const finalCommand = `/inject id=state position=chat scan=true depth=1 role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
+    const depth = extension_settings[extensionName]?.depthPromptState ?? 1;
+    const finalCommand = `/inject id=state position=chat scan=true depth=${depth} role=${injectionRole} [Relevant Informations for portraying characters {{pipe}}] |`;
 
     return await runGuideScript({
         guideId: 'state',

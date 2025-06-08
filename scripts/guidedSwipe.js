@@ -37,18 +37,11 @@ async function executeSTScriptCommand(command) {
 
 /**
  * Finds the last swipe for the last message, navigates directly to it,
- * and triggers one more swipe (generation) by clicking the button once.
+ * and triggers one more swipe (generation) by calling context.swipe.right().
  * Uses direct manipulation for navigation and waits for generation end event.
  * @returns {Promise<boolean>} True if successful, false otherwise.
  */
 async function generateNewSwipe() {
-    const jQueryRef = (typeof $ !== 'undefined') ? $ : jQuery;
-    if (!jQueryRef) {
-        console.error("[GuidedGenerations][Swipe] jQuery not found for generateNewSwipe.");
-        alert("Guided Swipe Error: jQuery not available.");
-        return false;
-    }
-
     // Ensure necessary functions/objects are available from SillyTavern's scope
     let context = getContext();
     const expectedContextProps = ['chat', 'messageFormatting', 'eventSource', 'event_types'];
@@ -114,20 +107,17 @@ async function generateNewSwipe() {
             console.log("[GuidedGenerations][Swipe] No existing swipes or only one swipe found. Proceeding to generate first/next swipe.");
         }
 
-        // --- 2. Trigger the *New* Swipe Generation (Click Button Once) ---
-        const selector1 = '#chat .mes:last-child .swipe_right:not(.stus--btn)';
-        const selector2 = '#chat .mes:last-child .mes_img_swipe_right';
-        let $button = jQueryRef(selector1);
-        if ($button.length === 0) $button = jQueryRef(selector2);
-
-        if ($button.length === 0) {
-            console.error(`[GuidedGenerations][Swipe] Could not find the swipe right button to trigger generation.`);
-            alert("Guided Swipe Error: Could not find the swipe button to generate.");
+        // --- 2. Trigger the *New* Swipe Generation (Using context.swipe.right()) ---
+        context = getContext(); // Get fresh context again before calling swipe.right
+        if (!context || !context.swipe || typeof context.swipe.right !== 'function') {
+            const warningMessage = "Guided Generations Feature Error: Core functionality (like SillyTavern.getContext().swipe.right) is missing. Please update SillyTavern to version 1.13.0 or newer for Swipe, Correction, and Edit Intro features to work correctly.";
+            console.error(`[GuidedGenerations][Swipe] ${warningMessage}`);
+            alert(warningMessage);
             return false;
         }
 
-        console.log("[GuidedGenerations][Swipe] Clicking button once to trigger new swipe generation...");
-        $button.first().trigger('click'); // THE VITAL CLICK TO START GENERATION
+        console.log("[GuidedGenerations][Swipe] Calling context.swipe.right() to trigger new swipe generation...");
+        context.swipe.right(); // THE VITAL CALL TO START GENERATION
 
         // --- 3. Wait for Generation to Finish ---
         const generationPromise = new Promise((resolve, reject) => {
@@ -208,6 +198,8 @@ const guidedSwipe = async () => {
     }
     const originalInput = textarea.value; // Get current input
 
+    const depth = extension_settings[extensionName]?.depthPromptGuidedSwipe ?? 0;
+
     // If no input, skip injection and do a plain swipe
     if (!originalInput.trim()) {
         console.log("[GuidedGenerations][Swipe] No input detected, performing plain swipe.");
@@ -232,12 +224,9 @@ const guidedSwipe = async () => {
         const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
         // --- 1. Store Input & Inject Context (if any) --- (Use direct context method)
-        if (originalInput.trim()) {
+        if (originalInput.trim() || (promptTemplate.trim() !== '' && promptTemplate.trim() !== '{{input}}')) {
             // Use the currentInjectionRole retrieved above
-            const stscriptCommand = 
-                `// Guided Swipe logic|
-                /inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}|
-                `;
+            const stscriptCommand = `/inject id=instruct position=chat ephemeral=true scan=true depth=${depth} role=${injectionRole} ${filledPrompt} |`;
             
             // Get context and execute directly
             if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
@@ -282,7 +271,7 @@ const guidedSwipe = async () => {
             console.error(errorMsg);
             alert("Guided Swipe Error: Could not verify instruction injection ('instruct'). Aborting swipe generation.");
             // Clean up potentially failed injection attempt and restore input before returning
-            jQueryRef("#send_textarea").val(originalInput).trigger('input');
+            textarea.value = originalInput;
             // Use the correct key for deletion as well
             await executeSTScriptCommand('/flushinject instruct');
             return; // Stop execution

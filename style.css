@@ -88,6 +88,18 @@
     position: relative; /* Needed for dropdown menu positioning */
 }
 
+/* Specific style for the Persistent Guides Menu Button */
+#pg_menu_button {
+    margin-left: 5px; /* Add some spacing from the GG Tools button */
+}
+
+/* Style for the Persistent Guides counter span */
+.pg-guide-counter {
+    font-size: 0.9em; /* Slightly smaller, adjust as needed */
+    color: inherit;   /* Inherit text color from the button */
+    margin-left: 5px; /* Add 5px space to the left of the counter */
+}
+
 /* Style for the GG tools dropdown/popup menu */
 .gg-tools-menu {
     position: absolute;
@@ -206,6 +218,24 @@
 .persistent-guides-content > .interactable {
     font-size: 0.95em;
     padding: 4px 8px;
+}
+
+/* Persistent Guides Counter Badge */
+#pg_counter_badge {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    transform: translate(40%, -40%);
+    background-color: var(--accent-color, #E53E3E); /* Fallback red if accent-color is not defined */
+    color: white;
+    border-radius: 20px; /* Pill shape */
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+    text-align: center;
+    z-index: 1;
+    display: none; /* Hidden by default, shown via JS if count > 0 */
 }
 
 /* Settings panel specific styles */

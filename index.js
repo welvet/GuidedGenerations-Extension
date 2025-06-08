@@ -6,7 +6,7 @@ import { simpleSend } from './scripts/simpleSend.js';
 import { recoverInput } from './scripts/inputRecovery.js';
 import { guidedResponse } from './scripts/guidedResponse.js';
 import { guidedSwipe } from './scripts/guidedSwipe.js';
-import { guidedContinue } from './scripts/guidedContinue.js';
+import { guidedContinue, undoLastGuidedAddition, revertToOriginalGuidedContinue, initGuidedContinueListeners } from './scripts/guidedContinue.js'; // Added initGuidedContinueListeners, undoLastGuidedAddition, revertToOriginalGuidedContinue
 import { guidedImpersonate } from './scripts/guidedImpersonate.js';
 import { guidedImpersonate2nd } from './scripts/guidedImpersonate2nd.js'; // Import 2nd
 import { guidedImpersonate3rd } from './scripts/guidedImpersonate3rd.js'; // Import 3rd
@@ -61,6 +61,9 @@ export const defaultSettings = {
     showCorrectionsButton: false,
     showSpellcheckerButton: false,
     showClearInputButton: false,
+    showUndoButton: false, // Default off for Undo Last Addition button
+    showRevertButton: false, // Default off for Revert to Original button
+    integrateQrBar: true, // Default on: Toggle for QR bar integration
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: 'GGSytemPrompt',
     presetState: 'GGSytemPrompt',
@@ -83,7 +86,7 @@ export const defaultSettings = {
     promptThinking: '[OOC: Answer me out of Character! Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
     promptSituational: '[Analyze the chat history and provide a concise summary of current location, present characters, relevant objects, and recent events. Keep factual and neutral. Format in clear paragraphs.] ',
     promptRules: '[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
-    promptCorrections: '[OOC: Do not continue the story do not wrote in character, instead write {{char}}\'s last response again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
+    promptCorrections: '[OOC: Do not continue the story do not wrote in character, instead write {{char}}\'s last response (msgtorework) again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
     promptSpellchecker: 'Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
     promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
     promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
@@ -100,7 +103,18 @@ export const defaultSettings = {
     rawPromptRules: false,
     rawPromptCorrections: false,
     rawPromptSpellchecker: false,
-    rawPromptCustomAuto: false // Default raw prompt setting for Custom Auto Guide
+    rawPromptCustomAuto: false, // Default raw prompt setting for Custom Auto Guide
+    // Depth settings for prompt overrides
+    depthPromptClothes: 1,
+    depthPromptState: 1,
+    depthPromptThinking: 0,
+    depthPromptSituational: 3,
+    depthPromptRules: 0,
+    depthPromptCorrections: 0,
+    depthPromptGuidedResponse: 0,
+    depthPromptGuidedSwipe: 0,
+    depthPromptCustomAuto: 1, // Default depth for Custom Auto Guide
+    LastPatchNoteVersion: '1.4.0' // Default extension version for patch notes
 };
 
 /**
@@ -196,6 +210,14 @@ function updateSettingsUI() {
             }
         });
 
+        // Populate depth number input fields
+        ['depthPromptClothes', 'depthPromptState', 'depthPromptThinking', 'depthPromptCustomAuto', 'depthPromptSituational', 'depthPromptRules', 'depthPromptCorrections', 'depthPromptGuidedResponse', 'depthPromptGuidedSwipe'].forEach(key => {
+            const input = document.getElementById(`gg_${key}`);
+            if (input) {
+                input.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? 0; // Default to 0 if undefined
+            }
+        });
+
         console.log(`${extensionName}: Settings UI updated.`);
     } else {
         console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
@@ -267,8 +289,14 @@ function handleSettingChange(event) {
         settingValue = target.value;
     } else if (target.tagName === 'INPUT' && target.type === 'text') {
         settingValue = target.value;
+        if (typeof settingValue === 'string') {
+            settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+        }
     } else if (target.tagName === 'TEXTAREA') {
         settingValue = target.value;
+        if (typeof settingValue === 'string') {
+            settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+        }
     } else {
         console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);
         return; // Don't save if it's not a recognized type
@@ -341,15 +369,6 @@ function updateExtensionButtons() {
     buttonContainer.appendChild(qrContainer);
     buttonContainer.appendChild(actionButtonsContainer);
     
-    // Check if QR bar exists and move it immediately if possible
-    const qrBar = document.getElementById('qr--bar');
-    if (qrBar) {
-        qrContainer.appendChild(qrBar);
-        console.log(`${extensionName}: QR Bar immediately integrated.`);
-    } else {
-        console.log(`${extensionName}: QR Bar not found, but container is ready.`);
-    }
-
     // --- Create GG Tools Menu Button (Wand) --- 
     let ggMenuButton = document.getElementById('gg_menu_button');
     if (!ggMenuButton) {
@@ -371,7 +390,6 @@ function updateExtensionButtons() {
         simpleSendMenuItem.innerHTML = '<i class="fa-solid fa-paper-plane fa-fw"></i><span data-i18n="Simple Send">Simple Send</span>'; // Add icon + span
         simpleSendMenuItem.title = "Sends the current input directly to the Chat without triggering a response from the Chatbot.";
         simpleSendMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Simple Send action clicked.`);
             simpleSend();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -383,7 +401,6 @@ function updateExtensionButtons() {
         recoverInputMenuItem.innerHTML = '<i class="fa-solid fa-arrow-rotate-left fa-fw"></i><span data-i18n="Recover Input">Recover Input</span>'; // Add icon + span
         recoverInputMenuItem.title = "Restores your previously typed input if it was accidentally cleared or overwritten.";
         recoverInputMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Recover Input action clicked.`);
             recoverInput();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -397,7 +414,6 @@ function updateExtensionButtons() {
         editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
         editIntrosMenuItem.title = "Opens a popup to edit or regenerate character introductions based on various criteria.";
         editIntrosMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Edit Intros action clicked.`);
             const { default: editIntros } = await import('./scripts/tools/editIntros.js');
             await editIntros();
             ggToolsMenu.classList.remove('shown');
@@ -411,7 +427,6 @@ function updateExtensionButtons() {
         correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
         correctionsMenuItem.title = "Instructs the AI to rewrite its last message, incorporating the corrections or changes you provide in the input field.";
         correctionsMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Corrections action clicked.`);
             const { default: corrections } = await import('./scripts/tools/corrections.js');
             await corrections();
             ggToolsMenu.classList.remove('shown');
@@ -425,7 +440,6 @@ function updateExtensionButtons() {
         spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
         spellcheckerMenuItem.title = "Checks and corrects the grammar, punctuation, and flow of the text currently in your input field.";
         spellcheckerMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Spellchecker action clicked.`);
             const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
             await spellchecker();
             ggToolsMenu.classList.remove('shown');
@@ -438,9 +452,36 @@ function updateExtensionButtons() {
         clearInputMenuItem.className = 'interactable';
         clearInputMenuItem.innerHTML = '<i class="fa-solid fa-trash fa-fw"></i><span data-i18n="Clear Input">Clear Input</span>';
         clearInputMenuItem.addEventListener('click', async (event) => {
-            console.log(`${extensionName}: Clear Input action clicked.`);
             const { default: clearInput } = await import('./scripts/tools/clearInput.js');
             await clearInput();
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // Add Undo Last Addition menu item
+        const undoMenuItem = document.createElement('a');
+        undoMenuItem.href = '#';
+        undoMenuItem.className = 'interactable';
+        undoMenuItem.innerHTML = '<i class="fa-solid fa-rotate-left fa-fw"></i><span data-i18n="Undo Last Addition">Undo Last Addition</span>';
+        undoMenuItem.title = 'Removes the last segment added by a guided continue action.';
+        undoMenuItem.addEventListener('click', (event) => {
+            if (window.GuidedGenerations && typeof window.GuidedGenerations.undoLastGuidedAddition === 'function') {
+                window.GuidedGenerations.undoLastGuidedAddition();
+            }
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
+        // Add Revert to Original Message menu item
+        const revertMenuItem = document.createElement('a');
+        revertMenuItem.href = '#';
+        revertMenuItem.className = 'interactable';
+        revertMenuItem.innerHTML = '<i class="fa-solid fa-history fa-fw"></i><span data-i18n="Revert to Original">Revert to Original</span>';
+        revertMenuItem.title = 'Restores the message to its state before any guided continues were applied.';
+        revertMenuItem.addEventListener('click', (event) => {
+            if (window.GuidedGenerations && typeof window.GuidedGenerations.revertToOriginalGuidedContinue === 'function') {
+                window.GuidedGenerations.revertToOriginalGuidedContinue();
+            }
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
         });
@@ -453,6 +494,13 @@ function updateExtensionButtons() {
         const separator = document.createElement('hr');
         separator.className = 'pg-separator';
         ggToolsMenu.appendChild(separator);
+
+        ggToolsMenu.appendChild(undoMenuItem);
+        ggToolsMenu.appendChild(revertMenuItem);
+        // Add a separator
+        const separator2 = document.createElement('hr');
+        separator2.className = 'pg-separator';
+        ggToolsMenu.appendChild(separator2);
         
         // Add new items after the separator
         ggToolsMenu.appendChild(editIntrosMenuItem);
@@ -466,7 +514,6 @@ function updateExtensionButtons() {
         updateCharacterMenuItem.className = 'interactable';
         updateCharacterMenuItem.innerHTML = '<i class="fa-solid fa-user-pen fa-fw"></i><span data-i18n="Update Character">Update Character</span>';
         updateCharacterMenuItem.addEventListener('click', (event) => {
-            console.log(`${extensionName}: Update Character action clicked.`);
             updateCharacter();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
@@ -478,7 +525,6 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         ggMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: ggMenuButton clicked.`);
 
             // --- Measure Height Correctly ---
             // Temporarily show the menu off-screen to measure its height
@@ -508,11 +554,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (ggToolsMenu.classList.contains('shown') && !ggMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding menu.`);
                 ggToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created GG Tools menu button.`);
     } 
     // Add menu button to the menu buttons container
     menuButtonsContainer.appendChild(ggMenuButton);
@@ -526,7 +570,6 @@ function updateExtensionButtons() {
         pgMenuButton.className = 'gg-menu-button fa-solid fa-book-open-reader'; // Thinking icon
         pgMenuButton.classList.add('interactable'); // Make sure it has interactable styles
         pgMenuButton.title = 'Persistent Guides';
-        pgMenuButton.style.marginLeft = '5px'; // Add some spacing from the GG Tools button
 
         const pgToolsMenu = document.createElement('div');
         pgToolsMenu.id = 'pg_tools_menu';
@@ -540,7 +583,6 @@ function updateExtensionButtons() {
             item.innerHTML = `<i class="fa-solid ${icon} fa-fw"></i><span data-i18n="${name}">${name}</span>`; // Add icon + span
             item.title = description; 
             item.addEventListener('click', (event) => {
-                console.log(`${extensionName}: ${name} Guide clicked.`);
                 action();
                 pgToolsMenu.classList.remove('shown');
                 event.stopPropagation();
@@ -572,7 +614,6 @@ function updateExtensionButtons() {
                 .then(module => {
                     const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
                     pgToolsMenu.appendChild(guideItem);
-                    console.log(`${extensionName}: Added ${guide.name} guide to menu`);
                 })
                 .catch(error => console.error(`${extensionName}: Error importing ${guide.name} guide:`, error));
         }))
@@ -581,7 +622,6 @@ function updateExtensionButtons() {
             const separator = document.createElement('hr');
             separator.className = 'pg-separator';
             pgToolsMenu.appendChild(separator);
-            console.log(`${extensionName}: Added separator to menu`);
 
             // Then load the tool guides
             return Promise.all(toolGuides.map(guide => {
@@ -589,7 +629,6 @@ function updateExtensionButtons() {
                     .then(module => {
                         const guideItem = createGuideItem(guide.name, guide.icon, module.default, guide.description);
                         pgToolsMenu.appendChild(guideItem);
-                        console.log(`${extensionName}: Added ${guide.name} tool to menu`);
                     })
                     .catch(error => console.error(`${extensionName}: Error importing ${guide.name} tool:`, error));
             }));
@@ -601,7 +640,6 @@ function updateExtensionButtons() {
 
         // Event Handlers for Menu Toggle and Close
         pgMenuButton.addEventListener('click', (event) => {
-            console.log(`${extensionName}: pgMenuButton clicked.`);
 
             // Temporarily show the menu off-screen to measure its height
             pgToolsMenu.style.visibility = 'hidden'; 
@@ -629,11 +667,9 @@ function updateExtensionButtons() {
 
         document.addEventListener('click', (event) => {
             if (pgToolsMenu.classList.contains('shown') && !pgMenuButton.contains(event.target)) {
-                console.log(`${extensionName}: Click outside detected, hiding persistent guides menu.`);
                 pgToolsMenu.classList.remove('shown');
             }
         });
-        console.log(`${extensionName}: Created Persistent Guides menu button.`);
     } 
     // Add Persistent Guides menu button to the menu buttons container
     menuButtonsContainer.appendChild(pgMenuButton);
@@ -753,49 +789,88 @@ function updateExtensionButtons() {
         regularButtons.push(guidedContinueButton);
     }
     
+    // Add Undo Last Addition button
+    if (settings.showUndoButton) {
+        const undoButton = createActionButton('gg_undo_button', 'Undo Last Addition', 'fa-solid fa-rotate-left', undoLastGuidedAddition);
+        regularButtons.push(undoButton);
+    }
+    
+    // Add Revert to Original button
+    if (settings.showRevertButton) {
+        const revertButton = createActionButton('gg_revert_button', 'Revert to Original', 'fa-solid fa-history', revertToOriginalGuidedContinue);
+        regularButtons.push(revertButton);
+    }
+    
     // Append all buttons to the container in the correct order
     regularButtons.forEach(button => {
         actionButtonsContainer.appendChild(button);
     });
+
+    integrateQRBar(); // Ensure QR bar is correctly placed after UI update
+    updatePersistentGuideCounter(); // Update counter after buttons are set up
 }
 
 // Function to integrate QR Bar from other extensions into our container
 function integrateQRBar() {
-    // Since we now always create the container, just focus on moving the QR bar if it exists
     const qrBar = document.getElementById('qr--bar');
-    if (!qrBar) {
-        // QR Bar doesn't exist yet, will keep checking
-        return false;
-    }
-
-    // Check if QR Bar is already in our container
     const qrContainer = document.getElementById('gg-qr-container');
-    if (!qrContainer) {
-        console.log(`${extensionName}: QR container not found, this shouldn't happen.`);
-        return false;
-    }
-    
-    // If the QR bar is already in our container, we're done
-    if (qrBar.parentElement === qrContainer) {
-        // Already integrated
-        return true;
+    const sendForm = document.getElementById('send_form'); // Common parent for QR bar
+
+    if (!qrBar || !qrContainer) {
+        // QR Bar or our container doesn't exist yet, will keep checking or log error
+        if (!qrBar) return false; // Keep polling if QR bar not found
+        if (!qrContainer) {
+            console.log(`${extensionName}: QR container (gg-qr-container) not found. This shouldn't happen.`);
+            return false;
+        }
     }
 
-    try {
-        // Move the QR Bar to our container
-        qrContainer.appendChild(qrBar);
-        console.log(`${extensionName}: Successfully moved QR Bar into our container.`);
-        return true;
-    } catch (error) {
-        console.error(`${extensionName}: Error moving QR Bar:`, error);
-        return false;
+    const currentSettings = extension_settings[extensionName];
+    if (!currentSettings) {
+        console.log(`${extensionName}: Extension settings not found.`);
+        return false; // Cannot determine integration preference
     }
+
+    if (currentSettings.integrateQrBar) {
+        // Setting wants QR bar IN our container
+        if (qrBar.parentElement !== qrContainer) {
+            try {
+                qrContainer.appendChild(qrBar);
+            } catch (error) {
+                console.error(`${extensionName}: Error moving QR Bar into gg-qr-container:`, error);
+                return false;
+            }
+        }
+        // Else: it's already in our container, do nothing
+    } else {
+        // Setting wants QR bar OUT of our container
+        if (qrBar.parentElement === qrContainer) {
+            if (sendForm) {
+                try {
+                    // Attempt to move it back to a common parent like send_form
+                    // This might not be its exact original parent, but a sensible default
+                    sendForm.appendChild(qrBar); 
+                } catch (error) {
+                    console.error(`${extensionName}: Error moving QR Bar out of gg-qr-container:`, error);
+                    // Fallback: if send_form append fails, at least remove from our container if possible
+                    // though this might leave it orphaned if not handled carefully.
+                    // For now, we'll rely on appendChild to handle reparenting.
+                    return false;
+                }
+            } else {
+                console.warn(`${extensionName}: Could not find 'send_form' to move QR bar back.`);
+                // If send_form doesn't exist, we can't reliably move it back. 
+                // Leaving it in qrContainer might be the lesser evil than orphaning it.
+                // Or, we could try qrContainer.removeChild(qrBar) but this needs a defined destination.
+            }
+        }
+        // Else: it's not in our container, do nothing (it's already where it should be according to this setting)
+    }
+    return true; // Indicates an attempt was made or state is correct
 }
 
 // Setup a polling mechanism to integrate QR Bar when it appears
 function startQRBarIntegration() {
-    console.log(`${extensionName}: Starting QR Bar integration monitor...`);
-    
     // Try to integrate immediately
     let integrated = integrateQRBar();
     
@@ -805,7 +880,6 @@ function startQRBarIntegration() {
             integrated = integrateQRBar();
             if (integrated) {
                 clearInterval(integrationInterval);
-                console.log(`${extensionName}: QR Bar integration complete, stopping monitor.`);
             }
         }, 1000); // Check every second
         
@@ -813,7 +887,6 @@ function startQRBarIntegration() {
         setTimeout(() => {
             if (!integrated) {
                 clearInterval(integrationInterval);
-                console.log(`${extensionName}: QR Bar integration timed out after 30 seconds.`);
             }
         }, 30000);
     }
@@ -821,15 +894,12 @@ function startQRBarIntegration() {
 
 // Set up a more aggressive and robust mutation observer to detect when the QR bar appears
 function setupQRMutationObserver() {
-    console.log(`${extensionName}: Setting up enhanced QR Bar integration observer...`);
-    
     // Create a timer that will periodically try to integrate the QR bar
     const integrationTimer = setInterval(() => {
         const integrated = integrateQRBar();
         // Stop the timer after 30 seconds regardless to avoid ongoing polling
         setTimeout(() => {
             clearInterval(integrationTimer);
-            console.log(`${extensionName}: Stopping automatic QR integration attempts.`);
         }, 30000);
     }, 1000); // Try every second
     
@@ -860,9 +930,7 @@ function setupQRMutationObserver() {
             childList: true, 
             subtree: true 
         });
-        
-        console.log(`${extensionName}: Set up enhanced mutation observer for QR Bar integration.`);
-    }, 1000); // Start observing after a short delay to allow the page to load
+    }, 1000); // Start observing after a short delay to ensure main UI is loaded
 }
 
 // Initial setup function
@@ -875,6 +943,8 @@ function setup() {
     startQRBarIntegration();
     // Setup mutation observer
     setupQRMutationObserver();
+    // Initialize listeners for guided continue functionality
+    initGuidedContinueListeners();
 }
 
 // --- Preset Installation ---
@@ -888,7 +958,6 @@ async function installPreset() {
     const presetApiId = 'openai'; 
     // Construct the path relative to the SillyTavern root
     const presetPath = `scripts/extensions/third-party/${extensionName}/${presetFileName}`;
-    console.log(`${extensionName}: Attempting to install ${presetApiId} preset "${presetName}" from ${presetPath}`);
 
     try {
         const response = await fetch(presetPath);
@@ -913,9 +982,6 @@ async function installPreset() {
             return;
         }
 
-        // Use the filename-derived name for checking and saving.
-        console.log(`${extensionName}: Validated internal structure of ${presetFileName} for preset "${presetName}"`);
-
         const presetManager = getPresetManager(presetApiId);
 
         if (!presetManager) {
@@ -937,8 +1003,6 @@ async function installPreset() {
                 // For indexed APIs, we need to get the text of the selected option
                 currentPresetName = $select.find('option:selected').text();
             }
-            
-            console.log(`${extensionName}: Current ${presetApiId} preset: "${currentPresetName}"`);
         } catch(err) {
             console.warn(`${extensionName}: Could not determine current preset: ${err}`);
         }
@@ -947,13 +1011,13 @@ async function installPreset() {
         const existingPreset = presetManager.findPreset(presetName);
 
         if (existingPreset !== undefined && existingPreset !== null) {
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) already exists. Skipping installation.`);
         } else {
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) not found. Attempting to save...`);
             // Save the entire original presetData object, using the filename-derived name.
             // This matches how performMasterImport handles chat completion presets.
             await presetManager.savePreset(presetName, presetData);
-            console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) successfully saved (using full data structure and filename).`);
+            // console.log(`${extensionName}: Preset "${presetName}" (${presetApiId}) successfully saved (using full data structure and filename).`);
             
             // If we had a previously selected preset, switch back to it
             if (currentPresetName && currentPresetName !== presetName) {
@@ -971,7 +1035,7 @@ async function installPreset() {
                                 $select.val($option.val()).trigger('change');
                             }
                         }
-                        console.log(`${extensionName}: Restored previous ${presetApiId} preset: "${currentPresetName}"`);
+                        // console.log(`${extensionName}: Restored previous ${presetApiId} preset: "${currentPresetName}"`);
                     }, 100); // Small delay to ensure the DOM has updated
                 } catch(err) {
                     console.warn(`${extensionName}: Could not restore previous preset: ${err}`);
@@ -987,17 +1051,77 @@ async function installPreset() {
     }
 }
 
+// Debounced version of the counter update function
+let updatePersistentGuideCounterDebounced;
+
+
 // Run setup after page load
-$(document).ready(function() {
-    setup();
+$(document).ready(async function () {
+    const context = getContext(); // Get the context here
+
+    setup(); // Initial setup of settings, UI elements etc.
+
+    // Delayed initial counter update to allow metadata to populate
+    setTimeout(() => {
+        console.log(`${extensionName}: Performing DELAYED initial update of persistent guide counter.`);
+        updatePersistentGuideCounter();
+    }, 5000); // Delay by 5 seconds
+
+    // Initialize the debounced function for counter updates from ST events
+    if (SillyTavern && SillyTavern.libs && SillyTavern.libs.lodash && SillyTavern.libs.lodash.debounce) {
+        updatePersistentGuideCounterDebounced = SillyTavern.libs.lodash.debounce(() => {
+            console.log(`${extensionName}: Debounced updatePersistentGuideCounter executing due to ST event.`);
+            updatePersistentGuideCounter();
+        }, 300); // 300ms debounce interval
+        console.log(`${extensionName}: Initialized debounced version of updatePersistentGuideCounter for ST events.`);
+    } else {
+        console.warn(`${extensionName}: Lodash debounce not found. Counter updates from ST events will not be debounced.`);
+        updatePersistentGuideCounterDebounced = () => { // Fallback to immediate call
+            console.log(`${extensionName}: updatePersistentGuideCounter (non-debounced fallback) executing due to ST event.`);
+            updatePersistentGuideCounter();
+        };
+    }
+
+    // Add SillyTavern event listeners for counter updates
+    const eventsToUpdateCounter = [
+        context.eventTypes.APP_READY,
+        context.eventTypes.CHAT_CREATED,
+        context.eventTypes.CHAT_CHANGED,
+        context.eventTypes.CHARACTER_MESSAGE_RENDERED,
+        context.eventTypes.USER_MESSAGE_RENDERED,
+        context.eventTypes.GROUP_MEMBER_DRAFTED,
+        context.eventTypes.WORLD_INFO_ACTIVATED,
+        context.eventTypes.GENERATION_STARTED,
+        context.eventTypes.GENERATION_ENDED,
+        context.eventTypes.GENERATION_STOPPED,
+        context.eventTypes.GENERATION_AFTER_COMMANDS,
+    ];
+
+    console.log(`${extensionName}: Registering SillyTavern event listeners for persistent guide counter updates.`);
+    for (const eventName of eventsToUpdateCounter) {
+        if (eventName && typeof eventName === 'string') { // Ensure eventName is a valid string
+            context.eventSource.makeLast(eventName, () => {
+                console.log(`${extensionName}: SillyTavern Event '${eventName}' received. Queuing debounced update for persistent guide counter.`);
+                if (updatePersistentGuideCounterDebounced) {
+                    updatePersistentGuideCounterDebounced();
+                }
+            });
+        } else {
+            console.warn(`${extensionName}: An event type in eventsToUpdateCounter was undefined or not a string. Skipping listener registration for it. Event: `, eventName);
+        }
+    }
+    console.log(`${extensionName}: Finished registering SillyTavern event listeners for counter.`);
+
     // Settings Panel Setup (runs with delay to allow main UI to render)
     setTimeout(() => {
-        console.log(`[${extensionName}] Delay finished, initiating settings panel load...`);
-        loadSettingsPanel();
+        loadSettingsPanel(context); // Pass context
     }, 1000);
+
     // Attempt to install the preset (can run relatively early)
     installPreset();
     
+    // Initialize other scripts that need context or should run on ready
+
     // Also set up a mutation observer to detect when the QR bar might be added/removed
     const observer = new MutationObserver(() => {
         integrateQRBar();
@@ -1008,10 +1132,111 @@ $(document).ready(function() {
         const sendForm = document.getElementById('send_form');
         if (sendForm) {
             observer.observe(sendForm, { childList: true, subtree: true });
-            console.log(`${extensionName}: Set up mutation observer for QR Bar integration.`);
         }
     }, 2000);
-});
+
+    // Delayed check for QR bar integration
+    setTimeout(() => {
+        const sendForm = document.getElementById('send_form');
+        if (sendForm && !document.getElementById('gg-qr-container')) {
+            integrateQRBar(sendForm);
+        }
+        // Fallback if send_form is not immediately available
+        else if (!sendForm) {
+            const qrObserver = new MutationObserver((mutationsList, obs) => { // Renamed observer to avoid conflict
+                const sendFormElement = document.getElementById('send_form'); // Renamed variable
+                if (sendFormElement) {
+                    if (!document.getElementById('gg-qr-container')) {
+                        integrateQRBar(sendFormElement);
+                    }
+                    obs.disconnect(); // Stop observing once found and integrated
+                }
+            });
+            qrObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    }, 2000);
+
+    // Check extension version and notify if updated
+    checkVersionAndNotify();
+}); // END OF $(document).ready()
 
 // Export settings helpers for settingsPanel.js import
 export { loadSettings, updateSettingsUI, addSettingsEventListeners };
+
+// Function to check version and show notification popup
+async function checkVersionAndNotify() {
+    if (!extension_settings[extensionName]) {
+        console.warn(`${extensionName}: Extension settings not found, skipping version check.`);
+        return;
+    }
+
+    const currentVersionInSettings = extension_settings[extensionName].LastPatchNoteVersion;
+    const defaultVersion = defaultSettings.LastPatchNoteVersion;
+
+    // If version in settings is undefined, null, empty, or older than default
+    if (!currentVersionInSettings || currentVersionInSettings < defaultVersion) {
+        // For simplicity, using confirm dialog. Can be replaced with a custom modal later.
+        const message = `Welcome to ${extensionName} v${defaultVersion}!\n\nThis update includes several enhancements and bug fixes. For detailed information, please check the changelog.\n\nClick 'OK' to acknowledge this update (this message won't show again until the next version).\nClick 'Cancel' to see this message again next time.`;
+        
+        const userAcknowledged = confirm(message);
+
+        if (userAcknowledged) {
+            extension_settings[extensionName].LastPatchNoteVersion = defaultVersion;
+            await saveSettingsDebounced();
+            console.log(`${extensionName}: Version updated to ${defaultVersion} in settings.`);
+        } else {
+            console.log(`${extensionName}: User chose to show version notification again.`);
+        }
+    }
+}
+
+// Expose functions to the global scope for buttons or STScripts
+window.GuidedGenerations = {
+    simpleSend,
+    guidedSwipe,
+    guidedContinue,
+    undoLastGuidedAddition, // Expose new function
+    revertToOriginalGuidedContinue, // Expose new function
+    guidedResponse,
+    updatePersistentGuideCounter, // Expose counter update function
+};
+
+/**
+ * Counts the number of active persistent guides.
+ * @param {object} context The SillyTavern context object.
+ * @returns {number} The number of active persistent guides.
+ */
+function countActiveGuides(context) {
+    if (context && context.chatMetadata && context.chatMetadata.script_injects) {
+        return Object.keys(context.chatMetadata.script_injects).length;
+    }
+    return 0;
+}
+
+/**
+ * Updates the display of the persistent guide counter on the pg_menu_button.
+ */
+function updatePersistentGuideCounter() {
+    const context = getContext(); 
+    if (!context) {
+        console.warn(`${extensionName}: Context not available, cannot update persistent guide counter.`);
+        return;
+    }
+
+    const count = countActiveGuides(context);
+    const pgMenuButton = document.getElementById('pg_menu_button');
+
+    if (pgMenuButton) {
+        let counterSpan = pgMenuButton.querySelector('#pg_guide_counter_span');
+        if (!counterSpan) {
+            counterSpan = document.createElement('span');
+            counterSpan.id = 'pg_guide_counter_span';
+            counterSpan.className = 'pg-guide-counter'; // For styling
+            pgMenuButton.appendChild(counterSpan);
+        }
+        counterSpan.textContent = ` ${count}`; // Display count without parentheses, e.g., " 0"
+        pgMenuButton.title = `Persistent Guides: ${count} Injections active.`; // Update the title attribute (mouseover text)
+    } else {
+        console.warn(`${extensionName}: pg_menu_button NOT found. Counter cannot be displayed.`);
+    } 
+}

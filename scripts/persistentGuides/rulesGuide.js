@@ -15,7 +15,8 @@ const rulesGuide = async (isAuto = false) => {
     const promptTemplate = extension_settings[extensionName]?.promptRules ?? `[Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules that have been explicitly established in the chat history or character information. Format as a numbered list.] `;
     const genCommandSuffix = promptTemplate;
     const label = `Character's rules: {{pipe}}`;
-    const finalCommand = `/inject id=rules position=chat scan=true depth=0 role=${injectionRole} [${label}] |`;
+    const depth = extension_settings[extensionName]?.depthPromptRules ?? 0;
+    const finalCommand = `/inject id=rules position=chat scan=true depth=${depth} role=${injectionRole} [Rules for current scene {{pipe}}] |`;
     return await runGuideScript({
         guideId: 'rules',
         genCommandSuffix,
