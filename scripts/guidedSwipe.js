@@ -121,45 +121,32 @@ async function generateNewSwipe() {
 
         // --- 3. Wait for Generation to Finish ---
         const generationPromise = new Promise((resolve, reject) => {
-            let resolved = false;
-            const timeoutDuration = 120000; // 120 seconds timeout
-            let timeoutId = null;
+            let successListener, failureListener, cleanup;
 
-            const cleanup = () => {
-                clearTimeout(timeoutId);
-                eventSource.removeListener(event_types.GENERATION_ENDED, successListener);
-                // TODO: Consider removing potential error listeners here too if added
+            cleanup = () => {
+                // Use the listener variables defined in the outer scope
+                eventSource.removeEventListener(event_types.GENERATION_END, successListener);
+                eventSource.removeEventListener(event_types.GENERATION_FAILED, failureListener);
             };
 
-            const successListener = () => {
-                if (!resolved) {
-                    resolved = true;
-                    cleanup();
-                    console.log("[GuidedGenerations][Swipe] Generation ended signal received.");
-                    resolve(true);
-                }
+            successListener = () => {
+                cleanup();
+                console.log("[GuidedGenerations][Swipe] Generation ended signal received.");
+                resolve(true);
             };
 
-            // Add the success listener
-            eventSource.once(event_types.GENERATION_ENDED, successListener);
+            failureListener = (errorData) => {
+                cleanup();
+                console.error("[GuidedGenerations][Swipe] Generation failed signal received:", errorData);
+                reject(new Error("Swipe generation failed."));
+            };
 
-            // Set the timeout
-            timeoutId = setTimeout(() => {
-                if (!resolved) {
-                    // Don't set resolved = true here, let the listener handle success if it comes later
-                    cleanup(); // Remove listener even on timeout
-                    console.error(`[GuidedGenerations][Swipe] Swipe generation timed out after ${timeoutDuration / 1000} seconds.`);
-                    // Reject the promise on timeout
-                    reject(new Error(`Swipe generation timed out after ${timeoutDuration / 1000} seconds.`));
-                }
-            }, timeoutDuration);
-
-            // TODO: Add an error listener if SillyTavern provides one
-            // const errorListener = (errorData) => { if (!resolved) { resolved = true; cleanup(); reject(new Error(...)); }};
-            // eventSource.once(event_types.GENERATION_FAILED, errorListener);
+            // Add the success and failure listeners
+            eventSource.once(event_types.GENERATION_END, successListener);
+            eventSource.once(event_types.GENERATION_FAILED, failureListener);
         });
 
-        // Await the generation promise (will throw on timeout/error)
+        // Await the generation promise (will throw on error)
         await generationPromise;
         // Use standard setTimeout for delay as context.delay is missing
         await new Promise(resolve => setTimeout(resolve, 200)); // Small delay after generation finishes
