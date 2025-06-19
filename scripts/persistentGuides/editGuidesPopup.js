@@ -40,7 +40,7 @@ export class EditGuidesPopup {
                             <label for="newGuideName">Name:</label>
                             <input id="newGuideName" type="text" placeholder="Guide Name">
                             <label for="newGuideDepth">Depth:</label>
-                            <input id="newGuideDepth" type="number" value="1" min="1">
+                            <input id="newGuideDepth" type="number" value="1" min="0">
                             <label for="genPromptInput">Gen Prompt:</label>
                             <input id="genPromptInput" type="text" placeholder="OOC: Don't continue the chat. Instead...">
                         </div>
@@ -123,7 +123,10 @@ export class EditGuidesPopup {
         // Create new custom guide
         createButton?.addEventListener('click', async () => {
             const newName = nameInput.value.trim();
-            const newDepth = parseInt(depthInput.value, 10) || 1;
+            let parsedDepth = parseInt(depthInput.value, 10);
+            // If parsing fails (NaN), default to 1. Otherwise, use the parsed value.
+            // If parsing fails (NaN), default to 1. Otherwise, use the parsed value, ensuring it's not less than 0.
+            const newDepth = isNaN(parsedDepth) ? 1 : Math.max(0, parsedDepth);
             if (!newName) { console.error('[GuidedGenerations] Guide name required.'); return; }
             // Disallow spaces, pipes, slashes in guide ID
             const validNameRegex = /^[A-Za-z0-9_-]+$/;
