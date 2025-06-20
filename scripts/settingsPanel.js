@@ -24,21 +24,17 @@ export async function loadSettingsPanel() {
             return;
         }
     } else {
-        console.log(`${extensionName}: Settings container #${containerId} found.`);
         container.innerHTML = '';
     }
 
     try {
-        console.log(`${extensionName}: Rendering settings template using renderExtensionTemplateAsync...`);
         const settingsHtml = await renderExtensionTemplateAsync(`third-party/${extensionName}`, 'settings');
-        console.log(`${extensionName}: Settings template rendered successfully.`);
         $(container).html(settingsHtml);
 
             // Remove any manual clear buttons to avoid duplicates
             container.querySelectorAll('.gg-clear-button').forEach(btn => btn.remove());
 
             setTimeout(() => {
-                console.log(`${extensionName}: DOM updated, now loading settings and adding listeners...`);
                 loadSettings();
                 updateSettingsUI();
                 addSettingsEventListeners();
@@ -105,7 +101,6 @@ export async function loadSettingsPanel() {
                     input.style.minWidth = '200px';
                 });
 
-                console.log(`[${extensionName}] Settings panel actions complete.`);
             }, 100);
     } catch (error) {
         console.error(`[${extensionName}] Error rendering settings template:`, error);

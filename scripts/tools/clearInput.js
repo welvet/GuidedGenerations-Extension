@@ -5,7 +5,6 @@
  */
 export default async function clearInput() {
     const extensionName = "GuidedGenerations-Extension";
-    console.log(`${extensionName}: Executing Clear Input tool`);
     
     // Execute the clearInput workflow
     const stscript = `/setinput`;
@@ -25,7 +24,6 @@ function executeSTScript(stscript) {
             const context = SillyTavern.getContext();
             // Send the combined script via context
             context.executeSlashCommandsWithOptions(stscript);
-            console.log(`${extensionName}: ST-Script executed successfully.`);
         } else {
             console.error(`${extensionName}: SillyTavern.getContext function not found.`);
         }

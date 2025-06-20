@@ -10,7 +10,6 @@ import { getContext, extension_settings } from '../../../../../extensions.js';
  * @returns {Promise<void>}
  */
 export default async function spellchecker() {
-    console.log('[GuidedGenerations][Spellchecker] Tool activated.');
     const textarea = document.getElementById('send_textarea');
     if (!textarea) {
         console.error('[GuidedGenerations][Spellchecker] Textarea #send_textarea not found.');
@@ -25,7 +24,6 @@ export default async function spellchecker() {
     // Determine target preset from settings
     const presetKey = 'presetSpellchecker';
     const targetPreset = extension_settings[extensionName]?.[presetKey];
-    console.log(`[GuidedGenerations][Spellchecker] Using preset: ${targetPreset || 'none'}`);
 
     // --- Build Preset Switching Script Parts Conditionally ---
     let presetSwitchStart = '';
@@ -75,10 +73,8 @@ async function executeSTScript(stscript) { // Make helper async if it needs cont
     try {
         // Use the context executeSlashCommandsWithOptions method
         const context = getContext(); // Get context via imported function
-        console.log(`[GuidedGenerations][Spellchecker] Executing STScript: ${stscript}`);
         // Send the combined script via context
         await context.executeSlashCommandsWithOptions(stscript);
-        console.log(`${extensionName}: Spellchecker ST-Script executed successfully.`);
     } catch (error) {
         console.error(`${extensionName}: Spellchecker Error executing ST-Script:`, error);
     }

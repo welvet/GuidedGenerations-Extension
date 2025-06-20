@@ -219,7 +219,6 @@ export class EditIntrosPopup {
 
             // Deselect custom option visually
             customOption.classList.remove('selected');
-            console.log('Selected Options:', this.selectedOptions);
         };
 
         options.forEach(option => {
@@ -255,7 +254,6 @@ export class EditIntrosPopup {
             // Select custom option
             customOption.classList.add('selected');
             this.isCustomSelected = true;
-            console.log('Custom Selected. Options:', this.selectedOptions);
         });
 
         // --- Custom Textarea Input Logic ---
@@ -310,7 +308,6 @@ export class EditIntrosPopup {
         // Ensure custom is visually deselected too
         this.popupElement.querySelector('.gg-custom-option')?.classList.remove('selected');
         
-        console.log('Selections reset.');
         // NOTE: We intentionally do NOT clear the custom command textarea here.
     }
 
@@ -365,7 +362,6 @@ export class EditIntrosPopup {
     async applyChanges() {
         // Increment and log invocation count
         this.applyChangesCount++;
-        console.log(`[GuidedGenerations] applyChanges invocation #${this.applyChangesCount}`);
         this._setLoading(true);
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
@@ -379,7 +375,6 @@ export class EditIntrosPopup {
                 return;
             }
             instruction = customCommand;
-            console.log('[GuidedGenerations] Applying custom instruction.');
             sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
@@ -397,7 +392,6 @@ export class EditIntrosPopup {
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
-            console.log(`[GuidedGenerations] Applying combined presets: ${instruction}`);
         }
 
         const textareaElement = document.getElementById('send_textarea');
@@ -454,14 +448,12 @@ export class EditIntrosPopup {
         try {
             const context = getContext();
             // Log the outgoing Editing Intro script for debugging
-            console.log('[GuidedGenerations] Sending Editing Intro scriptPart1:', scriptPart1);
             await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
             const swipeSuccess = await generateNewSwipe();
             if (swipeSuccess) {
                 // Wait a short moment before executing the final part
                 await new Promise(resolve => setTimeout(resolve, 3000)); 
                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
-                console.log('[GuidedGenerations] Edit Intros script executed successfully.');
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe.');
                  // Still switch back preset on failure?
@@ -489,7 +481,6 @@ export class EditIntrosPopup {
      */
     async makeNewIntro() {
         this._setLoading(true);
-        console.log('Make New Intro button clicked');
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
@@ -502,7 +493,6 @@ export class EditIntrosPopup {
                 return;
             }
             instruction = customCommand;
-            console.log('[GuidedGenerations] Making new intro with custom instruction.');
             sessionStorage.setItem('gg_lastCustomCommand', customCommand);
         } else {
             const selectedInstructions = [];
@@ -520,7 +510,6 @@ export class EditIntrosPopup {
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
-            console.log(`[GuidedGenerations] Making new intro with combined presets: ${instruction}`);
         }
 
         // --- Construct Modified Script (Existing logic, using new 'instruction') ---
@@ -570,7 +559,6 @@ export class EditIntrosPopup {
         try {
             const context = getContext();
             // Debug: log outgoing Make New Intro script for clarity
-            console.log('[GuidedGenerations] Sending Make New Intro scriptPart1:', scriptPart1);
             await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
             // Wait a short moment *after* initial commands before generating
             await new Promise(resolve => setTimeout(resolve, 300)); 
@@ -580,7 +568,6 @@ export class EditIntrosPopup {
                 await new Promise(resolve => setTimeout(resolve, 300)); 
                 // Only need to switch preset back
                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
-                console.log('[GuidedGenerations] Make New Intro script executed successfully.');
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe for Make New Intro.');
                 // Still switch back preset on failure?

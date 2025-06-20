@@ -8,7 +8,6 @@
  * @returns {Promise<string|null>} The result from the pipe, or null on error.
  */
 const updateCharacter = async () => { // Make async
-    console.log('[GuidedGenerations] Update Character button clicked');
 
     // Placeholder STScript - Replace with actual logic later
     let stscriptCommand = `/return test |`;

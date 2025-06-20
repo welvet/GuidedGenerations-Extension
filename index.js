@@ -1164,34 +1164,26 @@ $(document).ready(async function () {
 
     // Listen for the GENERATION_AFTER_COMMANDS event
     eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
-        console.log(`GuidedGenerations-Extension: GENERATION_AFTER_COMMANDS event fired. Type: ${type}, Dry Run:`, dryRun);
-
         // Condition for auto-triggering guides
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
-            console.log('GuidedGenerations-Extension: Condition for auto-triggering guides met.');
             const settings = extension_settings[extensionName];
             if (settings) {
                 if (settings.autoTriggerThinking) {
-                    console.log('GuidedGenerations-Extension: Auto-triggering thinkingGuide.');
                     await thinkingGuide(true); // Pass isAuto=true
                 }
                 if (settings.autoTriggerState) {
-                    console.log('GuidedGenerations-Extension: Auto-triggering stateGuide.');
                     await stateGuide(true); // Pass isAuto=true
                 }
                 if (settings.autoTriggerClothes) {
-                    console.log('GuidedGenerations-Extension: Auto-triggering clothesGuide.');
                     await clothesGuide(true); // Pass isAuto=true
                 }
                 if (settings.enableAutoCustomAutoGuide) {
-                    console.log('GuidedGenerations-Extension: Auto-triggering customAutoGuide.');
                     await customAutoGuide(true); // Pass isAuto=true
                 }
             } else {
                 console.warn('GuidedGenerations-Extension: Extension settings not found, cannot auto-trigger guides.');
             }
         } else if (type === 'quiet' && !dryRun) {
-            console.log('GuidedGenerations-Extension: Condition (type is quiet and not a dry run) met. Args:', generateArgsObject);
             // Future logic for handling this specific event can go here.
         }
     });
@@ -1223,9 +1215,7 @@ async function checkVersionAndNotify() {
         if (userAcknowledged) {
             extension_settings[extensionName].LastPatchNoteVersion = defaultVersion;
             await saveSettingsDebounced();
-            console.log(`${extensionName}: Version updated to ${defaultVersion} in settings.`);
         } else {
-            console.log(`${extensionName}: User chose to show version notification again.`);
         }
     }
 }

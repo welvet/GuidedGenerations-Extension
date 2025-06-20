@@ -11,7 +11,6 @@ const simpleSend = () => {
         return;
     }
     isSending = true;
-    console.log(`[GuidedGenerations][SimpleSend] function entered (isSending = true).`);
     
     const textarea = document.getElementById('send_textarea');
     if (!textarea) {
@@ -28,14 +27,12 @@ const simpleSend = () => {
     // Modified Stscript: Send current input, then clear input
     const command = `/send {{input}} | /setinput`; 
     
-    console.log("[GuidedGenerations][SimpleSend] Executing:", command);
     try {
         // Use the context executeSlashCommandsWithOptions method
         if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
             const context = SillyTavern.getContext();
             // Send the combined script via context
             context.executeSlashCommandsWithOptions(command);
-            console.log('[GuidedGenerations][SimpleSend] stscript executed.');
         } else {
             console.error('[GuidedGenerations][SimpleSend] SillyTavern.getContext function not found.');
         } 
@@ -45,7 +42,6 @@ const simpleSend = () => {
 
     // Reset the flag after a short delay 
     setTimeout(() => { isSending = false; }, 100); 
-    console.log(`[GuidedGenerations][SimpleSend] function finished (isSending = false after delay).`);
 };
 
 // Export the function

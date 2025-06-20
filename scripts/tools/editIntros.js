@@ -7,7 +7,6 @@ import editIntrosPopup from './editIntrosPopup.js';
 
 export default async function editIntros() {
     const extensionName = "GuidedGenerations-Extension";
-    console.log(`${extensionName}: Opening Edit Intros popup`);
     
     // Initialize and open the popup
     await editIntrosPopup.init();
@@ -26,7 +25,6 @@ function executeSTScript(stscript) {
             const context = SillyTavern.getContext();
             // Send the combined script via context
             context.executeSlashCommandsWithOptions(stscript);
-            console.log(`${extensionName}: ST-Script executed successfully.`);
         } else {
             console.error(`${extensionName}: SillyTavern.getContext function not found.`);
         }
