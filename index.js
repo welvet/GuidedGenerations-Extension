@@ -81,13 +81,13 @@ export const defaultSettings = {
     customAutoGuidePresetName: '', // Default preset name for Custom Auto Guide
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     // Guide prompt overrides
-    promptClothes: '[OOC: Answer me out of Character! Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
-    promptState: '[OOC: Answer me out of Character! Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
-    promptThinking: '[OOC: Answer me out of Character! Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
-    promptSituational: '[OOC: Answer me out of Character! Analyze the chat history and provide a concise summary of: 1. Current location and setting (indoors/outdoors, time of day, weather if relevant) 2. Present characters and their current activities 3. Relevant objects, items, or environmental details that could influence interactions 4. Recent events or topics of conversation (last 10-20 messages) Keep the overview factual and neutral without speculation. Format in clear paragraphs.] ',
-    promptRules: '[OOC: Answer me out of Character! Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
-    promptCorrections: '[OOC: Answer me out of Character! Do not continue the story do not wrote in character, instead write {{char}}\'s last response (msgtorework) again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
-    promptSpellchecker: '[OOC: Answer me out of Character! Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
+    promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
+    promptState: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
+    promptThinking: '[OOC: Answer me out of Character! Don\'t continue the RP.  Write what each characters in the current scene are currently thinking, pure thought only. Do NOT continue the story or include narration or dialogue. Do not include the{{user}}\'s thoughts.] ',
+    promptSituational: '[OOC: Answer me out of Character! Don\'t continue the RP.  Analyze the chat history and provide a concise summary of: 1. Current location and setting (indoors/outdoors, time of day, weather if relevant) 2. Present characters and their current activities 3. Relevant objects, items, or environmental details that could influence interactions 4. Recent events or topics of conversation (last 10-20 messages) Keep the overview factual and neutral without speculation. Format in clear paragraphs.] ',
+    promptRules: '[OOC: Answer me out of Character! Don\'t continue the RP.  Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
+    promptCorrections: '[OOC: Answer me out of Character! Don\'t continue the RP.  Do not continue the story do not wrote in character, instead write {{char}}\'s last response (msgtorework) again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
+    promptSpellchecker: '[OOC: Answer me out of Character! Don\'t continue the RP.  Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
     promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
     promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
     promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
@@ -108,13 +108,13 @@ export const defaultSettings = {
     depthPromptClothes: 1,
     depthPromptState: 1,
     depthPromptThinking: 0,
-    depthPromptSituational: 3,
+    depthPromptSituational: 1,
     depthPromptRules: 0,
     depthPromptCorrections: 0,
     depthPromptGuidedResponse: 0,
     depthPromptGuidedSwipe: 0,
     depthPromptCustomAuto: 1, // Default depth for Custom Auto Guide
-    LastPatchNoteVersion: '1.4.0' // Default extension version for patch notes
+    LastPatchNoteVersion: '1.4.3' // Default extension version for patch notes
 };
 
 /**
@@ -1176,7 +1176,7 @@ async function checkVersionAndNotify() {
     // If version in settings is undefined, null, empty, or older than default
     if (!currentVersionInSettings || currentVersionInSettings < defaultVersion) {
         // For simplicity, using confirm dialog. Can be replaced with a custom modal later.
-        const message = `Welcome to ${extensionName} v${defaultVersion}!\n\nThis update includes several enhancements and bug fixes. For detailed information, please check the changelog.\n\nClick 'OK' to acknowledge this update (this message won't show again until the next version).\nClick 'Cancel' to see this message again next time.`;
+        const message = `Welcome to ${extensionName} v${defaultVersion}!\n\nThis update includes several enhancements and bug fixes. For detailed information, please check the changelog.\n\nAdditionally, many of the default Prompts for the Guides have been updated. If you are still using the defaults, you might want to get the new defaults for a better experience.\n\nClick 'OK' to acknowledge this update (this message won't show again until the next version).\nClick 'Cancel' to see this message again next time.`;
         
         const userAcknowledged = confirm(message);
 
