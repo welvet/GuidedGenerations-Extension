@@ -19,6 +19,12 @@ import { getContext, loadExtensionSettings, extension_settings, renderExtensionT
 // Import Preset Manager
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
 import { loadSettingsPanel } from './scripts/settingsPanel.js';
+import { showVersionNotification } from './scripts/ui/versionNotificationPopup.js';
+
+// Import auto-triggerable guides
+import thinkingGuide from './scripts/persistentGuides/thinkingGuide.js';
+import stateGuide from './scripts/persistentGuides/stateGuide.js';
+import clothesGuide from './scripts/persistentGuides/clothesGuide.js';
 
 // --- Shared State for Impersonation Input Recovery ---
 let previousImpersonateInput = ''; // Input before the last impersonation
@@ -1156,6 +1162,40 @@ $(document).ready(async function () {
         }
     }, 2000);
 
+    // Listen for the GENERATION_AFTER_COMMANDS event
+    eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
+        console.log(`GuidedGenerations-Extension: GENERATION_AFTER_COMMANDS event fired. Type: ${type}, Dry Run:`, dryRun);
+
+        // Condition for auto-triggering guides
+        if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
+            console.log('GuidedGenerations-Extension: Condition for auto-triggering guides met.');
+            const settings = extension_settings[extensionName];
+            if (settings) {
+                if (settings.autoTriggerThinking) {
+                    console.log('GuidedGenerations-Extension: Auto-triggering thinkingGuide.');
+                    await thinkingGuide(true); // Pass isAuto=true
+                }
+                if (settings.autoTriggerState) {
+                    console.log('GuidedGenerations-Extension: Auto-triggering stateGuide.');
+                    await stateGuide(true); // Pass isAuto=true
+                }
+                if (settings.autoTriggerClothes) {
+                    console.log('GuidedGenerations-Extension: Auto-triggering clothesGuide.');
+                    await clothesGuide(true); // Pass isAuto=true
+                }
+                if (settings.enableAutoCustomAutoGuide) {
+                    console.log('GuidedGenerations-Extension: Auto-triggering customAutoGuide.');
+                    await customAutoGuide(true); // Pass isAuto=true
+                }
+            } else {
+                console.warn('GuidedGenerations-Extension: Extension settings not found, cannot auto-trigger guides.');
+            }
+        } else if (type === 'quiet' && !dryRun) {
+            console.log('GuidedGenerations-Extension: Condition (type is quiet and not a dry run) met. Args:', generateArgsObject);
+            // Future logic for handling this specific event can go here.
+        }
+    });
+
     // Check extension version and notify if updated
     checkVersionAndNotify();
 }); // END OF $(document).ready()
@@ -1175,10 +1215,10 @@ async function checkVersionAndNotify() {
 
     // If version in settings is undefined, null, empty, or older than default
     if (!currentVersionInSettings || currentVersionInSettings < defaultVersion) {
-        // For simplicity, using confirm dialog. Can be replaced with a custom modal later.
-        const message = `Welcome to ${extensionName} v${defaultVersion}!\n\nThis update includes several enhancements and bug fixes. For detailed information, please check the changelog.\n\nAdditionally, many of the default Prompts for the Guides have been updated. If you are still using the defaults, you might want to get the new defaults for a better experience.\n\nClick 'OK' to acknowledge this update (this message won't show again until the next version).\nClick 'Cancel' to see this message again next time.`;
+        const popupTitle = `${extensionName} v${defaultVersion} Updated`;
+        const messageContent = `This version includes an update to Auto-Triggered Guides: they now also run when you use the normal SillyTavern Send button (or press Enter to send), in addition to when using the Guided Response button.\n\nMany of the default Prompts for the Guides have also been updated. If you are still using the defaults, you might want to get the new defaults for a better experience.`;
         
-        const userAcknowledged = confirm(message);
+        const userAcknowledged = await showVersionNotification(popupTitle, messageContent);
 
         if (userAcknowledged) {
             extension_settings[extensionName].LastPatchNoteVersion = defaultVersion;

@@ -97,13 +97,6 @@ const guidedResponse = async () => {
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
         try {
-            // First check for auto-trigger settings and execute relevant guides
-            const settings = extension_settings[extensionName];
-            if (settings.autoTriggerThinking) await thinkingGuide(true); // Pass isAuto=true
-            if (settings.autoTriggerState) await stateGuide(true); // Pass isAuto=true
-            if (settings.autoTriggerClothes) await clothesGuide(true); // Pass isAuto=true
-            if (settings.enableAutoCustomAutoGuide) await customAutoGuide(true); // Pass isAuto=true
-
             // Execute the main command
             await context.executeSlashCommandsWithOptions(stscriptCommand);
 
