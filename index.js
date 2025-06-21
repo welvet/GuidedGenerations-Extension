@@ -1166,6 +1166,11 @@ $(document).ready(async function () {
     eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
         // Condition for auto-triggering guides
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
+            const textarea = document.getElementById('send_textarea');
+            if (textarea && textarea.value.trim() !== '') {
+                simpleSend();
+            }
+
             const settings = extension_settings[extensionName];
             if (settings) {
                 if (settings.autoTriggerThinking) {
