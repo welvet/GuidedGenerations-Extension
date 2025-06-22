@@ -6,13 +6,12 @@
  * Executes the Custom Guide script to let users create their own personal guides.
  * This allows for maximum flexibility in creating specialized context for characters.
  */
-import { getContext } from '../../../../../extensions.js';
 import editGuidesPopup from './editGuidesPopup.js';
 
 const customGuide = async () => {
     console.log('[GuidedGenerations] Custom Guide button clicked');
 
-    const context = getContext();
+    const context = SillyTavern.getContext();
     if (!context || !context.chatMetadata || !context.chatMetadata.script_injects) {
         console.error('[GuidedGenerations] Context or persistent injections not available.');
         return;

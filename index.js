@@ -1168,7 +1168,7 @@ $(document).ready(async function () {
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
             const textarea = document.getElementById('send_textarea');
             if (textarea && textarea.value.trim() !== '') {
-                simpleSend();
+                await simpleSend();
             }
 
             const settings = extension_settings[extensionName];

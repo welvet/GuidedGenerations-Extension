@@ -293,7 +293,6 @@ export class EditGuidesPopup {
             this.popupElement.style.display = 'none';
         }
         this.selectedGuideKey = null; // Clear selection on close
-        // Reset textarea? Optional.
     }
 
     /**
@@ -302,7 +301,6 @@ export class EditGuidesPopup {
     async saveChanges() {
         if (!this.selectedGuideKey || !this.injectionData[this.selectedGuideKey]) {
             console.error('[GuidedGenerations] No guide selected or data missing for save.');
-            // Optionally show a user-friendly message
             return;
         }
 
@@ -314,16 +312,13 @@ export class EditGuidesPopup {
 
         if (success) {
             console.log(`[GuidedGenerations] Guide "${this.selectedGuideKey}" updated directly in context.`);
-            // Update the internal data cache if needed, although reopening will refresh it
             this.injectionData[this.selectedGuideKey].value = newContent;
             this.close();
-            // Update the counter on the main UI
             if (window.GuidedGenerations && typeof window.GuidedGenerations.updatePersistentGuideCounter === 'function') {
                 window.GuidedGenerations.updatePersistentGuideCounter();
             }
         } else {
             console.error(`[GuidedGenerations] Failed to update guide "${this.selectedGuideKey}" directly.`);
-            // Optionally show an error message to the user
         }
     }
 
@@ -336,34 +331,40 @@ export class EditGuidesPopup {
     async updateGuidePromptDirectly(key, content) {
         try {
             const context = SillyTavern.getContext();
-            // Persistent store: chatMetadata.script_injects (keys without 'script_inject_' prefix)
-            if (context && context.chatMetadata && context.chatMetadata.script_injects) {
-                const guideName = key.startsWith('script_inject_') ? key.substring('script_inject_'.length) : key;
-                const injections = context.chatMetadata.script_injects;
-                if (!(guideName in injections)) {
-                    console.error(`[GuidedGenerations] Cannot update persistent injection: chatMetadata.script_injects['${guideName}'] not found.`);
+            const guideName = key.startsWith('script_inject_') ? key.substring('script_inject_'.length) : key;
+
+            if (context.chatMetadata && context.chatMetadata.script_injects) {
+                const injection = context.chatMetadata.script_injects[guideName];
+
+                if (!injection) {
+                    console.error(`[GuidedGenerations] Cannot update persistent injection: context.chatMetadata.script_injects['${guideName}'] not found.`);
                     return false;
                 }
-                injections[guideName].value = content;
-                // Optionally update depth
-                const depth = this.injectionData[key]?.depth;
-                if (typeof depth === 'number') {
-                    injections[guideName].depth = depth;
+
+                // Update the persisted value
+                injection.value = content;
+
+                // Update the live session prompt using the built-in function
+                if (typeof context.setExtensionPrompt === 'function') {
+                    context.setExtensionPrompt(
+                        key, // The prefixed key, e.g., 'script_inject_myguide'
+                        content,
+                        injection.position,
+                        injection.depth,
+                        injection.scan,
+                        injection.role,
+                        null // filterFunction - not supported by this editor
+                    );
                 }
-                // Persist updated metadata and reload chat
+
+                // Persist the changes without reloading the whole chat
                 if (typeof context.saveMetadata === 'function') {
                     await context.saveMetadata();
-                    if (typeof context.reloadCurrentChat === 'function') {
-                        context.reloadCurrentChat();
-                    }
                 }
+
                 return true;
             }
-            // Fall back to ephemeral extensionPrompts
-            if (context && context.extensionPrompts && context.extensionPrompts[key]) {
-                context.extensionPrompts[key].value = content;
-                return true;
-            }
+
             console.error(`[GuidedGenerations] Cannot update prompt: no data store for key '${key}'.`);
             return false;
         } catch (error) {
