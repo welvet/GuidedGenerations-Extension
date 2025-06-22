@@ -120,30 +120,13 @@ async function generateNewSwipe() {
         context.swipe.right(); // THE VITAL CALL TO START GENERATION
 
         // --- 3. Wait for Generation to Finish ---
-        const generationPromise = new Promise((resolve, reject) => {
-            let successListener, failureListener, cleanup;
-
-            cleanup = () => {
-                // Use the listener variables defined in the outer scope
-                eventSource.removeEventListener(event_types.GENERATION_END, successListener);
-                eventSource.removeEventListener(event_types.GENERATION_FAILED, failureListener);
-            };
-
-            successListener = () => {
-                cleanup();
+        const generationPromise = new Promise((resolve) => {
+            const successListener = () => {
                 console.log("[GuidedGenerations][Swipe] Generation ended signal received.");
                 resolve(true);
             };
 
-            failureListener = (errorData) => {
-                cleanup();
-                console.error("[GuidedGenerations][Swipe] Generation failed signal received:", errorData);
-                reject(new Error("Swipe generation failed."));
-            };
-
-            // Add the success and failure listeners
-            eventSource.once(event_types.GENERATION_END, successListener);
-            eventSource.once(event_types.GENERATION_FAILED, failureListener);
+            eventSource.once(event_types.GENERATION_ENDED, successListener);
         });
 
         // Await the generation promise (will throw on error)

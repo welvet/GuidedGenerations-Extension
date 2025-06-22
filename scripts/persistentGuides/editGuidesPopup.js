@@ -310,7 +310,7 @@ export class EditGuidesPopup {
         const newContent = textareaElement.value; // Get potentially modified content
 
         // Call the direct update method
-        const success = this.updateGuidePromptDirectly(this.selectedGuideKey, newContent);
+        const success = await this.updateGuidePromptDirectly(this.selectedGuideKey, newContent);
 
         if (success) {
             console.log(`[GuidedGenerations] Guide "${this.selectedGuideKey}" updated directly in context.`);
@@ -333,7 +333,7 @@ export class EditGuidesPopup {
      * @param {string} content - The new content for the guide prompt.
      * @returns {boolean} - True if successful, false otherwise.
      */
-    updateGuidePromptDirectly(key, content) {
+    async updateGuidePromptDirectly(key, content) {
         try {
             const context = SillyTavern.getContext();
             // Persistent store: chatMetadata.script_injects (keys without 'script_inject_' prefix)
@@ -350,8 +350,13 @@ export class EditGuidesPopup {
                 if (typeof depth === 'number') {
                     injections[guideName].depth = depth;
                 }
-                // Persist updated metadata
-                if (typeof context.saveMetadata === 'function') { context.saveMetadata(); }
+                // Persist updated metadata and reload chat
+                if (typeof context.saveMetadata === 'function') {
+                    await context.saveMetadata();
+                    if (typeof context.reloadCurrentChat === 'function') {
+                        context.reloadCurrentChat();
+                    }
+                }
                 return true;
             }
             // Fall back to ephemeral extensionPrompts

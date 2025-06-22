@@ -312,26 +312,6 @@ export class EditIntrosPopup {
     }
 
     /**
-     * Show or hide loading indicator by disabling buttons and updating text.
-     */
-    _setLoading(isLoading) {
-        const applyBtn = this.popupElement.querySelector('#ggApplyEditIntros');
-        const makeBtn = this.popupElement.querySelector('#ggMakeNewIntro');
-        const cancelBtn = this.popupElement.querySelector('#ggCancelEditIntros');
-        if (applyBtn) {
-            applyBtn.disabled = isLoading;
-            applyBtn.textContent = isLoading ? 'Loading...' : 'Edit Intro';
-        }
-        if (makeBtn) {
-            makeBtn.disabled = isLoading;
-            makeBtn.textContent = isLoading ? 'Loading...' : 'Make New Intro';
-        }
-        if (cancelBtn) {
-            cancelBtn.disabled = isLoading;
-        }
-    }
-
-    /**
      * Open the popup
      */
     open() {
@@ -353,7 +333,8 @@ export class EditIntrosPopup {
         if (this.popupElement) {
             this.popupElement.style.display = 'none';
         }
-        this.deselectAllPresets();
+        // Reset selections when closing
+        this._resetSelections();
     }
 
     /**
@@ -362,7 +343,6 @@ export class EditIntrosPopup {
     async applyChanges() {
         // Increment and log invocation count
         this.applyChangesCount++;
-        this._setLoading(true);
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
@@ -371,7 +351,6 @@ export class EditIntrosPopup {
             const customCommand = customCommandTextarea.value.trim();
             if (customCommand === '') {
                 alert('Custom option is selected, but the instruction text area is empty.');
-                this._setLoading(false);
                 return;
             }
             instruction = customCommand;
@@ -388,11 +367,13 @@ export class EditIntrosPopup {
             
             if (selectedInstructions.length === 0) {
                  alert('Please select at least one category option, or choose Custom and enter an instruction.');
-                 this._setLoading(false);
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
         }
+
+        // Close the popup immediately now that validation has passed
+        this.close();
 
         const textareaElement = document.getElementById('send_textarea');
         const customEdit = textareaElement ? textareaElement.value.trim() : '';
@@ -465,22 +446,15 @@ export class EditIntrosPopup {
             await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
         }
 
-        // Reset selections before closing, preserving custom text
-        this._resetSelections();
-        this._setLoading(false);
-
         if (customEdit && textareaElement) {
             textareaElement.value = '';
         }
-        
-        this.close();
     }
 
     /**
      * Creates a new intro based on the selected option or custom instruction.
      */
     async makeNewIntro() {
-        this._setLoading(true);
         let instruction = '';
         const customCommandTextarea = this.popupElement.querySelector('#gg-custom-edit-command');
 
@@ -489,7 +463,6 @@ export class EditIntrosPopup {
             const customCommand = customCommandTextarea.value.trim();
             if (customCommand === '') {
                 alert('Custom option is selected, but the instruction text area is empty.');
-                this._setLoading(false);
                 return;
             }
             instruction = customCommand;
@@ -506,11 +479,13 @@ export class EditIntrosPopup {
             
             if (selectedInstructions.length === 0) {
                  alert('Please select at least one category option, or choose Custom and enter an instruction.');
-                 this._setLoading(false);
                  return; 
             }
             instruction = selectedInstructions.join('. '); // Join instructions with a period and space
         }
+
+        // Close the popup immediately now that validation has passed
+        this.close();
 
         // --- Construct Modified Script (Existing logic, using new 'instruction') ---
         const scriptPart1 = `
@@ -578,12 +553,6 @@ export class EditIntrosPopup {
             // Ensure preset is switched back even on error
              await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
         }
-
-        // Reset selections before closing, preserving custom text
-        this._resetSelections();
-        this._setLoading(false);
-
-        this.close();
     }
 
 }
