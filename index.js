@@ -303,6 +303,9 @@ function handleSettingChange(event) {
         if (typeof settingValue === 'string') {
             settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
         }
+    } else if (target.type === 'number') {
+        const numValue = parseFloat(target.value);
+        settingValue = isNaN(numValue) ? 0 : numValue;
     } else {
         console.warn(`${extensionName}: Unhandled setting type: ${target.type}`);
         return; // Don't save if it's not a recognized type
