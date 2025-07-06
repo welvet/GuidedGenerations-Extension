@@ -35,6 +35,17 @@ export class EditGuidesPopup {
                             <label for="editGuideTextarea">Guide Content:</label>
                             <textarea id="editGuideTextarea" rows="15" placeholder="Select a guide to see its content..."></textarea>
                         </div>
+                        <div class="gg-popup-section guide-edit-section" style="display:none;">
+                            <label for="editGuideDepth">Depth:</label>
+                            <input id="editGuideDepth" type="number" min="0">
+                            <label for="editGuidePosition">Position:</label>
+                            <select id="editGuidePosition">
+                                <option value="1">In Chat</option>
+                                <option value="0">After Prompt</option>
+                                <option value="2">Before Prompt</option>
+                                <option value="3">Inactive</option>
+                            </select>
+                        </div>
                         <div class="gg-popup-section custom-create-section" style="display:none;">
                             <p class="gg-popup-note">"Generate" creates a new Guide by running the Gen Prompt to the Model. <br />"Create" creates a blank template for later editing. <br />Start the Gen Prompt with "OOC: Don't continue the chat. Instead" To avoid a continuation of the chat as the guide.</p>
                             <label for="newGuideName">Name:</label>
@@ -95,8 +106,16 @@ export class EditGuidesPopup {
         const saveButton = this.popupElement.querySelector('#editGuideSaveButton');
         const selectElement = this.popupElement.querySelector('#editGuideSelect');
         const textareaElement = this.popupElement.querySelector('#editGuideTextarea');
+
+        // Elements for editing existing guides
+        const editSection = this.popupElement.querySelector('.guide-edit-section');
+        const editDepthInput = this.popupElement.querySelector('#editGuideDepth');
+        const editPositionInput = this.popupElement.querySelector('#editGuidePosition');
+
+        // Elements for creating new guides
+        const customSection = this.popupElement.querySelector('.custom-create-section');
         const nameInput = this.popupElement.querySelector('#newGuideName');
-        const depthInput = this.popupElement.querySelector('#newGuideDepth');
+        const newDepthInput = this.popupElement.querySelector('#newGuideDepth');
         const genPromptInput = this.popupElement.querySelector('#genPromptInput');
         const generateButton = this.popupElement.querySelector('#generateGuideButton');
         const createButton = this.popupElement.querySelector('#createGuideButton');
@@ -108,22 +127,43 @@ export class EditGuidesPopup {
         // Guide selection change
         selectElement?.addEventListener('change', (event) => {
             this.selectedGuideKey = event.target.value;
-            if (this.selectedGuideKey && this.injectionData[this.selectedGuideKey]) {
-                textareaElement.value = this.injectionData[this.selectedGuideKey].value || '';
+            const guideData = this.injectionData[this.selectedGuideKey];
+
+            if (guideData) {
+                // A valid guide is selected. Enable the main editor first.
+                textareaElement.value = guideData.value ?? '';
                 textareaElement.disabled = false;
                 saveButton.disabled = false;
+
+                // Now, handle the additional fields and UI sections.
+                if (editDepthInput) {
+                    editDepthInput.value = guideData.depth ?? 1;
+                }
+                if (editPositionInput) {
+                    editPositionInput.value = guideData.position ?? 0;
+                }
+                
+                if (editSection) editSection.style.display = 'block';
+                if (customSection) customSection.style.display = 'none';
+
             } else {
+                // No guide selected or invalid key. Reset everything.
+                this.selectedGuideKey = null;
                 textareaElement.value = 'Select a guide to see its content...';
                 textareaElement.disabled = true;
                 saveButton.disabled = true;
-                this.selectedGuideKey = null; // Reset if invalid selection
+
+                if (editSection) editSection.style.display = 'none';
+                if (this.customMode && customSection) {
+                    customSection.style.display = 'block';
+                }
             }
         });
 
         // Create new custom guide
         createButton?.addEventListener('click', async () => {
             const newName = nameInput.value.trim();
-            let parsedDepth = parseInt(depthInput.value, 10);
+            let parsedDepth = parseInt(newDepthInput.value, 10);
             // If parsing fails (NaN), default to 1. Otherwise, use the parsed value.
             // If parsing fails (NaN), default to 1. Otherwise, use the parsed value, ensuring it's not less than 0.
             const newDepth = isNaN(parsedDepth) ? 1 : Math.max(0, parsedDepth);
@@ -142,7 +182,7 @@ export class EditGuidesPopup {
             try {
                 await context.executeSlashCommandsWithOptions(`/inject id=custom_${newName} position=chat scan=true depth=${newDepth} role=${role} .|`, { showOutput: false });
                 const key = `script_inject_custom_${newName}`;
-                this.injectionData[key] = { value: '', depth: newDepth };
+                this.injectionData[key] = { value: '', depth: newDepth, position: 1 }; // Default to 'In Chat'
                 // Persist new injection
                 if (typeof context.saveMetadata === 'function') { context.saveMetadata(); }
                 // Rebuild dropdown
@@ -183,9 +223,6 @@ export class EditGuidesPopup {
 
         // Save functionality
         saveButton?.addEventListener('click', () => this.saveChanges());
-
-        // Disable save button initially
-        saveButton.disabled = true;
     }
 
     /**
@@ -305,10 +342,15 @@ export class EditGuidesPopup {
         }
 
         const textareaElement = this.popupElement.querySelector('#editGuideTextarea');
-        const newContent = textareaElement.value; // Get potentially modified content
+        const depthInput = this.popupElement.querySelector('#editGuideDepth');
+        const positionSelect = this.popupElement.querySelector('#editGuidePosition');
+
+        const newContent = textareaElement.value;
+        const newDepth = parseInt(depthInput.value, 10);
+        const newPosition = parseInt(positionSelect.value, 10);
 
         // Call the direct update method
-        const success = await this.updateGuidePromptDirectly(this.selectedGuideKey, newContent);
+        const success = await this.updateGuidePromptDirectly(this.selectedGuideKey, newContent, newDepth, newPosition);
 
         if (success) {
             console.log(`[GuidedGenerations] Guide "${this.selectedGuideKey}" updated directly in context.`);
@@ -328,7 +370,7 @@ export class EditGuidesPopup {
      * @param {string} content - The new content for the guide prompt.
      * @returns {boolean} - True if successful, false otherwise.
      */
-    async updateGuidePromptDirectly(key, content) {
+    async updateGuidePromptDirectly(key, content, depth, position) {
         try {
             const context = SillyTavern.getContext();
             const guideName = key.startsWith('script_inject_') ? key.substring('script_inject_'.length) : key;
@@ -343,6 +385,8 @@ export class EditGuidesPopup {
 
                 // Update the persisted value
                 injection.value = content;
+                injection.depth = depth;
+                injection.position = position;
 
                 // Update the live session prompt using the built-in function
                 if (typeof context.setExtensionPrompt === 'function') {
