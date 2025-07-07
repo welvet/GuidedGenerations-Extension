@@ -28,7 +28,8 @@ async function editGuides() {
         for (const name in injections) {
             guidePrompts[`script_inject_${name}`] = {
                 value: injections[name].value,
-                depth: injections[name].depth
+                depth: injections[name].depth,
+                position: injections[name].position
             };
         }
 

@@ -22,7 +22,8 @@ const customGuide = async () => {
         if (name.startsWith('custom_')) {
             customPrompts[`script_inject_${name}`] = {
                 value: injections[name].value,
-                depth: injections[name].depth
+                depth: injections[name].depth,
+                position: injections[name].position
             };
         }
     }

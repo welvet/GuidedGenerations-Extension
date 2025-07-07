@@ -40,10 +40,7 @@ export class EditGuidesPopup {
                             <input id="editGuideDepth" type="number" min="0">
                             <label for="editGuidePosition">Position:</label>
                             <select id="editGuidePosition">
-                                <option value="1">In Chat</option>
-                                <option value="0">After Prompt</option>
-                                <option value="2">Before Prompt</option>
-                                <option value="3">Inactive</option>
+                                <!-- Options populated dynamically -->
                             </select>
                         </div>
                         <div class="gg-popup-section custom-create-section" style="display:none;">
@@ -91,6 +88,24 @@ export class EditGuidesPopup {
         }
 
         this.setupEventListeners();
+
+        // Dynamically populate the position dropdown to ensure correct order and values
+        const positionMap = [
+            { value: 1, text: 'In Chat' },
+            { value: 0, text: 'After Prompt' },
+            { value: 2, text: 'Before Prompt' },
+            { value: 3, text: 'Inactive' }
+        ];
+        const positionSelect = this.popupElement.querySelector('#editGuidePosition');
+        if (positionSelect) {
+            positionMap.forEach(opt => {
+                const optionElement = document.createElement('option');
+                optionElement.value = opt.value;
+                optionElement.textContent = opt.text;
+                positionSelect.appendChild(optionElement);
+            });
+        }
+
         this.initialized = true;
         console.log('[GuidedGenerations] Edit Guides Popup initialized successfully.');
     }
@@ -134,6 +149,7 @@ export class EditGuidesPopup {
                 textareaElement.value = guideData.value ?? '';
                 textareaElement.disabled = false;
                 saveButton.disabled = false;
+                saveButton.style.display = 'inline-block';
 
                 // Now, handle the additional fields and UI sections.
                 if (editDepthInput) {
@@ -152,6 +168,7 @@ export class EditGuidesPopup {
                 textareaElement.value = 'Select a guide to see its content...';
                 textareaElement.disabled = true;
                 saveButton.disabled = true;
+                saveButton.style.display = 'none';
 
                 if (editSection) editSection.style.display = 'none';
                 if (this.customMode && customSection) {
@@ -201,23 +218,38 @@ export class EditGuidesPopup {
             }
         });
 
+        
+
         // Generate new custom guide content without saving
         generateButton?.addEventListener('click', async () => {
             const newName = nameInput.value.trim();
-            const newDepth = parseInt(depthInput.value, 10) || 1;
+            const newDepth = parseInt(newDepthInput.value, 10) || 1;
             const genPrompt = genPromptInput.value.trim();
-            if (!newName) { alert('Guide ID required.'); return; }
+
+            if (!newName) { 
+                alert('Guide Name is required.'); 
+                return; 
+            }
             const validNameRegex = /^[A-Za-z0-9_-]+$/;
-            if (!validNameRegex.test(newName)) { alert('Invalid Guide ID. Only letters, numbers, underscores, hyphens allowed.'); return; }
-            if (!genPrompt) { alert('Gen Prompt required.'); return; }
+            if (!validNameRegex.test(newName)) { 
+                alert('Invalid Guide Name. Only letters, numbers, underscores, and hyphens are allowed.'); 
+                return; 
+            }
+            if (!genPrompt) { 
+                alert('Generation Prompt is required.'); 
+                return; 
+            }
+
             const role = extension_settings[extensionName]?.injectionEndRole ?? 'system';
             const context = SillyTavern.getContext();
-            const script = `/gen ${genPrompt} | /inject id=${newName} position=chat scan=true depth=${newDepth} role=${role} [Take into special Consideration: {{pipe}}] | /listinjects |`;
+            const script = `/gen ${genPrompt} | /inject id=custom_${newName} position=chat scan=true depth=${newDepth} role=${role} [Take into special Consideration: {{pipe}}] | /listinjects |`;
+            
             try {
-                await context.executeSlashCommandsWithOptions(script, { showOutput: true });
+                await context.executeSlashCommandsWithOptions(script, { showOutput: false });
+                this.close();
             } catch (err) {
                 console.error('[GuidedGenerations] Error generating guide:', err);
-                alert('Error during generation. Check console.');
+                alert('Error during generation. Check the browser console for details.');
             }
         });
 
@@ -233,33 +265,40 @@ export class EditGuidesPopup {
     open(injectionData, customMode = false) {
         if (!this.initialized) {
             console.error('[GuidedGenerations] Popup not initialized. Call init() first.');
-            // Optionally, try to initialize now
-            // await this.init(); // This would make open async
             return;
         }
-        this.customMode = customMode; // Store the mode
+        this.customMode = customMode;
 
-        // Populate and show
-        this._populateAndShow(injectionData); 
+        this._populateAndShow(injectionData);
 
-        // Get references to the elements after _populateAndShow might have created/ensured them
+        const editSection = this.popupElement.querySelector('.guide-edit-section');
+        const customSection = this.popupElement.querySelector('.custom-create-section');
         const generateButton = this.popupElement.querySelector('#generateGuideButton');
         const createButton = this.popupElement.querySelector('#createGuideButton');
-        const customCreateSection = this.popupElement.querySelector('.custom-create-section');
+        const saveButton = this.popupElement.querySelector('#editGuideSaveButton');
 
-        if (generateButton && createButton && customCreateSection) {
-            const displayStyle = this.customMode ? 'inline-block' : 'none'; // For buttons
-            const sectionDisplayStyle = this.customMode ? 'block' : 'none'; // For the section
-
-            generateButton.style.display = displayStyle;
-            createButton.style.display = displayStyle;
-            customCreateSection.style.display = sectionDisplayStyle;
+        if (this.customMode) {
+            // "Create New Guide" mode
+            editSection.style.display = 'none';
+            customSection.style.display = 'block';
+            generateButton.style.display = 'inline-block';
+            createButton.style.display = 'inline-block';
+            saveButton.style.display = 'none';
         } else {
-            console.error('[GuidedGenerations] Critical error: Could not find custom mode UI elements in editGuidesPopup.');
+            // "Edit Existing Guide" mode
+            editSection.style.display = 'none';
+            customSection.style.display = 'none';
+            generateButton.style.display = 'none';
+            createButton.style.display = 'none';
+            saveButton.style.display = 'none';
         }
 
-        this.popupElement.style.display = 'block'; // Show the popup itself
-        this.adjustPopupPosition(); // Adjust position when opened
+        // Reset the dropdown to the default "Select" option and clear fields
+        this.popupElement.querySelector('#editGuideSelect').value = '';
+        this.popupElement.querySelector('#editGuideTextarea').value = 'Select a guide to see its content...';
+
+        this.popupElement.style.display = 'block';
+        this.adjustPopupPosition();
     }
 
     /**
@@ -298,9 +337,7 @@ export class EditGuidesPopup {
         textareaElement.disabled = true;
         saveButton.disabled = true;
 
-        // Show or hide create row for custom mode
-        const createSection = this.popupElement.querySelector('.custom-create-section');
-        createSection.style.display = this.customMode ? 'block' : 'none';
+        
     }
 
     /**
