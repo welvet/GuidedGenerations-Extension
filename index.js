@@ -1174,6 +1174,16 @@ $(document).ready(async function () {
                 await simpleSend();
             }
 
+            const context = getContext();
+            let savedInstructInjection = null;
+
+            // Check for and save the ephemeral 'instruct' injection before auto-guides run
+            if (context?.chatMetadata?.script_injects?.instruct) {
+                // Create a deep copy to avoid issues with the object being mutated elsewhere
+                savedInstructInjection = JSON.parse(JSON.stringify(context.chatMetadata.script_injects.instruct));
+                await context.executeSlashCommandsWithOptions("/flushinject instruct", { displayCommand: false, showOutput: false });
+            }
+
             const settings = extension_settings[extensionName];
             if (settings) {
                 if (settings.autoTriggerThinking) {
@@ -1191,8 +1201,20 @@ $(document).ready(async function () {
             } else {
                 console.warn('GuidedGenerations-Extension: Extension settings not found, cannot auto-trigger guides.');
             }
-        } else if (type === 'quiet' && !dryRun) {
-            // Future logic for handling this specific event can go here.
+
+            // Re-insert the 'instruct' injection if it was saved
+            // Re-insert the 'instruct' injection if it was saved
+            if (savedInstructInjection && typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+                try {
+                    const { value, depth, scan } = savedInstructInjection;
+                    // Get role from settings for consistency, and hardcode position to 'chat' as it's where 'instruct' belongs.
+                    const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+                    const re_inject_command = `/inject id=instruct position=chat ephemeral=true scan=${scan} depth=${depth} role=${injectionRole} ${value}`;
+                    await context.executeSlashCommandsWithOptions(re_inject_command, { displayCommand: false, showOutput: false });
+                } catch (error) {
+                    console.error('[GuidedGenerations] Failed to restore ephemeral "instruct" injection:', error);
+                }
+            }
         }
     });
 
