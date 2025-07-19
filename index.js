@@ -1167,6 +1167,7 @@ $(document).ready(async function () {
 
     // Listen for the GENERATION_AFTER_COMMANDS event
     eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
+        console.log(`[GuidedGen] Generation type: ${type}`);
         // Condition for auto-triggering guides
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
             const textarea = document.getElementById('send_textarea');
