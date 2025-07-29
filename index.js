@@ -195,15 +195,30 @@ function updateSettingsUI() {
             injectionRoleSelect.value = extension_settings[extensionName].injectionEndRole;
         }
 
-        // Populate preset text fields
+        // Populate preset dropdowns
+        const presetManager = getContext()?.getPresetManager?.();
+        const presetList = presetManager?.getPresetList?.() || { preset_names: {} };
+        
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
          'presetCustomAuto'
         ].forEach(key => {
-            const input = document.getElementById(`gg_${key}`);
-            if (input) {
-                input.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+            const select = document.getElementById(key);
+            if (select) {
+                // Clear existing options
+                select.innerHTML = '<option value="">None</option>';
+                
+                // Add preset options
+                Object.entries(presetList.preset_names || {}).forEach(([name, id]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+                
+                // Set current value
+                select.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
             }
         });
 
@@ -292,6 +307,13 @@ function handleSettingChange(event) {
         settingValue = target.checked;
     } else if (target.tagName === 'SELECT') { // Handle dropdowns
         settingValue = target.value;
+        
+        // Handle preset dropdowns - no validation needed as values are preset IDs
+        const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
+        if (presetFields.includes(settingName)) {
+            // Values are preset IDs (numbers), no pipe validation needed
+            settingValue = settingValue.trim();
+        }
     } else if (target.tagName === 'INPUT' && target.type === 'text') {
         settingValue = target.value;
         if (typeof settingValue === 'string') {

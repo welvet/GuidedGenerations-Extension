@@ -25,24 +25,41 @@ export default async function spellchecker() {
     const presetKey = 'presetSpellchecker';
     const targetPreset = extension_settings[extensionName]?.[presetKey];
 
-    // --- Build Preset Switching Script Parts Conditionally ---
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
-
-    if (targetPreset) {
-        // Store old preset then switch to user-defined preset
-        presetSwitchStart = `
-// Get the currently active preset|
-/preset|
-/setvar key=oldPreset {{pipe}}|
-// Switch to user preset|
-/preset ${targetPreset}|
-`;
-        // Restore previous preset after execution
-        presetSwitchEnd = `
-// Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}}|
-`;
+    // Handle preset switching using PresetManager
+    const presetValue = extension_settings[extensionName]?.presetSpellchecker ?? '';
+    let originalPresetId = null;
+    let targetPresetId = null;
+    
+    if (presetValue) {
+        try {
+            const presetManager = getContext()?.getPresetManager?.();
+            if (presetManager) {
+                const availablePresets = presetManager.getPresetList();
+                
+                // Check if it's a valid ID
+                const validPresetIds = availablePresets.map(p => p.id);
+                if (validPresetIds.includes(presetValue)) {
+                    targetPresetId = presetValue;
+                } else {
+                    // Check if it's a legacy name that matches a preset
+                    const matchingPreset = availablePresets.find(p => p.name === presetValue);
+                    if (matchingPreset) {
+                        targetPresetId = matchingPreset.id;
+                    } else {
+                        console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
+                    }
+                }
+                
+                if (targetPresetId) {
+                    originalPresetId = presetManager.getSelectedPreset();
+                    if (targetPresetId !== originalPresetId) {
+                        presetManager.selectPreset(targetPresetId);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`${extensionName}: Error switching preset for spellchecker:`, error);
+        }
     }
 
     // Use user-defined spellchecker prompt override

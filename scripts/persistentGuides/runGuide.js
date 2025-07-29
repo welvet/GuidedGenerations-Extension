@@ -1,5 +1,6 @@
 import { getContext, extension_settings } from '../../../../../extensions.js';
 import { extensionName } from '../../index.js';
+import { handlePresetSwitching } from '../utils/presetUtils.js';
 
 /**
  * Generic runner for Persistent Guides STScript commands.
@@ -20,24 +21,8 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
     const rawPreset = extension_settings[extensionName]?.[presetKey] ?? '';
     const presetValue = rawPreset.trim().replace(/\|/g, ''); // Remove pipe characters to prevent STScript injection
 
-    // Build preset switch commands
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
-    if (presetValue) {
-        presetSwitchStart = `
- // Get current preset|
- /preset|
- /setvar key=currentPreset {{pipe}} |
- /if left={{getvar::currentPreset}} rule=neq right="${presetValue}" {:
-    /setvar key=oldPreset {{getvar::currentPreset}} |
-    /preset ${presetValue} |
-    /echo ${presetValue} |
-:}|
-`;
-        presetSwitchEnd = `
- /preset {{getvar::oldPreset}} |
-`;
-    }
+    // Get the switch and restore functions from the utility
+    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
 
     // Handle previous injection based on action
     let initCmd = '';
@@ -61,18 +46,18 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
     let script = `// Initial guide setup|
 ${initCmd}
 
-${presetSwitchStart}
-
 // Generate guide content|
 ${genLine}
-${finalCommand}
-${presetSwitchEnd}`;
+${finalCommand}`;
 
     if (!isAuto) {
         script += '\n/listinjects |';
     } else if (!script.trim().endsWith('|')) {
         script += ' |';
     }
+
+    // Switch to the target preset before executing the script
+    switchPreset();
 
     // Execute STScript via SillyTavern context
     const context = getContext();
@@ -89,9 +74,12 @@ ${presetSwitchEnd}`;
         } catch (err) {
             console.error(`${extensionName}: Error executing guide script for ${guideId}:`, err);
             return null;
+        } finally {
+            restore(); // Always restore the original preset
         }
     } else {
         console.error(`${extensionName}: Context unavailable to execute guide script for ${guideId}.`);
+        restore(); // Also restore if context is not available
         return null;
     }
 }

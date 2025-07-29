@@ -1,7 +1,7 @@
 // scripts/guidedImpersonate3rd.js
 import { getContext, extension_settings } from '../../../../extensions.js';
-// Import shared state functions
-import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; 
+import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js';
+import { handlePresetSwitching } from './utils/presetUtils.js'; 
 
 const guidedImpersonate3rd = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -38,16 +38,48 @@ const guidedImpersonate3rd = async () => {
     }
 
     // Determine target preset from settings
+    // Handle preset switching using PresetManager
     const presetKey = 'presetImpersonate3rd';
-    const targetPreset = extension_settings[extensionName]?.[presetKey];
-    console.log(`[GuidedGenerations] Using preset for 3rd-person impersonate: ${targetPreset || 'none'}`);
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
-    if (targetPreset) {
-        presetSwitchStart = `/preset|\n/setvar key=oldPreset {{pipe}}|\n/preset ${targetPreset}|\n`;
-        presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
+    const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
+    console.log(`[GuidedGenerations] Using preset for 3rd-person impersonate: ${presetValue || 'none'}`);
+    
+    let originalPresetId = null;
+    let targetPresetId = null;
+    
+    if (presetValue) {
+        try {
+            const presetManager = getContext()?.getPresetManager?.();
+            if (presetManager) {
+                const availablePresets = presetManager.getPresetList();
+                
+                // Check if it's a valid ID
+                const validPresetIds = availablePresets.map(p => p.id);
+                if (validPresetIds.includes(presetValue)) {
+                    targetPresetId = presetValue;
+                } else {
+                    // Check if it's a legacy name that matches a preset
+                    const matchingPreset = availablePresets.find(p => p.name === presetValue);
+                    if (matchingPreset) {
+                        targetPresetId = matchingPreset.id;
+                    } else {
+                        console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
+                    }
+                }
+                
+                if (targetPresetId) {
+                    originalPresetId = presetManager.getSelectedPreset();
+                    if (targetPresetId !== originalPresetId) {
+                        presetManager.selectPreset(targetPresetId);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`${extensionName}: Error switching preset for 3rd-person impersonate:`, error);
+        }
     }
-    const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
+    
+    const fullScript = `// 3rd-person impersonate guide|
+${stscriptCommand}`;
 
     try {
         const context = getContext(); 

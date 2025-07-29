@@ -2,6 +2,7 @@
 import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; // Import shared state functions
 import { getContext, extension_settings } from '../../../../extensions.js';
 import { extensionName } from '../index.js';
+import { handlePresetSwitching } from './utils/presetUtils.js';
 
 const guidedImpersonate = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -22,31 +23,21 @@ const guidedImpersonate = async () => {
     // --- If not restoring, proceed with impersonation ---
     setPreviousImpersonateInput(currentInputText); // Use setter
 
-    // Determine target preset from settings
+    // Handle preset switching using unified utility
     const presetKey = 'presetImpersonate1st';
-    const targetPreset = extension_settings[extensionName]?.[presetKey];
-    console.log(`[GuidedGenerations] Using preset for 1st-person impersonate: ${targetPreset || 'none'}`);
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
-    if (targetPreset) {
-        // Capture old preset and switch to user-defined preset
-        presetSwitchStart = `/preset|\n/setvar key=oldPreset {{pipe}}|\n/preset ${targetPreset}|\n`;
-        presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
-    }
+    const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
+    console.log(`[GuidedGenerations] Using preset for impersonate: ${presetValue || 'none'}`);
+    
+    const { originalPresetId, targetPresetId, restore } = handlePresetSwitching(presetValue);
 
     // Use user-defined impersonate prompt override
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate1st ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
-    // Only the core impersonate command remains
-    const presetName = extension_settings[extensionName]?.presetImpersonate1st ?? ''; // Get preset setting
-    let stscriptCommand = '';
-    if (presetName) {
-        stscriptCommand = `/preset name="${presetName}" silent=true | /impersonate await=true ${filledPrompt} |`;
-    } else {
-        stscriptCommand = `/impersonate await=true ${filledPrompt} |`; // No preset
-    }
-    const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
+    // Build STScript without preset switching
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
+    const fullScript = `// Impersonate guide|
+${stscriptCommand}`;
 
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
         const context = SillyTavern.getContext();
@@ -58,9 +49,24 @@ const guidedImpersonate = async () => {
             setLastImpersonateResult(textarea.value);
             console.log('[GuidedGenerations] Guided Impersonate (1st) stscript executed, new input stored in shared state.');
 
+            // After completion, restore original preset using utility restore function
+            restore();
+
         } catch (error) {
             console.error(`[GuidedGenerations] Error executing Guided Impersonate (1st) stscript: ${error}`);
             setLastImpersonateResult(''); // Use setter to clear shared state on error
+            
+            // Restore original preset on error
+            if (originalPresetId !== null && targetPresetId) {
+                try {
+                    const presetManager = context.getPresetManager?.();
+                    if (presetManager) {
+                        presetManager.selectPreset(originalPresetId);
+                    }
+                } catch (restoreError) {
+                    console.error(`${extensionName}: Error restoring original preset on error:`, restoreError);
+                }
+            }
         }
     } else {
         console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
