@@ -18,7 +18,7 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
     // Determine user-defined preset for this guide
     const presetKey = `preset${guideId.charAt(0).toUpperCase()}${guideId.slice(1)}`;
     const rawPreset = extension_settings[extensionName]?.[presetKey] ?? '';
-    const presetValue = rawPreset.trim();
+    const presetValue = rawPreset.trim().replace(/\|/g, ''); // Remove pipe characters to prevent STScript injection
 
     // Build preset switch commands
     let presetSwitchStart = '';
@@ -31,6 +31,7 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
  /if left={{getvar::currentPreset}} rule=neq right="${presetValue}" {:
     /setvar key=oldPreset {{getvar::currentPreset}} |
     /preset ${presetValue} |
+    /echo ${presetValue} |
 :}|
 `;
         presetSwitchEnd = `

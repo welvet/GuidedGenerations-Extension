@@ -83,8 +83,7 @@ export const defaultSettings = {
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
-    customAutoGuidePreset: '', // Default preset for Custom Auto Guide
-    customAutoGuidePresetName: '', // Default preset name for Custom Auto Guide
+    presetCustomAuto: '', // Default preset for Custom Auto Guide
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
@@ -200,7 +199,7 @@ function updateSettingsUI() {
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
-         'customAutoGuidePreset', 'customAutoGuidePresetName'
+         'presetCustomAuto'
         ].forEach(key => {
             const input = document.getElementById(`gg_${key}`);
             if (input) {
@@ -297,11 +296,29 @@ function handleSettingChange(event) {
         settingValue = target.value;
         if (typeof settingValue === 'string') {
             settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+            
+            // Validate preset fields to prevent pipe characters
+            const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
+            if (presetFields.includes(settingName) && settingValue.includes('|')) {
+                console.warn(`${extensionName}: Preset value cannot contain pipe character (|)`);
+                // Remove pipe characters and update the input field
+                settingValue = settingValue.replace(/\|/g, '');
+                target.value = settingValue;
+            }
         }
     } else if (target.tagName === 'TEXTAREA') {
         settingValue = target.value;
         if (typeof settingValue === 'string') {
             settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+            
+            // Validate preset fields to prevent pipe characters
+            const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
+            if (presetFields.includes(settingName) && settingValue.includes('|')) {
+                console.warn(`${extensionName}: Preset value cannot contain pipe character (|)`);
+                // Remove pipe characters and update the input field
+                settingValue = settingValue.replace(/\|/g, '');
+                target.value = settingValue;
+            }
         }
     } else if (target.type === 'number') {
         const numValue = parseFloat(target.value);
