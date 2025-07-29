@@ -83,8 +83,7 @@ export const defaultSettings = {
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
-    customAutoGuidePreset: '', // Default preset for Custom Auto Guide
-    customAutoGuidePresetName: '', // Default preset name for Custom Auto Guide
+    presetCustomAuto: '', // Default preset for Custom Auto Guide
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
@@ -200,7 +199,7 @@ function updateSettingsUI() {
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
-         'customAutoGuidePreset', 'customAutoGuidePresetName'
+         'presetCustomAuto'
         ].forEach(key => {
             const input = document.getElementById(`gg_${key}`);
             if (input) {
@@ -297,11 +296,29 @@ function handleSettingChange(event) {
         settingValue = target.value;
         if (typeof settingValue === 'string') {
             settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+            
+            // Validate preset fields to prevent pipe characters
+            const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
+            if (presetFields.includes(settingName) && settingValue.includes('|')) {
+                console.warn(`${extensionName}: Preset value cannot contain pipe character (|)`);
+                // Remove pipe characters and update the input field
+                settingValue = settingValue.replace(/\|/g, '');
+                target.value = settingValue;
+            }
         }
     } else if (target.tagName === 'TEXTAREA') {
         settingValue = target.value;
         if (typeof settingValue === 'string') {
             settingValue = settingValue.trim().replace(/\r?\n/g, '\n');
+            
+            // Validate preset fields to prevent pipe characters
+            const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
+            if (presetFields.includes(settingName) && settingValue.includes('|')) {
+                console.warn(`${extensionName}: Preset value cannot contain pipe character (|)`);
+                // Remove pipe characters and update the input field
+                settingValue = settingValue.replace(/\|/g, '');
+                target.value = settingValue;
+            }
         }
     } else if (target.type === 'number') {
         const numValue = parseFloat(target.value);
@@ -1167,7 +1184,7 @@ $(document).ready(async function () {
 
     // Listen for the GENERATION_AFTER_COMMANDS event
     eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
-        console.log(`[GuidedGen] Generation type: ${type}`);
+
         // Condition for auto-triggering guides
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
             const textarea = document.getElementById('send_textarea');
@@ -1175,7 +1192,7 @@ $(document).ready(async function () {
                 await simpleSend();
             }
 
-            const context = getContext();
+
             let savedInstructInjection = null;
 
             // Check for and save the ephemeral 'instruct' injection before auto-guides run
@@ -1183,6 +1200,12 @@ $(document).ready(async function () {
                 // Create a deep copy to avoid issues with the object being mutated elsewhere
                 savedInstructInjection = JSON.parse(JSON.stringify(context.chatMetadata.script_injects.instruct));
                 await context.executeSlashCommandsWithOptions("/flushinject instruct", { displayCommand: false, showOutput: false });
+            }
+
+            // Compatibility check for 'send_if_empty'
+            if (context.chatCompletionSettings.send_if_empty) {
+                alert('Incompatible Setting Detected: Guided Generations\n\nYour "Replace empty message" utility prompt is active. This will cause its content to be sent as a second message after every generation.\n\nPlease clear the "Replace empty message" utility prompt in your Chat Completion settings to fix this.');
+                return; // Stop before triggering guides
             }
 
             const settings = extension_settings[extensionName];
