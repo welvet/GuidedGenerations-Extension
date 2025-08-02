@@ -653,6 +653,7 @@ function updateExtensionButtons() {
         const toolGuides = [
             { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js', description: "Displays the content of currently active persistent guides." },
             { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js', description: "Opens a popup to create, edit, or delete custom persistent guides and their prompts." },
+            { name: 'Fun', icon: 'fa-gamepad', path: './scripts/persistentGuides/funGuide.js', description: "Opens a popup with various fun prompts and interactions." },
             { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." }
         ];
 
