@@ -12,6 +12,7 @@ import customGuide from './customGuide.js';
 import editGuides from './editGuides.js';
 import showGuides from './showGuides.js';
 import flushGuides from './flushGuides.js';
+import funGuide from './funGuide.js';
 
 // Export all guide functions
 export {
@@ -23,5 +24,6 @@ export {
     customGuide,
     editGuides,
     showGuides,
-    flushGuides
+    flushGuides,
+    funGuide
 };

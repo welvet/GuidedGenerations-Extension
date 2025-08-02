@@ -394,56 +394,87 @@ export class EditIntrosPopup {
 
         const scriptPart2 = `/cut 0|`;
 
-        // --- Preset Switching Logic ---
-        const introPresetSettingKey = 'presetEditIntros'; // CORRECTED: Setting key for the Edit Intros preset
-        const targetPresetNameRaw = extension_settings[extensionName]?.[introPresetSettingKey] ?? '';
-        const targetPresetName = targetPresetNameRaw.trim();
-
-        let presetSwitchStart = '';
-        let presetSwitchEnd = '';
-
-        if (targetPresetName) { // Only switch if a target preset name is configured and not empty
-            presetSwitchStart = `
-// Get the currently active preset|
-/preset|
-/setvar key=currentPreset {{pipe}} |
-+
-// If current preset is already ${targetPresetName}, do NOT overwrite oldPreset|
-/if left={{getvar::currentPreset}} rule=neq right="${targetPresetName}" {: 
-   // Store the current preset in oldPreset|
-   /setvar key=oldPreset {{getvar::currentPreset}} |
-   // Now switch to ${targetPresetName}|
-   /preset ${targetPresetName} |
-:}| 
-`;
-            presetSwitchEnd = `
-// Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}} |
-`;
-        } else {
-            presetSwitchStart = `// No preset configured for Edit Intros or preset switching disabled.|`;
-            presetSwitchEnd = `// No preset configured for Edit Intros or preset switching disabled.|`;
+        // --- Preset Switching Logic using PresetManager ---
+        const introPresetSettingKey = 'presetEditIntros';
+        const presetValue = extension_settings[extensionName]?.[introPresetSettingKey] ?? '';
+        
+        let originalPresetId = null;
+        let targetPresetId = null;
+        
+        if (presetValue) {
+            try {
+                const presetManager = getContext()?.getPresetManager?.();
+                if (presetManager) {
+                    const availablePresets = presetManager.getPresetList();
+                    
+                    // Check if it's a valid ID
+                    const validPresetIds = availablePresets.map(p => p.id);
+                    if (validPresetIds.includes(presetValue)) {
+                        targetPresetId = presetValue;
+                    } else {
+                        // Check if it's a legacy name that matches a preset
+                        const matchingPreset = availablePresets.find(p => p.name === presetValue);
+                        if (matchingPreset) {
+                            targetPresetId = matchingPreset.id;
+                        } else {
+                            console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
+                        }
+                    }
+                    
+                    if (targetPresetId) {
+                        originalPresetId = presetManager.getSelectedPreset();
+                        if (targetPresetId !== originalPresetId) {
+                            presetManager.selectPreset(targetPresetId);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`${extensionName}: Error switching preset for edit intros:`, error);
+            }
         }
 
-        // --- Execute Script (Existing logic) ---
+        // --- Execute Script (Updated logic) ---
         try {
             const context = getContext();
-            // Log the outgoing Editing Intro script for debugging
-            await context.executeSlashCommandsWithOptions(presetSwitchStart + '\n' + scriptPart1, { showOutput: false });
+            // Execute the script without preset switching (handled by PresetManager)
+            await context.executeSlashCommandsWithOptions(scriptPart1, { showOutput: false });
             const swipeSuccess = await generateNewSwipe();
             if (swipeSuccess) {
                 // Wait a short moment before executing the final part
                 await new Promise(resolve => setTimeout(resolve, 3000)); 
-                await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
+                await context.executeSlashCommandsWithOptions(scriptPart2, { showOutput: false });
             } else {
                 console.error('[GuidedGenerations] Failed to generate new swipe.');
-                 // Still switch back preset on failure?
-                 await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
+            }
+            
+            // Restore original preset if we switched
+            if (originalPresetId !== null && targetPresetId) {
+                try {
+                    const presetManager = context.getPresetManager?.();
+                    if (presetManager) {
+                        const currentPreset = presetManager.getSelectedPreset();
+                        if (currentPreset === targetPresetId) {
+                            presetManager.selectPreset(originalPresetId);
+                        }
+                    }
+                } catch (restoreError) {
+                    console.error(`${extensionName}: Error restoring original preset:`, restoreError);
+                }
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
-            // Ensure preset is switched back even on error
-            await context.executeSlashCommandsWithOptions(scriptPart2 + '\n' + presetSwitchEnd, { showOutput: false });
+            
+            // Restore original preset on error
+            if (originalPresetId !== null && targetPresetId) {
+                try {
+                    const presetManager = getContext()?.getPresetManager?.();
+                    if (presetManager) {
+                        presetManager.selectPreset(originalPresetId);
+                    }
+                } catch (restoreError) {
+                    console.error(`${extensionName}: Error restoring original preset on error:`, restoreError);
+                }
+            }
         }
 
         if (customEdit && textareaElement) {

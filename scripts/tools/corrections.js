@@ -4,6 +4,7 @@
 import { extensionName, setPreviousImpersonateInput } from '../../index.js'; // Import shared state function
 import { getContext, extension_settings } from '../../../../../extensions.js'; 
 import { generateNewSwipe } from '../guidedSwipe.js'; // Import the new function
+import { handlePresetSwitching } from '../utils/presetUtils.js';
 
 // Helper function for delays (copied from guidedSwipe.js)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -34,25 +35,41 @@ export default async function corrections() {
     const presetKey = 'presetCorrections';
     const targetPreset = extension_settings[extensionName]?.[presetKey];
 
-    // --- Build Preset Switching Script Parts Conditionally ---
-    let presetSwitchStartScript = '';
-    let presetSwitchEndScript = '';
-
-    if (targetPreset) {
-        // Store old preset then switch to user-defined preset
-        presetSwitchStartScript = `
-// Get the currently active preset|
-/preset|
-/setvar key=oldPreset {{pipe}}|
-
-// Switch to user preset|
-/preset ${targetPreset}|
-`;
-        // Restore previous preset after execution
-        presetSwitchEndScript = `
-// Switch back to the original preset if it was stored|
-/preset {{getvar::oldPreset}}|
-`;
+    // Handle preset switching using PresetManager
+    const presetValue = extension_settings[extensionName]?.presetCorrections ?? '';
+    let originalPresetId = null;
+    let targetPresetId = null;
+    
+    if (presetValue) {
+        try {
+            const presetManager = getContext()?.getPresetManager?.();
+            if (presetManager) {
+                const availablePresets = presetManager.getPresetList();
+                
+                // Check if it's a valid ID
+                const validPresetIds = availablePresets.map(p => p.id);
+                if (validPresetIds.includes(presetValue)) {
+                    targetPresetId = presetValue;
+                } else {
+                    // Check if it's a legacy name that matches a preset
+                    const matchingPreset = availablePresets.find(p => p.name === presetValue);
+                    if (matchingPreset) {
+                        targetPresetId = matchingPreset.id;
+                    } else {
+                        console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
+                    }
+                }
+                
+                if (targetPresetId) {
+                    originalPresetId = presetManager.getSelectedPreset();
+                    if (targetPresetId !== originalPresetId) {
+                        presetManager.selectPreset(targetPresetId);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`${extensionName}: Error switching preset for corrections:`, error);
+        }
     }
 
     // --- Part 1: Execute STscript for Presets and Injections --- 
@@ -104,8 +121,20 @@ export default async function corrections() {
         console.error("[GuidedGenerations][Corrections] Error during Corrections tool execution:", error);
         alert(`Corrections Tool Error: ${error.message || 'An unexpected error occurred.'}`);
     } finally {
-        // --- Part 3: Execute STscript for Preset End --- 
-        await executeSTScript(presetSwitchEndScript); // Ensure presets are switched back
+        // Restore original preset if we switched
+        if (originalPresetId !== null && targetPresetId) {
+            try {
+                const presetManager = getContext()?.getPresetManager?.();
+                if (presetManager) {
+                    const currentPreset = presetManager.getSelectedPreset();
+                    if (currentPreset === targetPresetId) {
+                        presetManager.selectPreset(originalPresetId);
+                    }
+                }
+            } catch (restoreError) {
+                console.error(`${extensionName}: Error restoring original preset:`, restoreError);
+            }
+        }
     }
 }
 

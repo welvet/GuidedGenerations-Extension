@@ -451,3 +451,64 @@
 .gg-button:hover {
     opacity: 0.9;
 }
+
+/* Fun Popup Styles */
+.gg-fun-prompts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Space between each prompt row */
+}
+
+.gg-fun-prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Space between button and description */
+}
+
+.gg-fun-button {
+    flex-shrink: 0; /* Prevent the button from shrinking */
+    width: 180px; /* Fixed width for the button */
+    padding: 8px 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    background-color: var(--SmartThemeBg);
+    color: var(--SmartThemeBodyColor);
+    font-family: inherit;
+    text-align: center;
+    font-weight: bold;
+}
+
+.gg-fun-button:hover {
+    background-color: var(--SmartThemeHover);
+    border-color: var(--SmartThemeAccentColor);
+}
+
+.gg-fun-prompt-description {
+    font-size: 0.9em;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.9;
+}
+
+.gg-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.gg-button-secondary {
+    padding: 8px 16px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    background-color: var(--SmartThemeBg);
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.gg-button-secondary:hover {
+    background-color: var(--SmartThemeHover);
+}

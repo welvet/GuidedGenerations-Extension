@@ -150,96 +150,83 @@
                 <small class="setting_item_description">Assign specific System Prompts (Presets) to different Guided Generation actions. When a preset is selected, it will be temporarily activated just before the guide runs, then deactivated. Use the 'GGSystemPrompt' button to quickly fill the field with the default guidance preset.</small>
                 <!-- Preset fields for each guide/tool -->
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetClothes" style="margin-left: 8px; min-width:150px;">Clothes Guide</label>
-                        <input type="text" id="gg_presetClothes" name="presetClothes" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetClothes" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetClothes" style="margin-bottom: 5px; display: block;">Clothes Guide Preset:</label>
+                    <select id="presetClothes" name="presetClothes" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetState" style="margin-left: 8px; min-width:150px;">State Guide</label>
-                        <input type="text" id="gg_presetState" name="presetState" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetState" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetState" style="margin-bottom: 5px; display: block;">State Guide Preset:</label>
+                    <select id="presetState" name="presetState" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetThinking" style="margin-left: 8px; min-width:150px;">Thinking Guide</label>
-                        <input type="text" id="gg_presetThinking" name="presetThinking" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetThinking" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetThinking" style="margin-bottom: 5px; display: block;">Thinking Guide Preset:</label>
+                    <select id="presetThinking" name="presetThinking" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetCustomAuto" style="margin-left: 8px; min-width:150px;">Custom Auto Guide Preset</label>
-                        <input type="text" id="gg_presetCustomAuto" name="presetCustomAuto" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetCustomAuto" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetCustomAuto" style="margin-bottom: 5px; display: block;">Custom Auto Guide Preset:</label>
+                    <select id="presetCustomAuto" name="presetCustomAuto" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
 
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetSituational" style="margin-left: 8px; min-width:150px;">Situational Guide</label>
-                        <input type="text" id="gg_presetSituational" name="presetSituational" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetSituational" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetSituational" style="margin-bottom: 5px; display: block;">Situational Guide Preset:</label>
+                    <select id="presetSituational" name="presetSituational" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetRules" style="margin-left: 8px; min-width:150px;">Rules Guide</label>
-                        <input type="text" id="gg_presetRules" name="presetRules" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetRules" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetRules" style="margin-bottom: 5px; display: block;">Rules Guide Preset:</label>
+                    <select id="presetRules" name="presetRules" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetCustom" style="margin-left: 8px; min-width:150px;">Custom Guide</label>
-                        <input type="text" id="gg_presetCustom" name="presetCustom" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetCustom" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetCustom" style="margin-bottom: 5px; display: block;">Custom Guide Preset:</label>
+                    <select id="presetCustom" name="presetCustom" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetCorrections" style="margin-left: 8px; min-width:150px;">Corrections</label>
-                        <input type="text" id="gg_presetCorrections" name="presetCorrections" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetCorrections" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetCorrections" style="margin-bottom: 5px; display: block;">Corrections Preset:</label>
+                    <select id="presetCorrections" name="presetCorrections" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetSpellchecker" style="margin-left: 8px; min-width:150px;">Spellchecker</label>
-                        <input type="text" id="gg_presetSpellchecker" name="presetSpellchecker" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetSpellchecker" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetSpellchecker" style="margin-bottom: 5px; display: block;">Spellchecker Preset:</label>
+                    <select id="presetSpellchecker" name="presetSpellchecker" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetEditIntros" style="margin-left: 8px; min-width:150px;">Edit Intros</label>
-                        <input type="text" id="gg_presetEditIntros" name="presetEditIntros" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetEditIntros" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetEditIntros" style="margin-bottom: 5px; display: block;">Edit Intros Preset:</label>
+                    <select id="presetEditIntros" name="presetEditIntros" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetImpersonate1st" style="margin-left: 8px; min-width:150px;">Impersonate 1st</label>
-                        <input type="text" id="gg_presetImpersonate1st" name="presetImpersonate1st" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetImpersonate1st" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetImpersonate1st" style="margin-bottom: 5px; display: block;">Impersonate 1st Preset:</label>
+                    <select id="presetImpersonate1st" name="presetImpersonate1st" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetImpersonate2nd" style="margin-left: 8px; min-width:150px;">Impersonate 2nd</label>
-                        <input type="text" id="gg_presetImpersonate2nd" name="presetImpersonate2nd" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetImpersonate2nd" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetImpersonate2nd" style="margin-bottom: 5px; display: block;">Impersonate 2nd Preset:</label>
+                    <select id="presetImpersonate2nd" name="presetImpersonate2nd" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <div class="setting_item">
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label for="gg_presetImpersonate3rd" style="margin-left: 8px; min-width:150px;">Impersonate 3rd</label>
-                        <input type="text" id="gg_presetImpersonate3rd" name="presetImpersonate3rd" class="gg-setting-input text_pole" style="flex:1; margin-left:8px;">
-                        <button type="button" class="gg-preset-button" data-target="presetImpersonate3rd" style="margin-left:8px;">GGSystemPrompt</button>
-                    </div>
+                    <label for="presetImpersonate3rd" style="margin-bottom: 5px; display: block;">Impersonate 3rd Preset:</label>
+                    <select id="presetImpersonate3rd" name="presetImpersonate3rd" class="gg-setting-input text_pole select_compact">
+                        <!-- Options will be populated by the extension -->
+                    </select>
                 </div>
                 <hr>
                 <div class="guide-prompt-overrides-section"> <!-- Added wrapper -->

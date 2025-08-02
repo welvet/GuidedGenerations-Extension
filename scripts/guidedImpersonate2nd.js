@@ -1,7 +1,7 @@
 // scripts/guidedImpersonate2nd.js
 import { getContext, extension_settings } from '../../../../extensions.js';
-// Import shared state functions
-import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; 
+import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js';
+import { handlePresetSwitching } from './utils/presetUtils.js'; 
 
 const guidedImpersonate2nd = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -36,16 +36,15 @@ const guidedImpersonate2nd = async () => {
         stscriptCommand = `/impersonate await=true persona={{charnames[1]}} ${filledPrompt} |`; // No preset
     }
 
-    // Determine target preset from settings
-    const targetPreset = extension_settings[extensionName]?.presetImpersonate2nd;
-    console.log(`[GuidedGenerations] Using preset for 2nd-person impersonate: ${targetPreset || 'none'}`);
-    let presetSwitchStart = '';
-    let presetSwitchEnd = '';
-    if (targetPreset) {
-        presetSwitchStart = `/preset|\n/setvar key=oldPreset {{pipe}}|\n/preset ${targetPreset}|\n`;
-        presetSwitchEnd = `/preset {{getvar::oldPreset}}|\n`;
-    }
-    const fullScript = presetSwitchStart + stscriptCommand + presetSwitchEnd;
+    // Handle preset switching using unified utility
+    const presetKey = 'presetImpersonate2nd';
+    const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
+    console.log(`[GuidedGenerations] Using preset for 2nd-person impersonate: ${presetValue || 'none'}`);
+    
+    const { originalPresetId, targetPresetId, restore } = handlePresetSwitching(presetValue);
+    
+    const fullScript = `// 2nd-person impersonate guide|
+${stscriptCommand}`;
 
     try {
         const context = getContext(); 
@@ -61,7 +60,10 @@ const guidedImpersonate2nd = async () => {
     } catch (error) {
         console.error(`[GuidedGenerations] Error executing Guided Impersonate (2nd) stscript: ${error}`);
         setLastImpersonateResult(''); // Clear shared state on error
-    } 
+    } finally {
+        // After completion, restore original preset using utility restore function
+        restore();
+    }
 };
 
 // Export the function
