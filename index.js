@@ -646,14 +646,14 @@ function updateExtensionButtons() {
             { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js', description: "Describes the current physical state, position, and actions of characters in the scene." },
             { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js', description: "Lists explicit rules or established facts that characters have learned or follow in the story." },
             { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js', description: "Runs a specific, user-defined custom guide script." },
-            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js', description: "Runs a user-defined custom guide automatically based on triggers or conditions." }
+            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js', description: "Runs a user-defined custom guide automatically based on triggers or conditions." },
+            { name: 'Fun', icon: 'fa-gamepad', path: './scripts/persistentGuides/funGuide.js', description: "Opens a popup with various fun prompts and interactions." }
         ];
 
         // Define the order and details for tool guides
         const toolGuides = [
             { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js', description: "Displays the content of currently active persistent guides." },
             { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js', description: "Opens a popup to create, edit, or delete custom persistent guides and their prompts." },
-            { name: 'Fun', icon: 'fa-gamepad', path: './scripts/persistentGuides/funGuide.js', description: "Opens a popup with various fun prompts and interactions." },
             { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." }
         ];
 
