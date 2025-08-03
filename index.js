@@ -71,20 +71,21 @@ export const defaultSettings = {
     showRevertButton: false, // Default off for Revert to Original button
     integrateQrBar: true, // Default on: Toggle for QR bar integration
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
-    presetClothes: 'GGSytemPrompt',
-    presetState: 'GGSytemPrompt',
-    presetThinking: 'GGSytemPrompt',
-    presetSituational: 'GGSytemPrompt',
-    presetRules: 'GGSytemPrompt',
-    presetCustom: 'GGSytemPrompt',
-    presetCorrections: 'GGSytemPrompt',
-    presetSpellchecker: 'GGSytemPrompt',
-    presetEditIntros: 'GGSytemPrompt',
+    presetClothes: '',
+    presetState: '',
+    presetThinking: '',
+    presetSituational: '',
+    presetRules: '',
+    presetCustom: '',
+    presetCorrections: '',
+    presetSpellchecker: '',
+    presetEditIntros: '',
     presetImpersonate1st: '',
     presetImpersonate2nd: '',
     presetImpersonate3rd: '',
     presetCustomAuto: '', // Default preset for Custom Auto Guide
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
+    presetFun: '', // Default preset for Fun Prompts
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
@@ -155,6 +156,10 @@ async function loadSettings() {
         }
     }
 
+    // Debug logging for presetFun specifically
+    console.log(`${extensionName}: presetFun setting value:`, extension_settings[extensionName].presetFun);
+    console.log(`${extensionName}: presetFun default value:`, defaultSettings.presetFun);
+
     console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
 
     // No need to update UI here, updateSettingsUI will be called separately after template render
@@ -202,10 +207,17 @@ function updateSettingsUI() {
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
-         'presetCustomAuto'
+         'presetCustomAuto','presetFun'
         ].forEach(key => {
             const select = document.getElementById(key);
             if (select) {
+                // Debug logging for presetFun specifically
+                if (key === 'presetFun') {
+                    console.log(`${extensionName}: Found presetFun element:`, select);
+                    console.log(`${extensionName}: presetFun current value:`, select.value);
+                    console.log(`${extensionName}: presetFun setting value:`, extension_settings[extensionName][key]);
+                }
+                
                 // Clear existing options
                 select.innerHTML = '<option value="">None</option>';
                 
@@ -219,6 +231,11 @@ function updateSettingsUI() {
                 
                 // Set current value
                 select.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+            } else {
+                // Debug logging for missing presetFun element
+                if (key === 'presetFun') {
+                    console.error(`${extensionName}: presetFun element NOT found in DOM`);
+                }
             }
         });
 
@@ -391,7 +408,7 @@ function updateExtensionButtons() {
         buttonContainer.className = 'gg-action-buttons-container'; // Add class for styling
         // Insert the container AFTER nonQRFormItems within send_form
         nonQRFormItems.parentNode.insertBefore(buttonContainer, nonQRFormItems.nextSibling);
-        console.log(`${extensionName}: Created action button container below input area.`);
+        console.log(`${extensionName}: Created action button container below input area. - TESTING CHANGES TRANSFER`);
     }
 
     // Clear the container before adding/arranging buttons
