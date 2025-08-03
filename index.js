@@ -221,13 +221,38 @@ function updateSettingsUI() {
                 // Clear existing options
                 select.innerHTML = '<option value="">None</option>';
                 
-                // Add preset options
-                Object.entries(presetList.preset_names || {}).forEach(([name, id]) => {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = name;
-                    select.appendChild(option);
-                });
+                // Add preset options - handle multiple possible data structures
+                if (presetList && presetList.preset_names) {
+                    // Newer format: presetList has preset_names property
+                    const presetNames = presetList.preset_names;
+                    if (Array.isArray(presetNames)) {
+                        // Text Completion format: preset_names is an array of names
+                        presetNames.forEach((name, index) => {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = name;
+                            select.appendChild(option);
+                        });
+                    } else {
+                        // Chat Completion format: preset_names is an object with name-to-id mapping
+                        Object.entries(presetNames).forEach(([name, id]) => {
+                            const option = document.createElement('option');
+                            option.value = id;
+                            option.textContent = name;
+                            select.appendChild(option);
+                        });
+                    }
+                } else if (Array.isArray(presetList)) {
+                    // Legacy format: presetList is an array of objects with id and name properties
+                    presetList.forEach(preset => {
+                        if (preset.name && preset.id !== undefined) {
+                            const option = document.createElement('option');
+                            option.value = preset.id;
+                            option.textContent = preset.name;
+                            select.appendChild(option);
+                        }
+                    });
+                }
                 
                 // Set current value
                 select.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
