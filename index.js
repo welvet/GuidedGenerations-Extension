@@ -1252,11 +1252,25 @@ $(document).ready(async function () {
 
         // Condition for auto-triggering guides
         if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
+            const settings = extension_settings[extensionName];
+            
+            // Check if any of the 4 auto-guides are active
+            const hasActiveAutoGuides = settings && (
+                settings.autoTriggerThinking ||
+                settings.autoTriggerState ||
+                settings.autoTriggerClothes ||
+                settings.enableAutoCustomAutoGuide
+            );
+
+            // Only proceed if at least one auto-guide is active
+            if (!hasActiveAutoGuides) {
+                return;
+            }
+
             const textarea = document.getElementById('send_textarea');
             if (textarea && textarea.value.trim() !== '') {
                 await simpleSend();
             }
-
 
             let savedInstructInjection = null;
 
@@ -1269,11 +1283,21 @@ $(document).ready(async function () {
 
             // Compatibility check for 'send_if_empty'
             if (context.chatCompletionSettings.send_if_empty) {
-                alert('Incompatible Setting Detected: Guided Generations\n\nYour "Replace empty message" utility prompt is active. This will cause its content to be sent as a second message after every generation.\n\nPlease clear the "Replace empty message" utility prompt in your Chat Completion settings to fix this.');
+                const disableAll = confirm('Incompatible Setting Detected: Guided Generations\n\nYour "Replace empty message" utility prompt is active. This will cause its content to be sent as a second message after every generation.\n\nWould you like to disable all auto-guides to fix this? (Click OK to disable all auto-guides, Cancel to keep them enabled)');
+                if (disableAll) {
+                    // Disable all auto-guides
+                    if (settings) {
+                        settings.autoTriggerThinking = false;
+                        settings.autoTriggerState = false;
+                        settings.autoTriggerClothes = false;
+                        settings.enableAutoCustomAutoGuide = false;
+                        // Save the settings
+                        saveSettingsDebounced();
+                    }
+                }
                 return; // Stop before triggering guides
             }
 
-            const settings = extension_settings[extensionName];
             if (settings) {
                 if (settings.autoTriggerThinking) {
                     await thinkingGuide(true); // Pass isAuto=true
