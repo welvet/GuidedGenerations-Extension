@@ -1,0 +1,5 @@
+[33m3d1e402[m[33m ([m[1;36mHEAD -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmain[m[33m)[m Add fun prompts preset configuration and external text file support
+[33mdf1d1ec[m Merge branch 'develop' into main
+[33m502a10a[m chore: bump version to 1.5.0
+[33m4b58708[m feat: enhance AITA prompt with direct replies and updates
+[33mfb24d4c[m feat: Add Sambolic to Discord Reacts random username list
