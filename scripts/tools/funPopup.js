@@ -200,20 +200,20 @@ export class FunPopup {
 `// Group chat logic for Fun Prompt|
 /buttons labels=${characterListJson} "Select character to respond"|
 /setglobalvar key=selection {{pipe}}|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: ${currentInput}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true {{getglobalvar::selection}}|
 `;
             } else {
                 // Fallback for group chat if members can't be found
                 stscriptCommand = `// Fallback logic for Fun Prompt|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: ${currentInput}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true|
 `;
             }
         } else {
             // Single character logic
             stscriptCommand = `// Single character logic for Fun Prompt|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: ${currentInput}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true|
 `;
         }
