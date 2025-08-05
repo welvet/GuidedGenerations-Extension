@@ -37,46 +37,12 @@ const guidedImpersonate3rd = async () => {
         stscriptCommand = `/impersonate await=true persona={{charnames[2]}} ${filledPrompt} |`; // No preset
     }
 
-    // Determine target preset from settings
-    // Handle preset switching using PresetManager
+    // Handle preset switching using unified utility
     const presetKey = 'presetImpersonate3rd';
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
     console.log(`[GuidedGenerations] Using preset for 3rd-person impersonate: ${presetValue || 'none'}`);
     
-    let originalPresetId = null;
-    let targetPresetId = null;
-    
-    if (presetValue) {
-        try {
-            const presetManager = getContext()?.getPresetManager?.();
-            if (presetManager) {
-                const availablePresets = presetManager.getPresetList();
-                
-                // Check if it's a valid ID
-                const validPresetIds = availablePresets.map(p => p.id);
-                if (validPresetIds.includes(presetValue)) {
-                    targetPresetId = presetValue;
-                } else {
-                    // Check if it's a legacy name that matches a preset
-                    const matchingPreset = availablePresets.find(p => p.name === presetValue);
-                    if (matchingPreset) {
-                        targetPresetId = matchingPreset.id;
-                    } else {
-                        console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
-                    }
-                }
-                
-                if (targetPresetId) {
-                    originalPresetId = presetManager.getSelectedPreset();
-                    if (targetPresetId !== originalPresetId) {
-                        presetManager.selectPreset(targetPresetId);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`${extensionName}: Error switching preset for 3rd-person impersonate:`, error);
-        }
-    }
+    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
     
     const fullScript = `// 3rd-person impersonate guide|
 ${stscriptCommand}`;
@@ -84,6 +50,9 @@ ${stscriptCommand}`;
     try {
         const context = getContext(); 
         if (typeof context.executeSlashCommandsWithOptions === 'function') {
+            // Switch preset before executing
+            switchPreset();
+            
             await context.executeSlashCommandsWithOptions(fullScript);
             
             // After completion, read the new input and store it in shared state
@@ -95,6 +64,9 @@ ${stscriptCommand}`;
     } catch (error) {
         console.error(`[GuidedGenerations] Error executing Guided Impersonate (3rd) stscript: ${error}`);
         setLastImpersonateResult(''); // Clear shared state on error
+    } finally {
+        // After completion, restore original preset using utility restore function
+        restore();
     } 
 };
 

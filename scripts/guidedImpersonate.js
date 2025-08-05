@@ -28,7 +28,7 @@ const guidedImpersonate = async () => {
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
     console.log(`[GuidedGenerations] Using preset for impersonate: ${presetValue || 'none'}`);
     
-    const { originalPresetId, targetPresetId, restore } = handlePresetSwitching(presetValue);
+    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
 
     // Use user-defined impersonate prompt override
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate1st ?? '';
@@ -39,9 +39,12 @@ const guidedImpersonate = async () => {
     const fullScript = `// Impersonate guide|
 ${stscriptCommand}`;
 
-    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
-        const context = SillyTavern.getContext();
-        try {
+    try {
+        const context = getContext();
+        if (typeof context.executeSlashCommandsWithOptions === 'function') {
+            // Switch preset before executing
+            switchPreset();
+            
             // Execute the command and wait for it to complete
             await context.executeSlashCommandsWithOptions(fullScript); 
             
@@ -52,24 +55,15 @@ ${stscriptCommand}`;
             // After completion, restore original preset using utility restore function
             restore();
 
-        } catch (error) {
-            console.error(`[GuidedGenerations] Error executing Guided Impersonate (1st) stscript: ${error}`);
-            setLastImpersonateResult(''); // Use setter to clear shared state on error
-            
-            // Restore original preset on error
-            if (originalPresetId !== null && targetPresetId) {
-                try {
-                    const presetManager = context.getPresetManager?.();
-                    if (presetManager) {
-                        presetManager.selectPreset(originalPresetId);
-                    }
-                } catch (restoreError) {
-                    console.error(`${extensionName}: Error restoring original preset on error:`, restoreError);
-                }
-            }
+        } else {
+            console.error('[GuidedGenerations] context.executeSlashCommandsWithOptions not found!');
         }
-    } else {
-        console.error('[GuidedGenerations] SillyTavern.getContext function not found.');
+    } catch (error) {
+        console.error(`[GuidedGenerations] Error executing Guided Impersonate (1st) stscript: ${error}`);
+        setLastImpersonateResult(''); // Use setter to clear shared state on error
+        
+        // Restore original preset on error
+        restore();
     }
 };
 

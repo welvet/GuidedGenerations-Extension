@@ -41,7 +41,7 @@ const guidedImpersonate2nd = async () => {
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
     console.log(`[GuidedGenerations] Using preset for 2nd-person impersonate: ${presetValue || 'none'}`);
     
-    const { originalPresetId, targetPresetId, restore } = handlePresetSwitching(presetValue);
+    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
     
     const fullScript = `// 2nd-person impersonate guide|
 ${stscriptCommand}`;
@@ -49,6 +49,9 @@ ${stscriptCommand}`;
     try {
         const context = getContext(); 
         if (typeof context.executeSlashCommandsWithOptions === 'function') {
+            // Switch preset before executing
+            switchPreset();
+            
             await context.executeSlashCommandsWithOptions(fullScript);
             
             // After completion, read the new input and store it in shared state
