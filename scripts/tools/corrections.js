@@ -31,53 +31,17 @@ export default async function corrections() {
     const promptTemplate = extension_settings[extensionName]?.promptCorrections ?? '';
     const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
 
-    // Determine target preset from settings
+    // Handle preset switching using unified utility
     const presetKey = 'presetCorrections';
-    const targetPreset = extension_settings[extensionName]?.[presetKey];
-
-    // Handle preset switching using PresetManager
-    const presetValue = extension_settings[extensionName]?.presetCorrections ?? '';
-    let originalPresetId = null;
-    let targetPresetId = null;
+    const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
+    console.log(`[GuidedGenerations] Using preset for corrections: ${presetValue || 'none'}`);
     
-    if (presetValue) {
-        try {
-            const presetManager = getContext()?.getPresetManager?.();
-            if (presetManager) {
-                const availablePresets = presetManager.getPresetList();
-                
-                // Check if it's a valid ID
-                const validPresetIds = availablePresets.map(p => p.id);
-                if (validPresetIds.includes(presetValue)) {
-                    targetPresetId = presetValue;
-                } else {
-                    // Check if it's a legacy name that matches a preset
-                    const matchingPreset = availablePresets.find(p => p.name === presetValue);
-                    if (matchingPreset) {
-                        targetPresetId = matchingPreset.id;
-                    } else {
-                        console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
-                    }
-                }
-                
-                if (targetPresetId) {
-                    originalPresetId = presetManager.getSelectedPreset();
-                    if (targetPresetId !== originalPresetId) {
-                        presetManager.selectPreset(targetPresetId);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`${extensionName}: Error switching preset for corrections:`, error);
-        }
-    }
+    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
 
-    // --- Part 1: Execute STscript for Presets and Injections --- 
+    // --- Part 1: Execute STscript for Injections --- 
     const instructionInjection = isRaw ? filledPrompt : `[${filledPrompt}]`;
     const depth = extension_settings[extensionName]?.depthPromptCorrections ?? 0;
     const stscriptPart1 = `
-        ${presetSwitchStartScript}
-
         // Inject assistant message to rework and instructions|
         /inject id=msgtorework position=chat ephemeral=true scan=true depth=${depth} role=assistant {{lastMessage}}|
         // Inject instructions using user override prompt|
@@ -85,6 +49,9 @@ export default async function corrections() {
     `;
     
     try {
+        // Switch preset before executing
+        switchPreset();
+        
         await executeSTScript(stscriptPart1); // Use the helper for STscript
 
         // --- Part 2: Execute JS Swipe Logic --- 
@@ -92,49 +59,23 @@ export default async function corrections() {
         if (!jQueryRef) {
             console.error("[GuidedGenerations][Corrections] jQuery not found.");
             alert("Corrections Tool Error: jQuery not available.");
-            // Attempt to run preset end script even if swipe fails
-             await executeSTScript(presetSwitchEndScript);
             return; 
         }
 
         const swipeSuccess = await generateNewSwipe(); // Call the imported function
 
         if (swipeSuccess) {
+            console.log('[GuidedGenerations] Corrections executed successfully.');
         } else {
-            console.error("[GuidedGenerations][Corrections] generateNewSwipe() reported failure or an issue occurred. Attempting to run preset end script.");
-            // generateNewSwipe() itself often alerts on failure. If it throws, the main catch block will also alert.
-            // We run the end script here for cases where it returns false without throwing, to ensure cleanup.
-            if (presetSwitchEndScript && typeof executeSTScript === 'function') { // Ensure dependencies are available
-                try {
-                    await executeSTScript(presetSwitchEndScript);
-                } catch (scriptError) {
-                    console.error("[GuidedGenerations][Corrections] Error executing presetSwitchEndScript after generateNewSwipe failure:", scriptError);
-                    // Optionally alert here too, or rely on main catch if this rethrows.
-                }
-            }
-            // Note: The function will continue to the final log and exit the try block.
-            // The outer catch in correctionsTool handles broader errors.
+            console.error("[GuidedGenerations][Corrections] generateNewSwipe() reported failure or an issue occurred.");
         }
-
 
     } catch (error) {
         console.error("[GuidedGenerations][Corrections] Error during Corrections tool execution:", error);
         alert(`Corrections Tool Error: ${error.message || 'An unexpected error occurred.'}`);
     } finally {
-        // Restore original preset if we switched
-        if (originalPresetId !== null && targetPresetId) {
-            try {
-                const presetManager = getContext()?.getPresetManager?.();
-                if (presetManager) {
-                    const currentPreset = presetManager.getSelectedPreset();
-                    if (currentPreset === targetPresetId) {
-                        presetManager.selectPreset(originalPresetId);
-                    }
-                }
-            } catch (restoreError) {
-                console.error(`${extensionName}: Error restoring original preset:`, restoreError);
-            }
-        }
+        // Restore original preset after completion
+        restore();
     }
 }
 
