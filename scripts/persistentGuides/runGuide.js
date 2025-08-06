@@ -58,6 +58,11 @@ ${finalCommand}`;
 
     // Switch to the target preset before executing the script
     switchPreset();
+    
+    // Add a small delay to allow preset switching to complete before starting generation
+    if (presetValue) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1000ms delay to allow preset switching to complete
+    }
 
     // Execute STScript via SillyTavern context
     const context = getContext();
