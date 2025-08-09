@@ -172,6 +172,9 @@ export class FunPopup {
         const textarea = document.getElementById('send_textarea');
         const currentInput = textarea ? textarea.value.trim() : '';
 
+        // Get the configured injection role from settings
+        const injectionRole = extension_settings[extensionName]?.injectionEndRole ?? 'system';
+
         let stscriptCommand = '';
         const filledPrompt = promptText.replace(/\n/g, '\\n'); // Escape newlines for the script
 
@@ -200,20 +203,20 @@ export class FunPopup {
 `// Group chat logic for Fun Prompt|
 /buttons labels=${characterListJson} "Select character to respond"|
 /setglobalvar key=selection {{pipe}}|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true {{getglobalvar::selection}}|
 `;
             } else {
                 // Fallback for group chat if members can't be found
                 stscriptCommand = `// Fallback logic for Fun Prompt|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true|
 `;
             }
         } else {
             // Single character logic
             stscriptCommand = `// Single character logic for Fun Prompt|
-/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=system ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
+/inject id=instruct position=chat ephemeral=true scan=true depth=0 role=${injectionRole} ${filledPrompt}In addition, make sure to take the following into consideration: {{input}}]|
 /trigger await=true|
 `;
         }
