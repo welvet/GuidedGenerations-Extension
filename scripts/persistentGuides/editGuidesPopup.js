@@ -428,7 +428,7 @@ export class EditGuidesPopup {
                 // Update the live session prompt using the built-in function
                 if (typeof context.setExtensionPrompt === 'function') {
                     context.setExtensionPrompt(
-                        key, // The prefixed key, e.g., 'script_inject_myguide'
+                        guideName, // The guide name without prefix, e.g., 'myguide'
                         content,
                         injection.position,
                         injection.depth,
