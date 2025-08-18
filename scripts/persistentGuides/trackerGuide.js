@@ -21,9 +21,9 @@ export default async function trackerGuide() {
         const trackerConfig = {
             enabled: existingConfig.enabled || false,
             messageCount: existingConfig.messageCount || 4,
-            initialFormat: existingConfig.initialFormat || '[OOC: Answer me out of Character! Don\'t continue the RP. Considering where we are currently in the story, write me ...]',
-            guidePrompt: existingConfig.guidePrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Considering where we are currently in the story, write me ...]',
-            trackerPrompt: existingConfig.trackerPrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Considering where we are currently in the story, write me ...]'
+            initialFormat: existingConfig.initialFormat || '> Distance {{char}} has moved in meters: 0',
+            guidePrompt: existingConfig.guidePrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Considering the last message alone, write me how far {{char}} has moved in meter in the last message. Give an exact number of your best estimate.]',
+            trackerPrompt: existingConfig.trackerPrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Update the Tracker with the Last update without any preamble. Use the follwing format for your output:]\n> Distance {{char}} has moved in meters: X'
         };
         
         // Create popup using the same structure as edit guides popup
@@ -37,35 +37,45 @@ export default async function trackerGuide() {
                     <h2>Tracker Configuration</h2>
                     <span class="gg-popup-close">&times;</span>
                 </div>
-                <div class="gg-popup-body">
-                                            <div class="gg-popup-section">
-                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                <input type="checkbox" id="trackerEnabled" ${trackerConfig.enabled ? 'checked' : ''} style="margin-right: 8px;">
-                                <label for="trackerEnabled" style="margin: 0; color: var(--SmartThemeBodyColor);">Enable Tracker</label>
-                            </div>
+                                <div class="gg-popup-body">
+                    <div class="gg-popup-section">
+                        <div style="margin-bottom: 20px; padding: 15px; background: var(--SmartThemeBlurTintColor); border-radius: 8px; border-left: 4px solid var(--SmartThemeBorderColor);">
+                            <h4 style="margin: 0 0 10px 0; color: var(--SmartThemeBodyColor);">What is the Tracker?</h4>
+                            <p style="margin: 0; color: var(--SmartThemeBodyColor); line-height: 1.4;">
+                                The Tracker automatically runs before each message generation. It does 2 API calls:<br>
+                                1. Analyzes recent chat messages to extract information<br>
+                                2. Updates a persistent tracker with the new data<br>
+                                Perfect for tracking things like character movement, relationships, or story progress.
+                            </p>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <input type="checkbox" id="trackerEnabled" ${trackerConfig.enabled ? 'checked' : ''} style="margin-right: 8px;">
+                            <label for="trackerEnabled" style="margin: 0; color: var(--SmartThemeBodyColor);">Enable Tracker</label>
+                        </div>
+                        
+                        <div class="gg-popup-section">
+                            <label for="trackerMessageCount" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Messages to Read Back:</label>
+                            <input type="number" id="trackerMessageCount" min="1" max="20" value="${trackerConfig.messageCount}" style="width: 80px; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 4px;">
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">How many recent messages to check for updates (default: 4)</small>
+                        </div>
                             
-                            <div class="gg-popup-section">
-                                <label for="trackerMessageCount" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Messages to Read Back:</label>
-                                <input type="number" id="trackerMessageCount" min="1" max="20" value="${trackerConfig.messageCount}" style="width: 80px; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 4px;">
-                                <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Number of recent messages to include as context for the tracker (default: 4).</small>
-                            </div>
-                            
-                            <div class="gg-popup-section">
-                                <label for="trackerInitialFormat" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Initial Tracker Format:</label>
-                                <textarea id="trackerInitialFormat" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.initialFormat}</textarea>
-                                <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">This defines the initial format and structure of your tracker.</small>
-                            </div>
+                                                    <div class="gg-popup-section">
+                            <label for="trackerInitialFormat" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Initial Tracker Format:</label>
+                            <textarea id="trackerInitialFormat" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.initialFormat}</textarea>
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Starting template for your tracker. Click "Setup Tracker" to create it.</small>
+                        </div>
                         
                         <div class="gg-popup-section">
                             <label for="trackerGuidePrompt" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Guide Prompt:</label>
                             <textarea id="trackerGuidePrompt" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.guidePrompt}</textarea>
-                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">This prompt will be used to generate the guide content.</small>
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Tells the AI what to look for in recent messages</small>
                         </div>
                         
                         <div class="gg-popup-section">
                             <label for="trackerTrackerPrompt" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Tracker Prompt:</label>
                             <textarea id="trackerTrackerPrompt" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.trackerPrompt}</textarea>
-                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">This prompt will be used to update the tracker. It will receive "Last Update" (the guide content) and "Tracker" (current tracker content) as context.</small>
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Tells the AI how to update your tracker. Gets "Last Update" (from Guide Prompt) and "Tracker" (current tracker content)</small>
                         </div>
                     </div>
                 </div>
@@ -110,7 +120,7 @@ export default async function trackerGuide() {
             }, false);
             
             console.log('[GuidedGenerations] Tracker configuration saved:', newConfig);
-            closePopup();
+            // Don't close popup after saving - let user continue configuring
         };
         
         closeButton.addEventListener('click', closePopup);
@@ -132,6 +142,7 @@ export default async function trackerGuide() {
         });
         runButton.addEventListener('click', async () => {
             await executeTracker(false);
+            closePopup(); // Close popup after running tracker
         });
         
         // Close on outside click
