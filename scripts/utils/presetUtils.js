@@ -2,6 +2,52 @@ import { getContext } from '../../../../../extensions.js';
 import { extensionName } from '../../index.js';
 
 /**
+ * Waits for preset switching to complete using SillyTavern events
+ * @param {string} operation - Description of the operation (e.g., "switch", "restore")
+ * @returns {Promise<void>} Resolves when preset change is complete
+ */
+async function waitForPresetChange(operation) {
+    return new Promise((resolve) => {
+        const context = getContext();
+        if (context?.eventSource && context?.eventTypes?.OAI_PRESET_CHANGED_AFTER) {
+            console.log(`[${extensionName}] Setting up listener for OAI_PRESET_CHANGED_AFTER event for ${operation}`);
+            
+            // Set up one-time listener for preset change completion
+            const presetChangeListener = () => {
+                console.log(`[${extensionName}] OAI_PRESET_CHANGED_AFTER event received - ${operation} complete`);
+                // Add a small delay to ensure preset change is fully settled before resolving
+                setTimeout(() => {
+                    console.log(`[${extensionName}] Preset change fully settled for ${operation}, resolving...`);
+                    resolve();
+                }, 500); // 50ms delay to ensure internal state is settled
+            };
+            context.eventSource.once(context.eventTypes.OAI_PRESET_CHANGED_AFTER, presetChangeListener);
+            
+            // Add timeout fallback in case event doesn't fire
+            const timeout = setTimeout(() => {
+                console.warn(`[${extensionName}] OAI_PRESET_CHANGED_AFTER event timeout for ${operation}, proceeding anyway`);
+                resolve();
+            }, 5000); // 5 second timeout
+            
+            // Clear timeout if event fires first
+            const originalResolve = resolve;
+            resolve = () => {
+                clearTimeout(timeout);
+                originalResolve();
+            };
+            
+            // Small delay to ensure event system is ready
+            setTimeout(() => {
+                console.log(`[${extensionName}] Event listener ready for ${operation}`);
+            }, 10);
+        } else {
+            console.log(`[${extensionName}] OAI_PRESET_CHANGED_AFTER event not available for ${operation}, falling back to fixed delay`);
+            setTimeout(resolve, 1000);
+        }
+    });
+}
+
+/**
  * Handles preset switching with legacy name support and provides restore function
  * @param {string} presetValue - The preset ID or name to switch to
  * @param {boolean} autoRestore - Whether to automatically restore the original preset when the returned restore function is called
@@ -98,24 +144,19 @@ export function handlePresetSwitching(presetValue) {
                     targetPresetId = presetNameToIdMap[normalizedValue];
                     console.log(`[${extensionName}] Found target preset by name:`, targetPresetId);
                 } else {
-                    console.log(`[${extensionName}] Preset not found by name either`);
+                    console.warn(`[${extensionName}] Preset not found: ${presetValueStr}`);
+                    console.warn(`[${extensionName}] Available preset IDs:`, validPresetIds);
+                    console.warn(`[${extensionName}] Available preset names:`, Object.keys(presetNameToIdMap));
+                    return { switch: () => {}, restore: () => {} };
                 }
-            }
-
-            if (!targetPresetId) {
-                console.warn(`${extensionName}: Preset '${presetValue}' not found. Valid IDs: ${validPresetIds.join(', ')}`);
-            } else {
-                console.log(`[${extensionName}] Target preset ID determined:`, targetPresetId);
-                console.log(`[${extensionName}] Is text completion mode:`, isTextCompletionMode);
             }
         } else {
             console.error(`[${extensionName}] Preset manager not available`);
+            return { switch: () => {}, restore: () => {} };
         }
-    } else {
-        console.log(`[${extensionName}] No presetValue provided`);
     }
 
-    const switchPreset = () => {
+    const switchPreset = async () => {
         console.log(`[${extensionName}] switchPreset called with targetPresetId:`, targetPresetId);
         
         if (!targetPresetId) {
@@ -145,7 +186,10 @@ export function handlePresetSwitching(presetValue) {
                 if (switchValue !== originalPresetId) {
                     console.log(`[${extensionName}] Switching from ${originalPresetId} to ${switchValue}...`);
                     presetManager.selectPreset(switchValue);
-                    console.log(`[${extensionName}] Preset switch completed`);
+                    console.log(`[${extensionName}] Preset switch initiated, waiting for completion...`);
+                    
+                    // Wait for the preset change to complete
+                    await waitForPresetChange("switch");
                     
                     // Verify the switch
                     const newSelectedPreset = presetManager.getSelectedPreset();
@@ -161,7 +205,7 @@ export function handlePresetSwitching(presetValue) {
         }
     };
 
-    const restore = () => {
+    const restore = async () => {
         console.log(`[${extensionName}] restore called with originalPresetId:`, originalPresetId, 'targetPresetId:', targetPresetId);
         
         if (!originalPresetId || !targetPresetId || originalPresetId === targetPresetId) {
@@ -200,7 +244,10 @@ export function handlePresetSwitching(presetValue) {
                     
                     console.log(`[${extensionName}] Restoring from ${currentPreset} to ${restoreValue}...`);
                     presetManager.selectPreset(restoreValue);
-                    console.log(`[${extensionName}] Preset restore completed`);
+                    console.log(`[${extensionName}] Preset restore initiated, waiting for completion...`);
+                    
+                    // Wait for the preset change to complete
+                    await waitForPresetChange("restore");
                     
                     // Verify the restore
                     const newSelectedPreset = presetManager.getSelectedPreset();

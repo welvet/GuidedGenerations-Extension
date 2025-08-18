@@ -57,11 +57,13 @@ ${finalCommand}`;
     }
 
     // Switch to the target preset before executing the script
-    switchPreset();
-    
-    // Add a small delay to allow preset switching to complete before starting generation
     if (presetValue) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1000ms delay to allow preset switching to complete
+        // Wait for preset switching to complete using the utility function
+        console.log(`${extensionName}: Switching to preset "${presetValue}" and waiting for completion...`);
+        await switchPreset();
+        console.log(`${extensionName}: Preset switch completed successfully`);
+    } else {
+        switchPreset();
     }
 
     // Execute STScript via SillyTavern context
@@ -80,11 +82,15 @@ ${finalCommand}`;
             console.error(`${extensionName}: Error executing guide script for ${guideId}:`, err);
             return null;
         } finally {
-            restore(); // Always restore the original preset
+            // Always restore the original preset and wait for completion
+            console.log(`${extensionName}: Restoring original preset...`);
+            await restore();
+            console.log(`${extensionName}: Preset restore completed`);
         }
     } else {
         console.error(`${extensionName}: Context unavailable to execute guide script for ${guideId}.`);
-        restore(); // Also restore if context is not available
+        // Also restore if context is not available
+        await restore();
         return null;
     }
 }
