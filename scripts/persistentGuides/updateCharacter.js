@@ -7,16 +7,18 @@
  * This will eventually update character information based on recent interactions.
  * @returns {Promise<string|null>} The result from the pipe, or null on error.
  */
+import { debugLog } from '../../index.js';
+
 const updateCharacter = async () => { // Make async
 
     // Placeholder STScript - Replace with actual logic later
     let stscriptCommand = `/return test |`;
 
     // Print the full command for debugging
-    console.log(`[GuidedGenerations] Update Character final stscript:`);
-    console.log(stscriptCommand);
+    debugLog(`[UpdateCharacter] Final stscript:`);
+    debugLog(stscriptCommand);
 
-    console.log(`[GuidedGenerations] Executing Update Character stscript...`);
+    debugLog(`[UpdateCharacter] Executing Update Character stscript...`);
 
     // Use the context executeSlashCommandsWithOptions method
     if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
@@ -28,7 +30,7 @@ const updateCharacter = async () => { // Make async
                 handleExecutionErrors: true // Allow capturing script errors
             });
 
-            console.log('[GuidedGenerations] Update Character stscript executed. Full Result:', result);
+            debugLog('[UpdateCharacter] STScript executed. Full Result:', result);
 
             // Check specifically for STScript execution errors
             if (result && result.isError) {
@@ -39,7 +41,7 @@ const updateCharacter = async () => { // Make async
 
             // Check the pipe for the result (Placeholder likely uses /echo which outputs to pipe)
             if (result && result.pipe !== undefined && result.pipe !== null && result.pipe !== '') {
-                console.log('[GuidedGenerations] Successfully retrieved pipe value:', result.pipe);
+                debugLog('[UpdateCharacter] Successfully retrieved pipe value:', result.pipe);
                 // You might want to display this result to the user via toastr or another method
                 toastr.info(`Update Character Result: ${result.pipe}`);
                 return result.pipe; // Return the content from pipe

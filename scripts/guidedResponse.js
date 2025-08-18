@@ -1,7 +1,7 @@
 /**
  * @file Contains the logic for the Guided Response button.
  */
-import { isGroupChat, setPreviousImpersonateInput, getPreviousImpersonateInput } from '../index.js'; // Import group chat checker and shared state functions
+import { isGroupChat, setPreviousImpersonateInput, getPreviousImpersonateInput, debugLog } from '../index.js'; // Import group chat checker and shared state functions
 import { getContext, extension_settings } from '../../../../extensions.js'; // Correct path to extensions.js
 
 // Import the guide scripts for direct execution
@@ -100,7 +100,7 @@ const guidedResponse = async () => {
             // Execute the main command
             await context.executeSlashCommandsWithOptions(stscriptCommand);
 
-            console.log('[GuidedGenerations][Response] Executed Command:', stscriptCommand); // Log the command
+            debugLog('[Response] Executed Command:', stscriptCommand); // Log the command
             
         } catch (error) {
             console.error(`[GuidedGenerations][Response] Error executing Guided Response stscript: ${error}`);
@@ -110,7 +110,7 @@ const guidedResponse = async () => {
             textarea.value = restoredInput;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
             if (typeof SillyTavern === 'undefined' || typeof SillyTavern.getContext !== 'function') {
-                console.log(`[GuidedGenerations][Response] Restoring input field after context error: "${restoredInput}"`);
+                debugLog(`[Response] Restoring input field after context error: "${restoredInput}"`);
             }
         }
     } else {
@@ -118,7 +118,7 @@ const guidedResponse = async () => {
         // Even if context isn't available, attempt restore if textarea exists
         if (textarea) {
              const restoredInput = getPreviousImpersonateInput();
-             console.log(`[GuidedGenerations][Response] Restoring input field after context error: "${restoredInput}"`);
+             debugLog(`[Response] Restoring input field after context error: "${restoredInput}"`);
              textarea.value = restoredInput;
              textarea.dispatchEvent(new Event('input', { bubbles: true }));
         }

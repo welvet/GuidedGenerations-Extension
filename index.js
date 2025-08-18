@@ -48,7 +48,27 @@ export function setLastImpersonateResult(value) {
 export const extensionName = "GuidedGenerations-Extension"; // Use the simple name as the internal identifier
 // const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; // No longer needed
 
-let isSending = false; 
+let isSending = false;
+
+/**
+ * Conditional logging utility that only logs when debug mode is enabled
+ * @param {...any} args - Arguments to log (same as console.log)
+ */
+export function debugLog(...args) {
+    if (extension_settings[extensionName]?.debugMode) {
+        console.log(`[${extensionName}][DEBUG]`, ...args);
+    }
+}
+
+/**
+ * Conditional warning utility that only logs when debug mode is enabled
+ * @param {...any} args - Arguments to log (same as console.warn)
+ */
+export function debugWarn(...args) {
+    if (extension_settings[extensionName]?.debugMode) {
+        console.warn(`[${extensionName}][DEBUG]`, ...args);
+    }
+} 
 // Removed storedInput as recovery now uses stscript global vars
 
 export const defaultSettings = {
@@ -71,6 +91,7 @@ export const defaultSettings = {
     showUndoButton: false, // Default off for Undo Last Addition button
     showRevertButton: false, // Default off for Revert to Original button
     integrateQrBar: true, // Default on: Toggle for QR bar integration
+    debugMode: false, // Default off: Toggle for debug logging
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     presetClothes: '',
     presetState: '',
@@ -145,24 +166,28 @@ async function loadSettings() {
     // Check if settings are empty and initialize with defaults
     // This simplified approach assumes defaults are complete.
     if (Object.keys(extension_settings[extensionName]).length === 0) {
-        console.log(`${extensionName}: Initializing settings with defaults.`);
+        debugLog(`Initializing settings with defaults.`);
         Object.assign(extension_settings[extensionName], defaultSettings);
     } else {
-         console.log(`${extensionName}: Settings already loaded, ensuring all keys exist.`);
+         debugLog(`Settings already loaded, ensuring all keys exist.`);
         // Ensure all default keys exist (migration / update handling)
         for (const key in defaultSettings) {
             if (extension_settings[extensionName][key] === undefined) {
-                console.warn(`${extensionName}: Setting key "${key}" missing, adding default value: ${defaultSettings[key]}`);
+                debugWarn(`Setting key "${key}" missing, adding default value: ${defaultSettings[key]}`);
                 extension_settings[extensionName][key] = defaultSettings[key];
             }
         }
     }
 
     // Debug logging for presetFun specifically
-    console.log(`${extensionName}: presetFun setting value:`, extension_settings[extensionName].presetFun);
-    console.log(`${extensionName}: presetFun default value:`, defaultSettings.presetFun);
+    debugLog(`presetFun setting value:`, extension_settings[extensionName].presetFun);
+    debugLog(`presetFun default value:`, defaultSettings.presetFun);
 
-    console.log(`${extensionName}: Current settings:`, extension_settings[extensionName]);
+    debugLog(`Current settings:`, extension_settings[extensionName]);
+
+    // Show debug mode status in normal console log
+    const debugStatus = extension_settings[extensionName]?.debugMode ? 'ACTIVE' : 'INACTIVE';
+    console.log(`${extensionName}: Debug logging is ${debugStatus}`);
 
     // No need to update UI here, updateSettingsUI will be called separately after template render
 }
@@ -171,7 +196,7 @@ function updateSettingsUI() {
     const settingsPanelId = `extension_settings_${extensionName}`;
     const container = document.getElementById(settingsPanelId);
     if (container) {
-        console.log(`${extensionName}: Updating UI elements from settings.`);
+        debugLog(`Updating UI elements from settings.`);
         Object.keys(defaultSettings).forEach(key => {
             const checkbox = container.querySelector(`input[name="${key}"]`);
             if (checkbox) {
@@ -179,7 +204,7 @@ function updateSettingsUI() {
                 if (extension_settings[extensionName] && extension_settings[extensionName].hasOwnProperty(key)) {
                      checkbox.checked = extension_settings[extensionName][key];
                 } else {
-                    console.warn(`${extensionName}: Setting key "${key}" not found in loaded settings during UI update. Using default: ${defaultSettings[key]}`);
+                    debugWarn(`Setting key "${key}" not found in loaded settings during UI update. Using default: ${defaultSettings[key]}`);
                     checkbox.checked = defaultSettings[key]; // Use default if missing
                 }
             } else {
@@ -215,9 +240,9 @@ function updateSettingsUI() {
             if (select) {
                 // Debug logging for presetFun specifically
                 if (key === 'presetFun') {
-                    console.log(`${extensionName}: Found presetFun element:`, select);
-                    console.log(`${extensionName}: presetFun current value:`, select.value);
-                    console.log(`${extensionName}: presetFun setting value:`, extension_settings[extensionName][key]);
+                    debugLog(`Found presetFun element:`, select);
+                    debugLog(`presetFun current value:`, select.value);
+                    debugLog(`presetFun setting value:`, extension_settings[extensionName][key]);
                 }
                 
                 // Clear existing options
@@ -282,9 +307,9 @@ function updateSettingsUI() {
             }
         });
 
-        console.log(`${extensionName}: Settings UI updated.`);
+        debugLog(`${extensionName}: Settings UI updated.`);
     } else {
-        console.warn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
+        debugWarn(`${extensionName}: Settings container #${settingsPanelId} not found during updateSettingsUI.`);
     }
 }
 
@@ -298,7 +323,7 @@ const addSettingsEventListeners = () => {
     const settingsContainer = document.getElementById(containerId);
 
     if (settingsContainer) {
-        console.log(`[${extensionName}] Adding delegated event listener to #${containerId}`);
+        debugLog(`[${extensionName}] Adding delegated event listener to #${containerId}`);
         // Remove any potentially existing listener first to avoid duplicates on reload
         settingsContainer.removeEventListener('change', handleSettingsChangeDelegated);
         // Add the delegated listener
@@ -315,7 +340,7 @@ const addSettingsEventListeners = () => {
 const handleSettingsChangeDelegated = (event) => {
     // Check if the changed element has the correct class
     if (event.target.classList.contains('gg-setting-input')) {
-        console.log(`[${extensionName}] Delegated change event detected on:`, event.target);
+        debugLog(`[${extensionName}] Delegated change event detected on:`, event.target);
         handleSettingChange(event); // Call the original handler
 
         // Special handling for button visibility settings after change
@@ -394,12 +419,12 @@ function handleSettingChange(event) {
         return; // Don't save if it's not a recognized type
     }
 
-    console.log(`[${extensionName}] Setting Changed: ${settingName} = ${settingValue} (Type: ${typeof settingValue})`);
+    debugLog(`Setting Changed: ${settingName} = ${settingValue} (Type: ${typeof settingValue})`);
 
     if (extension_settings[extensionName]) {
         extension_settings[extensionName][settingName] = settingValue;
-        console.log(`[${extensionName}] > Updated setting: Key='${settingName}', New Value='${settingValue}'`);
-        console.log(`[${extensionName}] > Current extension_settings[${extensionName}]:`, JSON.stringify(extension_settings[extensionName]));
+        debugLog(`> Updated setting: Key='${settingName}', New Value='${settingValue}'`);
+        debugLog(`> Current extension_settings[${extensionName}]:`, JSON.stringify(extension_settings[extensionName]));
         saveSettingsDebounced(); // Save after updating the specific key
 
         // *** ADDED: Refresh buttons after setting change ***
@@ -1276,9 +1301,9 @@ $(document).ready(async function () {
 
             // Log what's triggering the auto-execution
             if (hasActiveTracker && !hasActiveAutoGuides) {
-                console.log('[GuidedGenerations] Proceeding with auto-execution due to active tracker');
+                debugLog('Proceeding with auto-execution due to active tracker');
             } else if (hasActiveAutoGuides) {
-                console.log('[GuidedGenerations] Proceeding with auto-execution due to active auto-guides');
+                debugLog('Proceeding with auto-execution due to active auto-guides');
             }
 
             const textarea = document.getElementById('send_textarea');

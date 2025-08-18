@@ -1,25 +1,25 @@
 // scripts/inputRecovery.js
-import { getPreviousImpersonateInput } from '../index.js'; // Import the shared state getter
+import { getPreviousImpersonateInput, debugLog } from '../index.js'; // Import the shared state getter and debug logger
 
 const recoverInput = () => {
-    console.log('[GuidedGenerations] Input Recovery button clicked');
-    const textarea = document.getElementById('send_textarea');
+	debugLog('[InputRecovery] Button clicked');
+	const textarea = document.getElementById('send_textarea');
 
-    if (!textarea) {
-        console.error('[GuidedGenerations][InputRecovery] Textarea #send_textarea not found.');
-        return;
-    }
+	if (!textarea) {
+		console.error('[GuidedGenerations][InputRecovery] Textarea #send_textarea not found.');
+		return;
+	}
 
-    try {
-        const previousInput = getPreviousImpersonateInput();
-        console.log(`[GuidedGenerations][InputRecovery] Recovering input: "${previousInput}"`);
-        textarea.value = previousInput;
-        // Dispatch event for UI updates
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        console.log('[GuidedGenerations][InputRecovery] Input recovered successfully.');
-    } catch (error) {
-        console.error("[GuidedGenerations][InputRecovery] Error recovering input:", error);
-    }
+	try {
+		const previousInput = getPreviousImpersonateInput();
+		debugLog(`[InputRecovery] Recovering input: "${previousInput}"`);
+		textarea.value = previousInput;
+		// Dispatch event for UI updates
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+		debugLog('[InputRecovery] Input recovered successfully.');
+	} catch (error) {
+		console.error("[GuidedGenerations][InputRecovery] Error recovering input:", error);
+	}
 };
 
 // Export the function

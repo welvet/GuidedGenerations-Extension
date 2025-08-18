@@ -1,6 +1,7 @@
 import { getContext, extension_settings } from '../../../../../extensions.js';
 import { extensionName } from '../../index.js';
 import { handlePresetSwitching } from '../utils/presetUtils.js';
+import { debugLog } from '../../index.js';
 
 /**
  * Generic runner for Persistent Guides STScript commands.
@@ -59,9 +60,9 @@ ${finalCommand}`;
     // Switch to the target preset before executing the script
     if (presetValue) {
         // Wait for preset switching to complete using the utility function
-        console.log(`${extensionName}: Switching to preset "${presetValue}" and waiting for completion...`);
+        debugLog(`${extensionName}: Switching to preset "${presetValue}" and waiting for completion...`);
         await switchPreset();
-        console.log(`${extensionName}: Preset switch completed successfully`);
+        debugLog(`${extensionName}: Preset switch completed successfully`);
     } else {
         switchPreset();
     }
@@ -83,9 +84,9 @@ ${finalCommand}`;
             return null;
         } finally {
             // Always restore the original preset and wait for completion
-            console.log(`${extensionName}: Restoring original preset...`);
+            debugLog(`${extensionName}: Restoring original preset...`);
             await restore();
-            console.log(`${extensionName}: Preset restore completed`);
+            debugLog(`${extensionName}: Preset restore completed`);
         }
     } else {
         console.error(`${extensionName}: Context unavailable to execute guide script for ${guideId}.`);

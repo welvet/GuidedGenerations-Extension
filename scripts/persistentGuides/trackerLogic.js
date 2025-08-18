@@ -4,7 +4,7 @@
  */
 
 import { getContext } from '../../../../../extensions.js';
-import { extensionName } from '../../index.js';
+import { extensionName, debugLog } from '../../index.js';
 import { handlePresetSwitching } from '../utils/presetUtils.js';
 
 /**
@@ -23,36 +23,36 @@ export async function executeTracker(isAuto = false) {
         // Get tracker configuration from chat metadata
         const trackerConfig = context.chatMetadata?.[`${extensionName}_trackers`];
         if (!trackerConfig || !trackerConfig.enabled) {
-            console.log('[GuidedGenerations] Tracker not enabled or not configured');
+            debugLog('Tracker not enabled or not configured');
             return;
         }
 
-        console.log('[GuidedGenerations] Executing tracker with config:', trackerConfig);
+        debugLog('Executing tracker with config:', trackerConfig);
 
         // Check if we need to switch to the tracker preset
         const globalSettings = context.extensionSettings?.[extensionName];
-        console.log('[GuidedGenerations] Debug - extensionName:', extensionName);
-        console.log('[GuidedGenerations] Debug - context.extensionSettings exists:', !!context.extensionSettings);
-        console.log('[GuidedGenerations] Debug - extensionSettings[extensionName]:', globalSettings);
+        debugLog('Debug - extensionName:', extensionName);
+        debugLog('Debug - context.extensionSettings exists:', !!context.extensionSettings);
+        debugLog('Debug - extensionSettings[extensionName]:', globalSettings);
         
         let presetHandler = null;
         if (globalSettings?.presetTracker && globalSettings.presetTracker !== '') {
-            console.log('[GuidedGenerations] Switching to tracker preset:', globalSettings.presetTracker);
+            debugLog('Switching to tracker preset:', globalSettings.presetTracker);
             try {
                 presetHandler = handlePresetSwitching(globalSettings.presetTracker);
                 await presetHandler.switch();
-                console.log('[GuidedGenerations] Successfully switched to tracker preset');
+                debugLog('Successfully switched to tracker preset');
             } catch (error) {
                 console.error('[GuidedGenerations] Error switching to tracker preset:', error);
             }
         } else {
-            console.log('[GuidedGenerations] No preset to switch to - presetTracker:', globalSettings?.presetTracker);
+            debugLog('No preset to switch to - presetTracker:', globalSettings?.presetTracker);
         }
 
         // Check if the last message is a comment - if so, skip tracker execution
         const lastMessage = context.chat[context.chat.length - 1];
         if (lastMessage?.extra?.type === 'comment') {
-            console.log('[GuidedGenerations] Last message is a comment, skipping tracker execution (likely deleted/broken generation)');
+            debugLog('Last message is a comment, skipping tracker execution (likely deleted/broken generation)');
             return;
         }
 
@@ -75,7 +75,7 @@ export async function executeTracker(isAuto = false) {
                     }
                 }
             } catch (error) {
-                console.log('[GuidedGenerations] Could not retrieve current tracker content for guide prompt, proceeding without it');
+                debugLog('Could not retrieve current tracker content for guide prompt, proceeding without it');
             }
             
             if (currentTrackerContent) {
@@ -94,10 +94,10 @@ export async function executeTracker(isAuto = false) {
         }
 
         const guideContent = guideResult.pipe;
-        console.log('[GuidedGenerations] Generated guide content:', guideContent);
+        debugLog('Generated guide content:', guideContent);
 
         // Half second delay between the two tracker calls
-        console.log('[GuidedGenerations] Waiting 500ms before second tracker call...');
+        debugLog('Waiting 500ms before second tracker call...');
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Step 2: Get current tracker content to include in context
@@ -115,7 +115,7 @@ export async function executeTracker(isAuto = false) {
                 }
             }
         } catch (error) {
-            console.log('[GuidedGenerations] Could not retrieve current tracker content, proceeding with empty context');
+            debugLog('Could not retrieve current tracker content, proceeding with empty context');
         }
 
         // Step 2: Generate tracker update using /genraw with the guide content and current tracker as contex
@@ -133,12 +133,12 @@ export async function executeTracker(isAuto = false) {
         }
 
         const trackerUpdate = trackerResult.pipe;
-        console.log('[GuidedGenerations] Generated tracker update:', trackerUpdate);
-        console.log('[GuidedGenerations] Tracker update length:', trackerUpdate?.length || 0);
-        console.log('[GuidedGenerations] Tracker update type:', typeof trackerUpdate);
+        debugLog('Generated tracker update:', trackerUpdate);
+        debugLog('Tracker update length:', trackerUpdate?.length || 0);
+        debugLog('Tracker update type:', typeof trackerUpdate);
 
         // Half second delay after the second tracker call
-        console.log('[GuidedGenerations] Waiting 500ms after second tracker call...');
+        debugLog('Waiting 500ms after second tracker call...');
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Step 3: Update the tracker injection
@@ -148,7 +148,7 @@ export async function executeTracker(isAuto = false) {
                 showOutput: false, 
                 handleExecutionErrors: true 
             });
-            console.log('[GuidedGenerations] Tracker injection updated with content length:', trackerUpdate.length);
+            debugLog('Tracker injection updated with content length:', trackerUpdate.length);
         } else {
             console.error('[GuidedGenerations] Tracker update is empty or undefined, skipping injection update');
         }
@@ -162,16 +162,16 @@ export async function executeTracker(isAuto = false) {
 
         // Restore the original preset if we switched to a tracker preset
         if (presetHandler) {
-            console.log('[GuidedGenerations] Restoring original preset...');
+            debugLog('Restoring original preset...');
             try {
                 await presetHandler.restore();
-                console.log('[GuidedGenerations] Successfully restored original preset');
+                debugLog('Successfully restored original preset');
             } catch (error) {
                 console.error('[GuidedGenerations] Error restoring original preset:', error);
             }
         }
 
-        console.log('[GuidedGenerations] Tracker execution completed successfully');
+        debugLog('Tracker execution completed successfully');
 
     } catch (error) {
         console.error('[GuidedGenerations] Error executing tracker:', error);
@@ -192,7 +192,7 @@ export async function checkAndExecuteTracker() {
         // Check if tracker is enabled in chat metadata
         const trackerConfig = context.chatMetadata?.[`${extensionName}_trackers`];
         if (trackerConfig && trackerConfig.enabled) {
-            console.log('[GuidedGenerations] Auto-triggering tracker');
+            debugLog('Auto-triggering tracker');
             await executeTracker(true);
         }
     } catch (error) {

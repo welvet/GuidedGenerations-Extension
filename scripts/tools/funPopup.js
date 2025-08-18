@@ -2,7 +2,7 @@
  * Fun Popup - Handles UI for fun prompts and interactions
  */
 
-import { extensionName } from '../../index.js';
+import { extensionName, debugLog } from '../../index.js';
 import { getContext, extension_settings } from '../../../../../extensions.js';
 import { handlePresetSwitching } from '../utils/presetUtils.js';
 
@@ -27,7 +27,7 @@ async function loadFunPrompts() {
             return;
         }
         
-        console.log(`${extensionName}: Successfully loaded fun prompts from:`, presetPath);
+        debugLog(`${extensionName}: Successfully loaded fun prompts from:`, presetPath);
         
         const text = await response.text();
         const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('#'));
@@ -46,7 +46,7 @@ async function loadFunPrompts() {
             }
         });
         
-        console.log(`${extensionName}: Loaded ${Object.keys(FUN_PROMPTS).length} fun prompts from file`);
+        debugLog(`${extensionName}: Loaded ${Object.keys(FUN_PROMPTS).length} fun prompts from file`);
     } catch (error) {
         console.error(`${extensionName}: Error loading fun prompts:`, error);
         // Fallback to empty prompts if file can't be loaded
@@ -164,7 +164,7 @@ export class FunPopup {
         // Handle preset switching using unified utility
         const presetKey = 'presetFun';
         const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-        console.log(`${extensionName}: Using preset for fun prompts: ${presetValue || 'none'}`);
+        debugLog(`${extensionName}: Using preset for fun prompts: ${presetValue || 'none'}`);
         
         const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
 

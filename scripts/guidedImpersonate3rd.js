@@ -1,6 +1,6 @@
 // scripts/guidedImpersonate3rd.js
 import { getContext, extension_settings } from '../../../../extensions.js';
-import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js';
+import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult, debugLog } from '../index.js';
 import { handlePresetSwitching } from './utils/presetUtils.js'; 
 
 const guidedImpersonate3rd = async () => {
@@ -40,12 +40,11 @@ const guidedImpersonate3rd = async () => {
     // Handle preset switching using unified utility
     const presetKey = 'presetImpersonate3rd';
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-    console.log(`[GuidedGenerations] Using preset for 3rd-person impersonate: ${presetValue || 'none'}`);
+    debugLog(`[Impersonate-3rd] Using preset: ${presetValue || 'none'}`);
     
     const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
     
-    const fullScript = `// 3rd-person impersonate guide|
-${stscriptCommand}`;
+    const fullScript = `// 3rd-person impersonate guide|\n${stscriptCommand}`;
 
     try {
         const context = getContext(); 
@@ -57,7 +56,7 @@ ${stscriptCommand}`;
             
             // After completion, read the new input and store it in shared state
             setLastImpersonateResult(textarea.value); // Use shared setter
-            console.log('[GuidedGenerations] Guided Impersonate (3rd) stscript executed, new input stored in shared state.');
+            debugLog('[Impersonate-3rd] STScript executed, new input stored in shared state.');
         } else {
             console.error('[GuidedGenerations] context.executeSlashCommandsWithOptions not found!');
         }

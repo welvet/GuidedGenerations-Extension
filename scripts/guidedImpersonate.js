@@ -1,5 +1,5 @@
 // scripts/guidedImpersonate.js
-import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from '../index.js'; // Import shared state functions
+import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult, debugLog } from '../index.js'; // Import shared state functions
 import { getContext, extension_settings } from '../../../../extensions.js';
 import { extensionName } from '../index.js';
 import { handlePresetSwitching } from './utils/presetUtils.js';
@@ -26,7 +26,7 @@ const guidedImpersonate = async () => {
     // Handle preset switching using unified utility
     const presetKey = 'presetImpersonate1st';
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-    console.log(`[GuidedGenerations] Using preset for impersonate: ${presetValue || 'none'}`);
+    debugLog(`[Impersonate-1st] Using preset: ${presetValue || 'none'}`);
     
     const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
 
@@ -36,8 +36,7 @@ const guidedImpersonate = async () => {
 
     // Build STScript without preset switching
     const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
-    const fullScript = `// Impersonate guide|
-${stscriptCommand}`;
+    const fullScript = `// Impersonate guide|\n${stscriptCommand}`;
 
     try {
         const context = getContext();
@@ -50,7 +49,7 @@ ${stscriptCommand}`;
             
             // After completion, read the new input and store it using the setter
             setLastImpersonateResult(textarea.value);
-            console.log('[GuidedGenerations] Guided Impersonate (1st) stscript executed, new input stored in shared state.');
+            debugLog('[Impersonate-1st] STScript executed, new input stored in shared state.');
 
             // After completion, restore original preset using utility restore function
             restore();

@@ -1,6 +1,6 @@
 // scripts/settingsPanel.js
 
-import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners, defaultSettings } from '../index.js';
+import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners, defaultSettings, debugLog, debugWarn } from '../index.js';
 import { renderExtensionTemplateAsync } from '../../../../extensions.js';
 
 /**
@@ -11,11 +11,11 @@ export async function loadSettingsPanel() {
     let container = document.getElementById(containerId);
 
     const parentContainer = document.getElementById('extensions_settings');
-    console.log(`[${extensionName}] Checking parent container #extensions_settings:`, parentContainer ? 'Found' : 'NOT Found');
+    debugLog(`[${extensionName}] Checking parent container #extensions_settings:`, parentContainer ? 'Found' : 'NOT Found');
 
     if (!container) {
         if (parentContainer) {
-            console.log(`[${extensionName}] Settings container #${containerId} not initially found. Ensuring it exists...`);
+            debugLog(`[${extensionName}] Settings container #${containerId} not initially found. Ensuring it exists...`);
             container = document.createElement('div');
             container.id = containerId;
             parentContainer.appendChild(container);
@@ -89,7 +89,7 @@ export async function loadSettingsPanel() {
                             // Trigger change event to ensure SillyTavern recognizes the update
                             input.dispatchEvent(new Event('change', { bubbles: true })); 
                         } else {
-                            console.warn(`[${extensionName}] Could not find input for gg_${key} or default setting for ${key}`);
+                            debugWarn(`[${extensionName}] Could not find input for gg_${key} or default setting for ${key}`);
                         }
                     });
                 });

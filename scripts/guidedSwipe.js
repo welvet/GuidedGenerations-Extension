@@ -1,7 +1,7 @@
 // scripts/guidedSwipe.js
 
 import { getContext, extension_settings } from '../../../../extensions.js'; // Import getContext and extension_settings
-import { setPreviousImpersonateInput, getPreviousImpersonateInput } from '../index.js'; // Import shared state functions
+import { setPreviousImpersonateInput, getPreviousImpersonateInput, debugLog } from '../index.js'; // Import shared state functions
 
 // Helper function for delays
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -73,7 +73,7 @@ async function generateNewSwipe() {
         if (messageData && Array.isArray(messageData.swipes) && messageData.swipes.length > 1) {
             const targetSwipeIndex = messageData.swipes.length - 1;
             if (messageData.swipe_id !== targetSwipeIndex) {
-                console.log(`[GuidedGenerations][Swipe] Navigating directly from swipe ${messageData.swipe_id} to last swipe ${targetSwipeIndex}.`);
+                debugLog(`[Swipe] Navigating directly from swipe ${messageData.swipe_id} to last swipe ${targetSwipeIndex}.`);
                 messageData.swipe_id = targetSwipeIndex;
                 messageData.mes = messageData.swipes[targetSwipeIndex];
                 // Optional: Update extra fields if needed, similar to swipes-go
@@ -91,7 +91,7 @@ async function generateNewSwipe() {
                     // Update swipe counter in DOM
                     [...mesDom.querySelectorAll('.swipes-counter')].forEach(it => it.textContent = `${messageData.swipe_id + 1}/${messageData.swipes.length}`);
                 } else {
-                    console.warn(`[GuidedGenerations][Swipe] Could not find DOM element for message ${lastMessageIndex} to update UI during direct navigation.`);
+                    debugLog(`[Swipe] Could not find DOM element for message ${lastMessageIndex} to update UI during direct navigation.`);
                 }
 
                 // Save chat and notify - Removed saveChatConditional() as it's not available
@@ -101,10 +101,10 @@ async function generateNewSwipe() {
                 // Use standard setTimeout for delay as context.delay is missing
                 await new Promise(resolve => setTimeout(resolve, 150)); // Delay for UI updates/event propagation
             } else {
-                console.log("[GuidedGenerations][Swipe] Already on the last existing swipe.");
+                debugLog("[Swipe] Already on the last existing swipe.");
             }
         } else {
-            console.log("[GuidedGenerations][Swipe] No existing swipes or only one swipe found. Proceeding to generate first/next swipe.");
+            debugLog("[Swipe] No existing swipes or only one swipe found. Proceeding to generate first/next swipe.");
         }
 
         // --- 2. Trigger the *New* Swipe Generation (Using context.swipe.right()) ---
@@ -116,13 +116,13 @@ async function generateNewSwipe() {
             return false;
         }
 
-        console.log("[GuidedGenerations][Swipe] Calling context.swipe.right() to trigger new swipe generation...");
+        debugLog("[Swipe] Calling context.swipe.right() to trigger new swipe generation...");
         context.swipe.right(); // THE VITAL CALL TO START GENERATION
 
         // --- 3. Wait for Generation to Finish ---
         const generationPromise = new Promise((resolve) => {
             const successListener = () => {
-                console.log("[GuidedGenerations][Swipe] Generation ended signal received.");
+                debugLog("[Swipe] Generation ended signal received.");
                 resolve(true);
             };
 
@@ -138,7 +138,7 @@ async function generateNewSwipe() {
         context = getContext(); // Get latest context
         const finalMessageData = context.chat[context.chat.length - 1];
         const finalSwipeCount = finalMessageData?.swipes?.length ?? 0;
-        console.log(`[GuidedGenerations][Swipe] Final swipe count after generation: ${finalSwipeCount}`);
+        debugLog(`[Swipe] Final swipe count after generation: ${finalSwipeCount}`);
 
         return true; // Indicate success
 
@@ -172,10 +172,10 @@ const guidedSwipe = async () => {
 
     // If no input, skip injection and do a plain swipe
     if (!originalInput.trim()) {
-        console.log("[GuidedGenerations][Swipe] No input detected, performing plain swipe.");
+        debugLog("[Swipe] No input detected, performing plain swipe.");
         const swipeSuccess = await generateNewSwipe();
         if (swipeSuccess) {
-            console.log("[GuidedGenerations][Swipe] Swipe finished successfully.");
+            debugLog("[Swipe] Swipe finished successfully.");
         } else {
             console.error("[GuidedGenerations][Swipe] Swipe failed.");
         }
@@ -203,7 +203,7 @@ const guidedSwipe = async () => {
                 const context = SillyTavern.getContext();
                 if (typeof context.executeSlashCommandsWithOptions === 'function') {
                     await context.executeSlashCommandsWithOptions(stscriptCommand);
-                    console.log('[GuidedGenerations][Swipe] Executed Command:', stscriptCommand); 
+                    debugLog('[Swipe] Executed Command:', stscriptCommand); 
                 } else {
                     throw new Error("context.executeSlashCommandsWithOptions function not found.");
                 }
@@ -211,7 +211,7 @@ const guidedSwipe = async () => {
                 throw new Error("SillyTavern.getContext function not found.");
             }
         } else {
-            console.log("[GuidedGenerations][Swipe] No input detected, skipping injection.");
+            debugLog("[Swipe] No input detected, skipping injection.");
         }
         
 
@@ -223,14 +223,14 @@ const guidedSwipe = async () => {
         for (let i = 0; i < maxAttempts; i++) {
             const currentContext = SillyTavern.getContext(); // Get fresh context each time
             if (currentContext.chatMetadata?.script_injects?.instruct) {
-                console.log(`[GuidedGenerations][Swipe] Injection found after attempt ${i + 1}.`);
+                debugLog(`[Swipe] Injection found after attempt ${i + 1}.`);
                 injectionFound = true;
                 break; // Exit loop once found
 
             }
             // If not found, wait before the next check (unless it's the last attempt)
             if (i < maxAttempts - 1) {
-                console.log(`[GuidedGenerations][Swipe] Injection check ${i + 1} failed, waiting ${checkDelay}ms...`);
+                debugLog(`[Swipe] Injection check ${i + 1} failed, waiting ${checkDelay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, checkDelay));
             }
         }
@@ -247,13 +247,13 @@ const guidedSwipe = async () => {
             return; // Stop execution
         }
 
-        // --- 2. Generate the new swipe --- (This now only runs if injection was found)
-        console.log('[GuidedGenerations][Swipe] Instruction injection confirmed. Proceeding to generate new swipe...');
+                // --- 2. Generate the new swipe --- (This now only runs if injection was found)
+        debugLog('[Swipe] Instruction injection confirmed. Proceeding to generate new swipe...');
         const swipeSuccess = await generateNewSwipe();
 
         if (swipeSuccess) {
-            console.log("[GuidedGenerations][Swipe] Guided Swipe finished successfully.");
-            await new Promise(resolve => setTimeout(resolve, 3000)); 
+            debugLog("[Swipe] Guided Swipe finished successfully.");
+            await new Promise(resolve => setTimeout(resolve, 3000));
         } else {
             console.error("[GuidedGenerations][Swipe] Guided Swipe failed during swipe generation step.");
             // Error likely already alerted within generateNewSwipe
@@ -270,15 +270,15 @@ const guidedSwipe = async () => {
         // Always attempt to restore the input field from the shared state (imported)
         if (textarea) { // Check if textarea was found initially
             const restoredInput = getPreviousImpersonateInput();
-            console.log(`[GuidedGenerations][Swipe] Restoring input field to: "${restoredInput}" (finally block)`);
+            debugLog(`[Swipe] Restoring input field to: "${restoredInput}" (finally block)`);
             textarea.value = restoredInput;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
             // This case should ideally not happen if the initial check passed
-            console.warn("[GuidedGenerations][Swipe] Textarea was not available for restoration in finally block.");
+            debugLog("[Swipe] Textarea was not available for restoration in finally block.");
         }
         // Clean up injection using the correct key
-        console.log('[GuidedGenerations][Swipe] Cleaning up injection (finally block)');
+        debugLog('[Swipe] Cleaning up injection (finally block)');
         await executeSTScriptCommand('/flushinject instruct'); // Already using 'instruct' ID here, which seems correct
     }
 };

@@ -4,7 +4,7 @@
  * Edit Guides Popup - Handles UI for editing guide injections.
  */
 import { extension_settings } from '../../../../../extensions.js';
-import { extensionName } from '../../index.js';
+import { extensionName, debugLog } from '../../index.js';
 
 export class EditGuidesPopup {
     constructor() {
@@ -71,14 +71,14 @@ export class EditGuidesPopup {
     async init(parentElement = document.body) {
         if (this.initialized) return;
 
-        console.log('[GuidedGenerations] Initializing Edit Guides Popup...');
+        debugLog('[EditGuidesPopup] Initializing...');
 
         // Check if popup exists, create if not
         this.popupElement = document.getElementById(this.popupId);
         if (!this.popupElement) {
             parentElement.insertAdjacentHTML('beforeend', this.popupHtml);
             this.popupElement = document.getElementById(this.popupId);
-            console.log('[GuidedGenerations] Edit Guides Popup element created.');
+            debugLog('[EditGuidesPopup] Element created.');
         }
 
         // Ensure popupElement is valid before proceeding
@@ -107,7 +107,7 @@ export class EditGuidesPopup {
         }
 
         this.initialized = true;
-        console.log('[GuidedGenerations] Edit Guides Popup initialized successfully.');
+        debugLog('[EditGuidesPopup] Initialized successfully.');
     }
 
     /**
@@ -329,7 +329,7 @@ export class EditGuidesPopup {
             });
         } else {
              // Handle case with no guides - maybe disable select/show message
-             console.log("[GuidedGenerations] No guides found to populate editor.");
+            debugLog('[EditGuidesPopup] No guides found to populate editor.');
         }
 
         // Reset textarea and button state
@@ -356,7 +356,7 @@ export class EditGuidesPopup {
 
         // Relying on CSS (e.g., position: absolute, top: 50%, left: 50%, transform: translate(-50%, -50%))
         // and max-height/max-width set in style.css.
-        console.log(`[GuidedGenerations] Window size: ${windowWidth}x${windowHeight}. CSS handles popup sizing/positioning.`);
+        debugLog(`[EditGuidesPopup] Window size: ${windowWidth}x${windowHeight}.`);
      }
 
     /**
@@ -390,7 +390,7 @@ export class EditGuidesPopup {
         const success = await this.updateGuidePromptDirectly(this.selectedGuideKey, newContent, newDepth, newPosition);
 
         if (success) {
-            console.log(`[GuidedGenerations] Guide "${this.selectedGuideKey}" updated directly in context.`);
+            debugLog(`[EditGuidesPopup] Guide "${this.selectedGuideKey}" updated directly in context.`);
             this.injectionData[this.selectedGuideKey].value = newContent;
             this.close();
             if (window.GuidedGenerations && typeof window.GuidedGenerations.updatePersistentGuideCounter === 'function') {

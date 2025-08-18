@@ -106,6 +106,8 @@ All extension settings are managed via SillyTavern’s Extension Settings panel:
 
 - **Injection Role**: select the role (`system`, `assistant`, or `user`) used when injecting instructions.
 
+- **Debug Mode**: when enabled, shows detailed debug information in the browser console. Useful for troubleshooting but can clutter the console during normal use.
+
 - **Presets**: for each guide/tool (Clothes, State, Thinking, Situational, Rules, Custom, Corrections, Spellchecker, Edit Intros, Impersonation 1st/2nd/3rd), choose any SillyTavern preset. Before running a guide/tool, the extension will switch to that preset (and its configured API/model), execute the action, then restore your previous preset—allowing different models per guide.
 
 - **Prompt Overrides**: customize the raw prompt template for each guide/tool. Use `{{input}}` for your input text and other placeholders as supported. Overrides apply to:
