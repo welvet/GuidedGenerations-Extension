@@ -25,6 +25,7 @@ import { showVersionNotification } from './scripts/ui/versionNotificationPopup.j
 import thinkingGuide from './scripts/persistentGuides/thinkingGuide.js';
 import stateGuide from './scripts/persistentGuides/stateGuide.js';
 import clothesGuide from './scripts/persistentGuides/clothesGuide.js';
+import { checkAndExecuteTracker } from './scripts/persistentGuides/trackerLogic.js';
 
 // --- Shared State for Impersonation Input Recovery ---
 let previousImpersonateInput = ''; // Input before the last impersonation
@@ -86,6 +87,7 @@ export const defaultSettings = {
     presetCustomAuto: '', // Default preset for Custom Auto Guide
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
     presetFun: '', // Default preset for Fun Prompts
+    presetTracker: '', // Default preset for Tracker functionality
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
@@ -207,7 +209,7 @@ function updateSettingsUI() {
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
-         'presetCustomAuto','presetFun'
+         'presetCustomAuto','presetFun','presetTracker'
         ].forEach(key => {
             const select = document.getElementById(key);
             if (select) {
@@ -696,7 +698,8 @@ function updateExtensionButtons() {
         const toolGuides = [
             { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js', description: "Displays the content of currently active persistent guides." },
             { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js', description: "Opens a popup to create, edit, or delete custom persistent guides and their prompts." },
-            { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." }
+            { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." },
+            { name: 'Tracker', icon: 'fa-chart-line', path: './scripts/persistentGuides/trackerGuide.js', description: "Create and configure trackers to monitor specific aspects of your story or characters." }
         ];
 
         // Load the content guides in sequence
@@ -1262,9 +1265,20 @@ $(document).ready(async function () {
                 settings.enableAutoCustomAutoGuide
             );
 
-            // Only proceed if at least one auto-guide is active
-            if (!hasActiveAutoGuides) {
+            // Check if tracker is active (tracker is chat-specific, not global)
+            const context = getContext();
+            const hasActiveTracker = context?.chatMetadata?.[`${extensionName}_trackers`]?.enabled;
+
+            // Only proceed if at least one auto-guide OR tracker is active
+            if (!hasActiveAutoGuides && !hasActiveTracker) {
                 return;
+            }
+
+            // Log what's triggering the auto-execution
+            if (hasActiveTracker && !hasActiveAutoGuides) {
+                console.log('[GuidedGenerations] Proceeding with auto-execution due to active tracker');
+            } else if (hasActiveAutoGuides) {
+                console.log('[GuidedGenerations] Proceeding with auto-execution due to active auto-guides');
             }
 
             const textarea = document.getElementById('send_textarea');
@@ -1314,6 +1328,9 @@ $(document).ready(async function () {
             } else {
                 console.warn('GuidedGenerations-Extension: Extension settings not found, cannot auto-trigger guides.');
             }
+
+            // Execute tracker if enabled (tracker is always chat-specific, no global setting needed)
+            await checkAndExecuteTracker();
 
             // Re-insert the 'instruct' injection if it was saved
             // Re-insert the 'instruct' injection if it was saved
