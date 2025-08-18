@@ -21,6 +21,7 @@ export default async function trackerGuide() {
         const trackerConfig = {
             enabled: existingConfig.enabled || false,
             messageCount: existingConfig.messageCount || 4,
+            includeTrackerInGuide: existingConfig.includeTrackerInGuide || false,
             initialFormat: existingConfig.initialFormat || '> Distance {{char}} has moved in meters: 0',
             guidePrompt: existingConfig.guidePrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Considering the last message alone, write me how far {{char}} has moved in meter in the last message. Give an exact number of your best estimate.]',
             trackerPrompt: existingConfig.trackerPrompt || '[OOC: Answer me out of Character! Don\'t continue the RP. Update the Tracker with the Last update without any preamble. Use the follwing format for your output:]\n> Distance {{char}} has moved in meters: X'
@@ -60,7 +61,7 @@ export default async function trackerGuide() {
                             <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">How many recent messages to check for updates (default: 4)</small>
                         </div>
                             
-                                                    <div class="gg-popup-section">
+                        <div class="gg-popup-section">
                             <label for="trackerInitialFormat" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Initial Tracker Format:</label>
                             <textarea id="trackerInitialFormat" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.initialFormat}</textarea>
                             <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Starting template for your tracker. Click "Setup Tracker" to create it.</small>
@@ -69,7 +70,15 @@ export default async function trackerGuide() {
                         <div class="gg-popup-section">
                             <label for="trackerGuidePrompt" style="display: block; margin-bottom: 5px; color: var(--SmartThemeBodyColor);">Guide Prompt:</label>
                             <textarea id="trackerGuidePrompt" rows="4" style="width: 100%; color: var(--SmartThemeBodyColor); background: var(--SmartThemeBlurTintColor); border: 1px solid var(--SmartThemeBorderColor); border-radius: 5px; padding: 8px;">${trackerConfig.guidePrompt}</textarea>
-                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Tells the AI what to look for in recent messages</small>
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Tells the AI what to look for in recent messages. Enable the checkbox below to also include current tracker state.</small>
+                        </div>
+                        
+                        <div class="gg-popup-section">
+                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                <input type="checkbox" id="trackerIncludeTrackerInGuide" ${trackerConfig.includeTrackerInGuide ? 'checked' : ''} style="margin-right: 8px;">
+                                <label for="trackerIncludeTrackerInGuide" style="margin: 0; color: var(--SmartThemeBodyColor);">Include Current Tracker in Guide Prompt Context</label>
+                            </div>
+                            <small style="color: var(--SmartThemeBodyColor); opacity: 0.8;">Enable this for trackers like mood that need to consider previous tracker state</small>
                         </div>
                         
                         <div class="gg-popup-section">
@@ -80,10 +89,15 @@ export default async function trackerGuide() {
                     </div>
                 </div>
                 <div class="gg-popup-footer">
-                    <button class="gg-button gg-button-primary" id="trackerSaveButton">Save</button>
-                    <button class="gg-button gg-button-secondary" id="trackerSetupButton">Setup Tracker</button>
-                    <button class="gg-button gg-button-secondary" id="trackerRunButton">Run Tracker</button>
-                    <button class="gg-button gg-button-secondary" id="trackerCloseButton">Close</button>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button class="gg-button gg-button-primary" id="trackerSetupButton">Setup Tracker</button>
+                        <button class="gg-button gg-button-primary" id="trackerSyncButton">Sync Tracker with Comment</button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="gg-button gg-button-primary" id="trackerSaveButton">Save</button>
+                        <button class="gg-button gg-button-secondary" id="trackerRunButton">Run Tracker</button>
+                        <button class="gg-button gg-button-secondary" id="trackerCloseButton">Close</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -93,9 +107,11 @@ export default async function trackerGuide() {
         const closeButton2 = popup.querySelector('#trackerCloseButton');
         const saveButton = popup.querySelector('#trackerSaveButton');
         const setupButton = popup.querySelector('#trackerSetupButton');
+        const syncButton = popup.querySelector('#trackerSyncButton');
         const runButton = popup.querySelector('#trackerRunButton');
         const enabledCheckbox = popup.querySelector('#trackerEnabled');
         const messageCountInput = popup.querySelector('#trackerMessageCount');
+        const includeTrackerInGuideCheckbox = popup.querySelector('#trackerIncludeTrackerInGuide');
         const initialFormatTextarea = popup.querySelector('#trackerInitialFormat');
         const guidePromptTextarea = popup.querySelector('#trackerGuidePrompt');
         const trackerPromptTextarea = popup.querySelector('#trackerTrackerPrompt');
@@ -109,6 +125,7 @@ export default async function trackerGuide() {
             const newConfig = {
                 enabled: enabledCheckbox.checked,
                 messageCount: parseInt(messageCountInput.value) || 4,
+                includeTrackerInGuide: includeTrackerInGuideCheckbox.checked,
                 initialFormat: initialFormatTextarea.value,
                 guidePrompt: guidePromptTextarea.value,
                 trackerPrompt: trackerPromptTextarea.value
@@ -140,6 +157,35 @@ export default async function trackerGuide() {
                 }
             }
         });
+        
+        syncButton.addEventListener('click', async () => {
+            try {
+                // Find the last comment in the chat
+                let lastComment = null;
+                for (let i = context.chat.length - 1; i >= 0; i--) {
+                    const message = context.chat[i];
+                    if (message.extra?.type === 'comment') {
+                        lastComment = message;
+                        break;
+                    }
+                }
+                
+                if (lastComment && lastComment.content) {
+                    // Update the tracker injection with the comment content
+                    const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastComment.content}]`;
+                    await context.executeSlashCommandsWithOptions(injectionCommand, { 
+                        showOutput: false, 
+                        handleExecutionErrors: true 
+                    });
+                    console.log('[GuidedGenerations] Tracker synced with last comment:', lastComment.content);
+                } else {
+                    console.log('[GuidedGenerations] No comment found to sync with');
+                }
+            } catch (error) {
+                console.error('[GuidedGenerations] Error syncing tracker with comment:', error);
+            }
+        });
+        
         runButton.addEventListener('click', async () => {
             await executeTracker(false);
             closePopup(); // Close popup after running tracker

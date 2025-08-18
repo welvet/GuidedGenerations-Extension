@@ -36,8 +36,34 @@ export async function executeTracker(isAuto = false) {
         }
 
         // Step 1: Generate guide content using the first prompt
+        let guidePrompt = trackerConfig.guidePrompt;
+        
+        // If configured to include tracker context, add current tracker content
+        if (trackerConfig.includeTrackerInGuide) {
+            let currentTrackerContent = '';
+            try {
+                const listResult = await context.executeSlashCommandsWithOptions(
+                    '/listinjects return=object',
+                    { showOutput: false, handleExecutionErrors: true }
+                );
+                
+                if (listResult && listResult.pipe) {
+                    const injections = JSON.parse(listResult.pipe);
+                    if (injections.tracker && injections.tracker.value) {
+                        currentTrackerContent = injections.tracker.value;
+                    }
+                }
+            } catch (error) {
+                console.log('[GuidedGenerations] Could not retrieve current tracker content for guide prompt, proceeding without it');
+            }
+            
+            if (currentTrackerContent) {
+                guidePrompt = `${trackerConfig.guidePrompt}\n\nCurrent Tracker:\n${currentTrackerContent}`;
+            }
+        }
+        
         const guideResult = await context.executeSlashCommandsWithOptions(
-            `/gen ${trackerConfig.guidePrompt}`,
+            `/gen ${guidePrompt}`,
             { showOutput: false, handleExecutionErrors: true }
         );
 
@@ -71,7 +97,7 @@ export async function executeTracker(isAuto = false) {
             console.log('[GuidedGenerations] Could not retrieve current tracker content, proceeding with empty context');
         }
 
-        // Step 2: Generate tracker update using /genraw with the guide content and current tracker as context
+        // Step 2: Generate tracker update using /genraw with the guide content and current tracker as contex
         const trackerPrompt = `${trackerConfig.trackerPrompt}\n\nLast Update:\n${guideContent}\n\nTracker:\n${currentTrackerContent}`;
         
         const trackerResult = await context.executeSlashCommandsWithOptions(
