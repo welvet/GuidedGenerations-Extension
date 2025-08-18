@@ -162,24 +162,32 @@ export default async function trackerGuide() {
             try {
                 // Find the last comment in the chat
                 let lastComment = null;
+                console.log('[GuidedGenerations] Searching for comments in chat...');
+                
                 for (let i = context.chat.length - 1; i >= 0; i--) {
                     const message = context.chat[i];
-                    if (message.extra?.type === 'comment') {
+                    console.log(`[GuidedGenerations] Message ${i}: name="${message.name}", is_system=${message.is_system}, extra=`, message.extra);
+                    
+                    if (message.extra && message.extra.type === 'comment') {
                         lastComment = message;
+                        console.log('[GuidedGenerations] Found comment message:', message);
                         break;
                     }
                 }
                 
-                if (lastComment && lastComment.content) {
+                if (lastComment && lastComment.mes) {
                     // Update the tracker injection with the comment content
-                    const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastComment.content}]`;
+                    const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastComment.mes}]`;
                     await context.executeSlashCommandsWithOptions(injectionCommand, { 
                         showOutput: false, 
                         handleExecutionErrors: true 
                     });
-                    console.log('[GuidedGenerations] Tracker synced with last comment:', lastComment.content);
+                    console.log('[GuidedGenerations] Tracker synced with last comment:', lastComment.mes);
                 } else {
-                    console.log('[GuidedGenerations] No comment found to sync with');
+                    console.log('[GuidedGenerations] No comment found to sync with. Available messages:');
+                    context.chat.forEach((msg, idx) => {
+                        console.log(`  ${idx}: name="${msg.name}", is_system=${msg.is_system}, extra=`, msg.extra);
+                    });
                 }
             } catch (error) {
                 console.error('[GuidedGenerations] Error syncing tracker with comment:', error);

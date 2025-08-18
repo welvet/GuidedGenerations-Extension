@@ -5,6 +5,7 @@
 
 import { getContext } from '../../../../../extensions.js';
 import { extensionName } from '../../index.js';
+import { handlePresetSwitching } from '../utils/presetUtils.js';
 
 /**
  * Executes the tracker logic automatically when triggered
@@ -27,6 +28,26 @@ export async function executeTracker(isAuto = false) {
         }
 
         console.log('[GuidedGenerations] Executing tracker with config:', trackerConfig);
+
+        // Check if we need to switch to the tracker preset
+        const globalSettings = context.extensionSettings?.[extensionName];
+        console.log('[GuidedGenerations] Debug - extensionName:', extensionName);
+        console.log('[GuidedGenerations] Debug - context.extensionSettings exists:', !!context.extensionSettings);
+        console.log('[GuidedGenerations] Debug - extensionSettings[extensionName]:', globalSettings);
+        
+        let presetHandler = null;
+        if (globalSettings?.presetTracker && globalSettings.presetTracker !== '') {
+            console.log('[GuidedGenerations] Switching to tracker preset:', globalSettings.presetTracker);
+            try {
+                presetHandler = handlePresetSwitching(globalSettings.presetTracker);
+                await presetHandler.switch();
+                console.log('[GuidedGenerations] Successfully switched to tracker preset');
+            } catch (error) {
+                console.error('[GuidedGenerations] Error switching to tracker preset:', error);
+            }
+        } else {
+            console.log('[GuidedGenerations] No preset to switch to - presetTracker:', globalSettings?.presetTracker);
+        }
 
         // Check if the last message is a comment - if so, skip tracker execution
         const lastMessage = context.chat[context.chat.length - 1];
@@ -138,6 +159,17 @@ export async function executeTracker(isAuto = false) {
             showOutput: false, 
             handleExecutionErrors: true 
         });
+
+        // Restore the original preset if we switched to a tracker preset
+        if (presetHandler) {
+            console.log('[GuidedGenerations] Restoring original preset...');
+            try {
+                await presetHandler.restore();
+                console.log('[GuidedGenerations] Successfully restored original preset');
+            } catch (error) {
+                console.error('[GuidedGenerations] Error restoring original preset:', error);
+            }
+        }
 
         console.log('[GuidedGenerations] Tracker execution completed successfully');
 
