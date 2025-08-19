@@ -1,7 +1,8 @@
 // scripts/guidedImpersonate3rd.js
+import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult, debugLog } from '../index.js'; // Import shared state functions
 import { getContext, extension_settings } from '../../../../extensions.js';
-import { extensionName, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult, debugLog } from '../index.js';
-import { handlePresetSwitching } from './utils/presetUtils.js'; 
+import { extensionName } from '../index.js';
+import { handleProfileAndPresetSwitching } from './utils/presetUtils.js';
 
 const guidedImpersonate3rd = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -9,64 +10,96 @@ const guidedImpersonate3rd = async () => {
         console.error('[GuidedGenerations] Textarea #send_textarea not found.');
         return;
     }
-    const originalInput = textarea.value;
-    const lastGeneratedText = getLastImpersonateResult(); // Use shared getter
+    const currentInputText = textarea.value;
+    const lastGeneratedText = getLastImpersonateResult(); // Use getter
 
-    // Check if the current input matches the last generated text (from any impersonation)
-    if (lastGeneratedText && originalInput === lastGeneratedText) {
-        textarea.value = getPreviousImpersonateInput(); // Use shared getter
-        textarea.dispatchEvent(new Event('input', { bubbles: true })); 
+    // Check if the current input matches the last generated text
+    if (lastGeneratedText && currentInputText === lastGeneratedText) {
+        textarea.value = getPreviousImpersonateInput(); // Use getter
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
         return; // Restoration done, exit
     }
 
     // --- If not restoring, proceed with impersonation ---
-    setPreviousImpersonateInput(originalInput); // Use shared setter
+    setPreviousImpersonateInput(currentInputText); // Use setter
 
-    // --- Get Settings ---
-    const presetName = extension_settings[extensionName]?.presetImpersonate3rd ?? '';
-
-    // Save the input state using the shared function
-    const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
-    const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
-
-    // Handle preset logic
-    let stscriptCommand;
-    if (presetName) {
-        stscriptCommand = `/preset name="${presetName}" silent=true | /impersonate await=true persona={{charnames[2]}} ${filledPrompt} |`;
-    } else {
-        stscriptCommand = `/impersonate await=true persona={{charnames[2]}} ${filledPrompt} |`; // No preset
+    // Capture the original profile BEFORE any switching happens
+    const context = getContext();
+    let originalProfile = '';
+    if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
+        try {
+            // Get current profile before any switching
+            const { getCurrentProfile } = await import('./utils/profileUtils.js');
+            originalProfile = await getCurrentProfile();
+            debugLog(`[Impersonate-3rd] Captured original profile before switching: "${originalProfile}"`);
+        } catch (error) {
+            debugLog(`[Impersonate-3rd] Could not get original profile:`, error);
+        }
     }
 
-    // Handle preset switching using unified utility
+    // Handle profile and preset switching using unified utility
+    const profileKey = 'profileImpersonate3rd';
     const presetKey = 'presetImpersonate3rd';
+    const profileValue = extension_settings[extensionName]?.[profileKey] ?? '';
     const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-    debugLog(`[Impersonate-3rd] Using preset: ${presetValue || 'none'}`);
     
-    const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
+    // Debug: Log the exact values being retrieved
+    debugLog(`[Impersonate-3rd] Profile key: "${profileKey}"`);
+    debugLog(`[Impersonate-3rd] Preset key: "${presetKey}"`);
+    debugLog(`[Impersonate-3rd] Profile value from settings: "${profileValue}"`);
+    debugLog(`[Impersonate-3rd] Preset value from settings: "${presetValue}"`);
+    debugLog(`[Impersonate-3rd] All profile settings:`, Object.keys(extension_settings[extensionName] || {}).filter(key => key.startsWith('profile')));
     
-    const fullScript = `// 3rd-person impersonate guide|\n${stscriptCommand}`;
+    debugLog(`[Impersonate-3rd] Using profile: ${profileValue || 'current'}, preset: ${presetValue || 'none'}`);
+    
+    const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
+
+    // Use user-defined impersonate prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptImpersonate3rd ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
+
+    // Build STScript without preset switching
+    const stscriptCommand = `/impersonate await=true ${filledPrompt} |`;
+    const fullScript = `// Impersonate guide|\n${stscriptCommand}`;
 
     try {
-        const context = getContext(); 
+        const context = getContext();
         if (typeof context.executeSlashCommandsWithOptions === 'function') {
-            // Switch preset before executing
-            switchPreset();
+            debugLog('[Impersonate-3rd] About to switch profile and preset...');
             
-            await context.executeSlashCommandsWithOptions(fullScript);
+            // Switch profile and preset before executing
+            await switchProfileAndPreset();
             
-            // After completion, read the new input and store it in shared state
-            setLastImpersonateResult(textarea.value); // Use shared setter
+            debugLog('[Impersonate-3rd] Profile and preset switch complete, about to execute STScript...');
+            
+            // Execute the command and wait for it to complete
+            await context.executeSlashCommandsWithOptions(fullScript); 
+            
+            debugLog('[Impersonate-3rd] STScript execution complete, about to restore profile...');
+            
+            // After completion, read the new input and store it using the setter
+            setLastImpersonateResult(textarea.value);
             debugLog('[Impersonate-3rd] STScript executed, new input stored in shared state.');
+
+            // After completion, restore original profile and preset using utility restore function
+            await restore();
+            
+            debugLog('[Impersonate-3rd] Profile restore complete');
+
         } else {
             console.error('[GuidedGenerations] context.executeSlashCommandsWithOptions not found!');
         }
     } catch (error) {
         console.error(`[GuidedGenerations] Error executing Guided Impersonate (3rd) stscript: ${error}`);
-        setLastImpersonateResult(''); // Clear shared state on error
-    } finally {
-        // After completion, restore original preset using utility restore function
-        restore();
-    } 
+        setLastImpersonateResult(''); // Use setter to clear shared state on error
+        
+        debugLog('[Impersonate-3rd] Error occurred, about to restore profile...');
+        
+        // Restore original profile and preset on error
+        await restore();
+        
+        debugLog('[Impersonate-3rd] Profile restore complete after error');
+    }
 };
 
 // Export the function

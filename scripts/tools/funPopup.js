@@ -2,9 +2,9 @@
  * Fun Popup - Handles UI for fun prompts and interactions
  */
 
-import { extensionName, debugLog } from '../../index.js';
-import { getContext, extension_settings } from '../../../../../extensions.js';
-import { handlePresetSwitching } from '../utils/presetUtils.js';
+import { getContext, extension_settings } from '../../../../extensions.js';
+import { extensionName, debugLog } from '../index.js';
+import { handleProfileAndPresetSwitching } from '../utils/presetUtils.js';
 
 // Map to store fun prompts loaded from file
 let FUN_PROMPTS = {};
@@ -161,12 +161,25 @@ export class FunPopup {
             return;
         }
 
-        // Handle preset switching using unified utility
+        // Handle profile and preset switching using unified utility
+        const profileKey = 'profileFun';
         const presetKey = 'presetFun';
+        const profileValue = extension_settings[extensionName]?.[profileKey] ?? '';
         const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-        debugLog(`${extensionName}: Using preset for fun prompts: ${presetValue || 'none'}`);
+        debugLog(`${extensionName}: Using profile: ${profileValue || 'current'}, preset: ${presetValue || 'none'}`);
         
-        const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
+        // Capture the original profile BEFORE any switching happens
+        let originalProfile = '';
+        try {
+            // Get current profile before any switching
+            const { getCurrentProfile } = await import('../utils/profileUtils.js');
+            originalProfile = await getCurrentProfile();
+            debugLog(`[FunPopup] Captured original profile before switching: "${originalProfile}"`);
+        } catch (error) {
+            debugLog(`[FunPopup] Could not get original profile:`, error);
+        }
+        
+        const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
 
         // Get the current input from the textarea
         const textarea = document.getElementById('send_textarea');
@@ -222,8 +235,8 @@ export class FunPopup {
         }
 
         try {
-            // Switch preset before executing
-            switchPreset();
+            // Switch profile and preset before executing
+            await switchProfileAndPreset();
             
             // Execute the command
             await context.executeSlashCommandsWithOptions(stscriptCommand, {
@@ -231,13 +244,13 @@ export class FunPopup {
                 handleExecutionErrors: true
             });
             
-            // Restore original preset after completion
-            restore();
+            // Restore original profile and preset after completion
+            await restore();
         } catch (error) {
             console.error(`${extensionName}: Error executing fun prompt script:`, error);
             
-            // Restore original preset on error
-            restore();
+            // Restore original profile and preset on error
+            await restore();
         }
     }
 

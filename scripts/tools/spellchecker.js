@@ -1,66 +1,86 @@
 /**
  * @file Contains the logic for the Spellcheck tool.
  */
-import { extensionName, setPreviousImpersonateInput, debugLog } from '../../index.js'; // Import shared state function
-import { getContext, extension_settings } from '../../../../../extensions.js';
-import { handlePresetSwitching } from '../utils/presetUtils.js'; 
+import { getContext, extension_settings } from '../../../../extensions.js';
+import { extensionName, debugLog } from '../index.js';
+import { handleProfileAndPresetSwitching } from '../utils/presetUtils.js';
 
-/**
- * Provides a tool to correct grammar, punctuation, and improve paragraph flow
- * 
- * @returns {Promise<void>}
- */
-export default async function spellchecker() {
-	const textarea = document.getElementById('send_textarea');
-	if (!textarea) {
-		console.error('[GuidedGenerations][Spellchecker] Textarea #send_textarea not found.');
-		return;
-	}
-	const originalInput = textarea.value; // Get current input
+const spellchecker = async () => {
+    const textarea = document.getElementById('send_textarea');
+    if (!textarea) {
+        console.error('[GuidedGenerations] Textarea #send_textarea not found.');
+        return;
+    }
+    const currentInputText = textarea.value;
+    
+    // Capture the original profile BEFORE any switching happens
+    const context = getContext();
+    let originalProfile = '';
+    if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
+        try {
+            // Get current profile before any switching
+            const { getCurrentProfile } = await import('../utils/profileUtils.js');
+            originalProfile = await getCurrentProfile();
+            debugLog(`[Spellchecker] Captured original profile before switching: "${originalProfile}"`);
+        } catch (error) {
+            debugLog(`[Spellchecker] Could not get original profile:`, error);
+        }
+    }
 
-	// Save the input state using the shared function (even though we overwrite it later)
-	setPreviousImpersonateInput(originalInput);
-	debugLog(`[Spellchecker] Original input saved (for potential recovery elsewhere): "${originalInput}"`);
+    // Handle profile and preset switching using unified utility
+    const profileKey = 'profileSpellchecker';
+    const presetKey = 'presetSpellchecker';
+    const profileValue = extension_settings[extensionName]?.[profileKey] ?? '';
+    const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
+    
+    debugLog(`[Spellchecker] Using profile: ${profileValue || 'current'}, preset: ${presetValue || 'none'}`);
+    
+    const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
 
-	// Handle preset switching using unified utility
-	const presetKey = 'presetSpellchecker';
-	const presetValue = extension_settings[extensionName]?.[presetKey] ?? '';
-	debugLog(`[Spellchecker] Using preset: ${presetValue || 'none'}`);
-	
-	const { switch: switchPreset, restore } = handlePresetSwitching(presetValue);
+    // Use user-defined spellchecker prompt override
+    const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';
+    const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
-	// Use user-defined spellchecker prompt override
-	const isRaw = extension_settings[extensionName]?.rawPromptSpellchecker ?? false;
-	const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';
-	const filledPrompt = promptTemplate.replace('{{input}}', originalInput);
+    // Build STScript without preset switching
+    const stscriptCommand = `/gen ${filledPrompt} |`;
+    const fullScript = `// Spellchecker guide|\n${stscriptCommand}`;
 
-	// Execute the spellchecker workflow
-	const stscript = `
-		// Generate correction using the current input|
-		${isRaw ? filledPrompt : `/genraw ${filledPrompt}`} |
-		// Replace the input field with the generated correction|
-		/setinput {{pipe}}|
-	`;
-	
-	try {
-		const context = getContext();
-		if (typeof context.executeSlashCommandsWithOptions === 'function') {
-			// Switch preset before executing
-			switchPreset();
-			
-			// Execute the command
-			await context.executeSlashCommandsWithOptions(stscript);
-			
-			debugLog('[Spellchecker] Executed successfully.');
-		} else {
-			console.error('[GuidedGenerations] context.executeSlashCommandsWithOptions not found!');
-		}
-	} catch (error) {
-		console.error(`[GuidedGenerations] Error executing spellchecker: ${error}`);
-	} finally {
-		// Restore original preset after completion
-		restore();
-	}
-}
+    try {
+        const context = getContext();
+        if (typeof context.executeSlashCommandsWithOptions === 'function') {
+            debugLog('[Spellchecker] About to switch profile and preset...');
+            
+            // Switch profile and preset before executing
+            await switchProfileAndPreset();
+            
+            debugLog('[Spellchecker] Profile and preset switch complete, about to execute STScript...');
+            
+            // Execute the command and wait for it to complete
+            await context.executeSlashCommandsWithOptions(fullScript); 
+            
+            debugLog('[Spellchecker] STScript execution complete, about to restore profile...');
+            
+            // After completion, restore original profile and preset using utility restore function
+            await restore();
+            
+            debugLog('[Spellchecker] Profile restore complete');
+
+        } else {
+            console.error('[GuidedGenerations] context.executeSlashCommandsWithOptions not found!');
+        }
+    } catch (error) {
+        console.error(`[GuidedGenerations] Error executing Spellchecker stscript: ${error}`);
+        
+        debugLog('[Spellchecker] Error occurred, about to restore profile...');
+        
+        // Restore original profile and preset on error
+        await restore();
+        
+        debugLog('[Spellchecker] Profile restore complete after error');
+    }
+};
+
+// Export the function
+export { spellchecker };
 
 

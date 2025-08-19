@@ -1,0 +1,22 @@
+warning: in the working copy of 'index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/guidedImpersonate.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/guidedImpersonate2nd.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/guidedImpersonate3rd.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/persistentGuides/runGuide.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/persistentGuides/trackerLogic.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/settingsPanel.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/tools/funPopup.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/utils/presetUtils.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'settings.html', LF will be replaced by CRLF the next time Git touches it
+index.js
+scripts/guidedImpersonate.js
+scripts/guidedImpersonate2nd.js
+scripts/guidedImpersonate3rd.js
+scripts/persistentGuides/runGuide.js
+scripts/persistentGuides/trackerLogic.js
+scripts/settingsPanel.js
+scripts/tools/corrections.js
+scripts/tools/funPopup.js
+scripts/tools/spellchecker.js
+scripts/utils/presetUtils.js
+settings.html

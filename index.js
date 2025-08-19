@@ -20,6 +20,7 @@ import { getContext, loadExtensionSettings, extension_settings, renderExtensionT
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
 import { loadSettingsPanel } from './scripts/settingsPanel.js';
 import { showVersionNotification } from './scripts/ui/versionNotificationPopup.js';
+import { getProfileList } from './scripts/utils/profileUtils.js';
 
 // Import auto-triggerable guides
 import thinkingGuide from './scripts/persistentGuides/thinkingGuide.js';
@@ -93,22 +94,53 @@ export const defaultSettings = {
     integrateQrBar: true, // Default on: Toggle for QR bar integration
     debugMode: false, // Default off: Toggle for debug logging
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
+    // Profile and Preset settings for each guide
+    profileClothes: '', // Profile for Clothes Guide
     presetClothes: '',
+    profileClothesApiType: '', // API type for Clothes Guide profile
+    profileState: '', // Profile for State Guide
     presetState: '',
+    profileStateApiType: '', // API type for State Guide profile
+    profileThinking: '', // Profile for Thinking Guide
     presetThinking: '',
+    profileThinkingApiType: '', // API type for Thinking Guide profile
+    profileSituational: '', // Profile for Situational Guide
     presetSituational: '',
+    profileSituationalApiType: '', // API type for Situational Guide profile
+    profileRules: '', // Profile for Rules Guide
     presetRules: '',
+    profileRulesApiType: '', // API type for Rules Guide profile
+    profileCustom: '', // Profile for Custom Guide
     presetCustom: '',
+    profileCustomApiType: '', // API type for Custom Guide profile
+    profileCorrections: '', // Profile for Corrections
     presetCorrections: '',
+    profileCorrectionsApiType: '', // API type for Corrections profile
+    profileSpellchecker: '', // Profile for Spellchecker
     presetSpellchecker: '',
+    profileSpellcheckerApiType: '', // API type for Spellchecker profile
+    profileEditIntros: '', // Profile for Edit Intros
     presetEditIntros: '',
+    profileEditIntrosApiType: '', // API type for Edit Intros profile
+    profileImpersonate1st: '', // Profile for Impersonate 1st Person
     presetImpersonate1st: '',
+    profileImpersonate1stApiType: '', // API type for Impersonate 1st Person profile
+    profileImpersonate2nd: '', // Profile for Impersonate 2nd Person
     presetImpersonate2nd: '',
+    profileImpersonate2ndApiType: '', // API type for Impersonate 2nd Person profile
+    profileImpersonate3rd: '', // Profile for Impersonate 3rd Person
     presetImpersonate3rd: '',
+    profileImpersonate3rdApiType: '', // API type for Impersonate 3rd Person profile
+    profileCustomAuto: '', // Profile for Custom Auto Guide
     presetCustomAuto: '', // Default preset for Custom Auto Guide
+    profileCustomAutoApiType: '', // API type for Custom Auto Guide profile
     usePresetCustomAuto: false, // Default use preset toggle for Custom Auto Guide
+    profileFun: '', // Profile for Fun Prompts
     presetFun: '', // Default preset for Fun Prompts
+    profileFunApiType: '', // API type for Fun Prompts profile
+    profileTracker: '', // Profile for Tracker functionality
     presetTracker: '', // Default preset for Tracker functionality
+    profileTrackerApiType: '', // API type for Tracker functionality profile
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
@@ -179,6 +211,9 @@ async function loadSettings() {
         }
     }
 
+    // Handle backward compatibility for profile settings
+    migrateProfileSettings();
+    
     // Debug logging for presetFun specifically
     debugLog(`presetFun setting value:`, extension_settings[extensionName].presetFun);
     debugLog(`presetFun default value:`, defaultSettings.presetFun);
@@ -192,7 +227,33 @@ async function loadSettings() {
     // No need to update UI here, updateSettingsUI will be called separately after template render
 }
 
-function updateSettingsUI() {
+/**
+ * Migrates existing settings to include profile fields for backward compatibility
+ */
+function migrateProfileSettings() {
+    const settings = extension_settings[extensionName];
+    if (!settings) return;
+    
+    // List of all preset keys that need corresponding profile keys
+    const presetKeys = [
+        'presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules',
+        'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros',
+        'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd',
+        'presetCustomAuto', 'presetFun', 'presetTracker'
+    ];
+    
+    presetKeys.forEach(presetKey => {
+        const profileKey = presetKey.replace('preset', 'profile');
+        
+        // If profile key doesn't exist but preset key does, set profile to empty (current profile)
+        if (settings[presetKey] !== undefined && settings[profileKey] === undefined) {
+            settings[profileKey] = '';
+            debugLog(`[${extensionName}] Migrated ${profileKey} to empty (current profile) for backward compatibility`);
+        }
+    });
+}
+
+async function updateSettingsUI() {
     const settingsPanelId = `extension_settings_${extensionName}`;
     const container = document.getElementById(settingsPanelId);
     if (container) {
@@ -227,15 +288,52 @@ function updateSettingsUI() {
             injectionRoleSelect.value = extension_settings[extensionName].injectionEndRole;
         }
 
-        // Populate preset dropdowns
-        const presetManager = getContext()?.getPresetManager?.();
-        const presetList = presetManager?.getPresetList?.() || { preset_names: {} };
-        
+        // Populate profile dropdowns
+        try {
+            const profileList = await getProfileList();
+            debugLog(`[${extensionName}] Profile list received:`, profileList);
+            
+            const profileKeys = ['profileClothes','profileState','profileThinking','profileSituational','profileRules',
+             'profileCustom','profileCorrections','profileSpellchecker','profileEditIntros',
+             'profileImpersonate1st','profileImpersonate2nd','profileImpersonate3rd',
+             'profileCustomAuto','profileFun','profileTracker'
+            ];
+            
+            profileKeys.forEach(key => {
+                const select = document.getElementById(key);
+                if (select) {
+                    // Clear existing options
+                    select.innerHTML = '<option value="">None</option>';
+                    
+                    // Add profile options
+                    if (Array.isArray(profileList) && profileList.length > 0) {
+                        profileList.forEach(profileName => {
+                            const option = document.createElement('option');
+                            option.value = profileName;
+                            option.textContent = profileName;
+                            select.appendChild(option);
+                        });
+                        debugLog(`[${extensionName}] Added ${profileList.length} profiles to ${key}`);
+                    } else {
+                        debugLog(`[${extensionName}] No profiles available for ${key}, profileList:`, profileList);
+                    }
+                    
+                    // Set current value
+                    select.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
+                } else {
+                    debugLog(`[${extensionName}] Profile select element not found for ${key}`);
+                }
+            });
+        } catch (error) {
+            console.error(`[${extensionName}] Error populating profile dropdowns:`, error);
+        }
+
+        // Populate preset dropdowns with correct presets for selected profiles
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
          'presetCustomAuto','presetFun','presetTracker'
-        ].forEach(key => {
+        ].forEach(async (key) => {
             const select = document.getElementById(key);
             if (select) {
                 // Debug logging for presetFun specifically
@@ -245,43 +343,10 @@ function updateSettingsUI() {
                     debugLog(`presetFun setting value:`, extension_settings[extensionName][key]);
                 }
                 
-                // Clear existing options
-                select.innerHTML = '<option value="">None</option>';
+                // Use the improved populatePresetDropdown function that checks for selected profiles
+                await populatePresetDropdown(select);
                 
-                // Add preset options - handle multiple possible data structures
-                if (presetList && presetList.preset_names) {
-                    // Newer format: presetList has preset_names property
-                    const presetNames = presetList.preset_names;
-                    if (Array.isArray(presetNames)) {
-                        // Text Completion format: preset_names is an array of names
-                        presetNames.forEach((name, index) => {
-                            const option = document.createElement('option');
-                            option.value = index;
-                            option.textContent = name;
-                            select.appendChild(option);
-                        });
-                    } else {
-                        // Chat Completion format: preset_names is an object with name-to-id mapping
-                        Object.entries(presetNames).forEach(([name, id]) => {
-                            const option = document.createElement('option');
-                            option.value = id;
-                            option.textContent = name;
-                            select.appendChild(option);
-                        });
-                    }
-                } else if (Array.isArray(presetList)) {
-                    // Legacy format: presetList is an array of objects with id and name properties
-                    presetList.forEach(preset => {
-                        if (preset.name && preset.id !== undefined) {
-                            const option = document.createElement('option');
-                            option.value = preset.id;
-                            option.textContent = preset.name;
-                            select.appendChild(option);
-                        }
-                    });
-                }
-                
-                // Set current value
+                // Set current value after populating
                 select.value = extension_settings[extensionName][key] ?? defaultSettings[key] ?? '';
             } else {
                 // Debug logging for missing presetFun element
@@ -337,7 +402,7 @@ const addSettingsEventListeners = () => {
  * Delegated event handler for settings changes within the container.
  * @param {Event} event The event object
  */
-const handleSettingsChangeDelegated = (event) => {
+const handleSettingsChangeDelegated = async (event) => {
     // Check if the changed element has the correct class
     if (event.target.classList.contains('gg-setting-input')) {
         debugLog(`[${extensionName}] Delegated change event detected on:`, event.target);
@@ -363,6 +428,30 @@ const handleSettingsChangeDelegated = (event) => {
             const button = document.getElementById('gg_continue_button');
             if (button) button.style.display = event.target.checked ? '' : 'none';
         }
+        
+        // Special handling for profile dropdowns - repopulate preset dropdowns when profile changes
+        if (event.target.name && event.target.name.startsWith('profile')) {
+            const guideName = event.target.name.replace('profile', '');
+            const presetSelect = document.getElementById(`preset${guideName}`);
+            if (presetSelect) {
+                // Store the API type for this profile
+                const selectedProfile = event.target.value;
+                if (selectedProfile && selectedProfile.trim() !== '') {
+                    // Get and store the API type for this profile
+                    const { getProfileApiType } = await import('./scripts/utils/profileUtils.js');
+                    const apiType = await getProfileApiType(selectedProfile);
+                    
+                    if (apiType) {
+                        const apiTypeFieldName = `${event.target.name}ApiType`;
+                        extension_settings[extensionName][apiTypeFieldName] = apiType;
+                        debugLog(`[${extensionName}] Stored API type "${apiType}" for profile "${selectedProfile}"`);
+                    }
+                }
+                
+                // Update the preset dropdown
+                await handleProfileChangeForPresets(selectedProfile, presetSelect);
+            }
+        }
     }
 };
 
@@ -377,10 +466,11 @@ function handleSettingChange(event) {
     } else if (target.tagName === 'SELECT') { // Handle dropdowns
         settingValue = target.value;
         
-        // Handle preset dropdowns - no validation needed as values are preset IDs
+        // Handle preset and profile dropdowns - no validation needed as values are preset IDs or profile names
         const presetFields = ['presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules', 'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros', 'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd', 'presetCustomAuto'];
-        if (presetFields.includes(settingName)) {
-            // Values are preset IDs (numbers), no pipe validation needed
+        const profileFields = ['profileClothes', 'profileState', 'profileThinking', 'profileSituational', 'profileRules', 'profileCustom', 'profileCorrections', 'profileSpellchecker', 'profileEditIntros', 'profileImpersonate1st', 'profileImpersonate2nd', 'profileImpersonate3rd', 'profileCustomAuto', 'profileFun', 'profileTracker'];
+        if (presetFields.includes(settingName) || profileFields.includes(settingName)) {
+            // Values are preset IDs (numbers) or profile names, no pipe validation needed
             settingValue = settingValue.trim();
         }
     } else if (target.tagName === 'INPUT' && target.type === 'text') {
@@ -431,6 +521,110 @@ function handleSettingChange(event) {
         updateExtensionButtons();
     } else {
         console.error(`[${extensionName}] Error: extension_settings[${extensionName}] is undefined.`);
+    }
+}
+
+/**
+ * Handles profile change for presets - populates preset dropdown based on selected profile's API type
+ * @param {string} selectedProfile - The selected profile name
+ * @param {HTMLElement} presetDropdown - The preset dropdown element to populate
+ */
+async function handleProfileChangeForPresets(selectedProfile, presetDropdown) {
+    try {
+        debugLog(`[${extensionName}] Profile changed to: "${selectedProfile}", updating preset dropdown...`);
+        
+        // Clear existing preset options
+        presetDropdown.innerHTML = '';
+        
+        if (!selectedProfile || selectedProfile.trim() === '') {
+            debugLog(`[${extensionName}] No profile selected, populating with current profile's presets`);
+            await populatePresetDropdown(presetDropdown);
+            return;
+        }
+        
+        // Get the API type for the selected profile without switching to it
+        const { getProfileApiType, getPresetsForApiType } = await import('./scripts/utils/profileUtils.js');
+        const apiType = await getProfileApiType(selectedProfile);
+        
+        if (!apiType) {
+            debugLog(`[${extensionName}] Could not determine API type for profile "${selectedProfile}", using current profile's presets`);
+            await populatePresetDropdown(presetDropdown);
+            return;
+        }
+        
+        debugLog(`[${extensionName}] Profile "${selectedProfile}" uses API type: "${apiType}"`);
+        
+        // Get presets for this API type without switching profiles
+        const presetList = await getPresetsForApiType(apiType);
+        
+        if (!presetList) {
+            debugLog(`[${extensionName}] Could not get presets for API type "${apiType}", using current profile's presets`);
+            await populatePresetDropdown(presetDropdown);
+            return;
+        }
+        
+        debugLog(`[${extensionName}] Retrieved ${presetList.preset_names?.length || 0} presets for API type "${apiType}"`);
+        
+        // Populate the preset dropdown with the API-specific presets
+        await populatePresetDropdownWithList(presetDropdown, presetList);
+        
+    } catch (error) {
+        console.error(`[${extensionName}] Error handling profile change for presets:`, error);
+        // Fallback to current profile's presets
+        await populatePresetDropdown(presetDropdown);
+    }
+}
+
+
+
+/**
+ * Populates a preset dropdown with a specific preset list
+ * @param {HTMLElement} presetSelect - The preset select element to populate
+ * @param {Object} presetList - The preset list to use
+ */
+function populatePresetDropdownWithList(presetSelect, presetList) {
+    // Clear existing options
+    presetSelect.innerHTML = '<option value="">None</option>';
+    
+    // Check if presetList is valid
+    if (!presetList) {
+        debugLog(`[${extensionName}] No preset list provided for dropdown population`);
+        return;
+    }
+    
+    // Add preset options - handle multiple possible data structures
+    if (presetList.preset_names) {
+        // Newer format: presetList has preset_names property
+        const presetNames = presetList.preset_names;
+        if (Array.isArray(presetNames)) {
+            // Text Completion format: preset_names is an array of names
+            presetNames.forEach((name, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = name;
+                presetSelect.appendChild(option);
+            });
+        } else {
+            // Chat Completion format: preset_names is an object with name-to-id mapping
+            Object.entries(presetNames).forEach(([name, id]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                presetSelect.appendChild(option);
+            });
+        }
+    } else if (Array.isArray(presetList)) {
+        // Legacy format: presetList is an array of objects with id and name properties
+        presetList.forEach(preset => {
+            if (preset.name && preset.id !== undefined) {
+                const option = document.createElement('option');
+                option.value = preset.id;
+                option.textContent = preset.name;
+                presetSelect.appendChild(option);
+            }
+        });
+    } else {
+        debugLog(`[${extensionName}] Unknown preset list format:`, presetList);
     }
 }
 
@@ -1454,4 +1648,91 @@ function updatePersistentGuideCounter() {
     } else {
         console.warn(`${extensionName}: pg_menu_button NOT found. Counter cannot be displayed.`);
     } 
+}
+
+/**
+ * Debug function for the profile system
+ */
+export async function debugProfileSystem() {
+    const statusElement = document.getElementById('profileDebugStatus');
+    if (!statusElement) {
+        console.error(`[${extensionName}] Debug status element not found`);
+        return;
+    }
+
+    try {
+        statusElement.textContent = 'Testing profile system...';
+        
+        // Test getCurrentProfile
+        const currentProfile = await getCurrentProfile();
+        console.log(`[${extensionName}] Current Profile:`, currentProfile);
+        
+        // Test getProfileList
+        const profileList = await getProfileList();
+        console.log(`[${extensionName}] Profile List:`, profileList);
+        
+        if (Array.isArray(profileList) && profileList.length > 0) {
+            statusElement.textContent = `✓ Found ${profileList.length} profiles. Current: ${currentProfile || 'None'}`;
+            statusElement.style.color = 'green';
+        } else {
+            statusElement.textContent = `⚠ No profiles found. Current: ${currentProfile || 'None'}`;
+            statusElement.style.color = 'orange';
+        }
+        
+        // Refresh the profile dropdowns
+        await updateSettingsUI();
+        
+    } catch (error) {
+        console.error(`[${extensionName}] Error in debugProfileSystem:`, error);
+        statusElement.textContent = `✗ Error: ${error.message}`;
+        statusElement.style.color = 'red';
+    }
+}
+
+/**
+ * Populates a preset dropdown with the current profile's presets
+ * @param {HTMLElement} presetDropdown - The preset dropdown element to populate
+ */
+async function populatePresetDropdown(presetDropdown) {
+    try {
+        // Get the guide name from the dropdown ID
+        const guideName = presetDropdown.id.replace('preset', '');
+        const profileFieldName = `profile${guideName}`;
+        
+        // Check if a profile is already selected for this guide
+        const selectedProfile = extension_settings[extensionName]?.[profileFieldName];
+        
+        if (selectedProfile && selectedProfile.trim() !== '') {
+            debugLog(`[${extensionName}] Profile "${selectedProfile}" already selected for ${guideName}, using its presets`);
+            
+            // Get the API type for the selected profile
+            const { getProfileApiType, getPresetsForApiType } = await import('./scripts/utils/profileUtils.js');
+            const apiType = await getProfileApiType(selectedProfile);
+            
+            if (apiType) {
+                // Get presets for this profile's API type
+                const presetList = await getPresetsForApiType(apiType);
+                if (presetList) {
+                    await populatePresetDropdownWithList(presetDropdown, presetList);
+                    return;
+                }
+            }
+            
+            debugLog(`[${extensionName}] Failed to get presets for selected profile "${selectedProfile}", falling back to current profile`);
+        }
+        
+        // Fallback: use current profile's presets
+        debugLog(`[${extensionName}] Using current profile's presets for ${guideName}`);
+        const context = getContext();
+        const presetManager = context?.getPresetManager?.();
+        
+        if (presetManager) {
+            const presetList = presetManager.getPresetList();
+            await populatePresetDropdownWithList(presetDropdown, presetList);
+        } else {
+            debugLog(`[${extensionName}] No preset manager available for current profile`);
+        }
+    } catch (error) {
+        console.error(`[${extensionName}] Error populating preset dropdown:`, error);
+    }
 }

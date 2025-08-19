@@ -94,6 +94,31 @@ export async function loadSettingsPanel() {
                     });
                 });
 
+                // Setup debug profile system button
+                const debugButton = container.querySelector('#debugProfileSystem');
+                if (debugButton) {
+                    debugButton.addEventListener('click', async () => {
+                        try {
+                            const { debugProfileSystem } = await import('../index.js');
+                            await debugProfileSystem();
+                        } catch (error) {
+                            console.error(`[${extensionName}] Error importing debugProfileSystem:`, error);
+                        }
+                    });
+                }
+
+                // Setup refresh profile dropdowns button
+                const refreshButton = container.querySelector('#refreshProfileDropdowns');
+                if (refreshButton) {
+                    refreshButton.addEventListener('click', async () => {
+                        try {
+                            await updateSettingsUI();
+                        } catch (error) {
+                            console.error(`[${extensionName}] Error refreshing profile dropdowns:`, error);
+                        }
+                    });
+                }
+
                 // Static Raw checkboxes are defined in settings.html; dynamic insertion removed
 
                 // Set width on preset text inputs
