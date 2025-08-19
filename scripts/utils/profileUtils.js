@@ -1,398 +1,381 @@
-import { getContext } from '../../../../../extensions.js';
-import { extensionName, debugLog } from '../../index.js';
+import { debugLog, debugWarn } from '../../index.js';
+
+const extensionName = 'Guided Generations';
 
 /**
- * Gets the current active profile name
- * @returns {Promise<string>} The current profile name
+ * Wait for the connection manager to be available
+ * @param {number} maxAttempts - Maximum number of attempts
+ * @param {number} delayMs - Delay between attempts in milliseconds
+ * @returns {Promise<boolean>} True if connection manager becomes available
+ */
+async function waitForConnectionManager(maxAttempts = 10, delayMs = 200) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const context = SillyTavern.getContext();
+        if (context?.extensionSettings?.connectionManager) {
+            debugLog(`[${extensionName}] Connection manager available on attempt ${attempt}`);
+            return true;
+        }
+        
+        if (attempt < maxAttempts) {
+            debugLog(`[${extensionName}] Connection manager not available, attempt ${attempt}/${maxAttempts}, waiting ${delayMs}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+    }
+    
+    debugWarn(`[${extensionName}] Connection manager not available after ${maxAttempts} attempts`);
+    return false;
+}
+
+/**
+ * Get the current active connection profile name
+ * @returns {Promise<string>} The name of the current profile or empty string if none
  */
 export async function getCurrentProfile() {
     try {
-        const context = getContext();
-        if (!context || typeof context.executeSlashCommandsWithOptions !== 'function') {
-            debugLog(`[${extensionName}] executeSlashCommandsWithOptions not available for profile operations`);
+        // Wait for connection manager to be available
+        const isAvailable = await waitForConnectionManager();
+        if (!isAvailable) {
             return '';
         }
 
-        debugLog(`[${extensionName}] Executing /profile command...`);
-        
-        // Execute /profile command to get current profile
-        const result = await context.executeSlashCommandsWithOptions('/profile', { 
-            showOutput: false,
-            displayCommand: false 
-        });
-        
-        debugLog(`[${extensionName}] /profile result:`, result);
-        debugLog(`[${extensionName}] Result type:`, typeof result);
-        
-        // Debug: Log all properties of the result object
-        if (result && typeof result === 'object') {
-            debugLog(`[${extensionName}] Result object properties:`, Object.keys(result));
-            debugLog(`[${extensionName}] Result object values:`, Object.fromEntries(
-                Object.entries(result).map(([key, value]) => [key, typeof value === 'string' ? value : typeof value])
-            ));
+        const context = SillyTavern.getContext();
+        const { selectedProfile, profiles } = context.extensionSettings.connectionManager;
+        if (!selectedProfile || !profiles || !Array.isArray(profiles)) {
+            debugLog(`[${extensionName}] No profile selected or profiles not available`);
+            return '';
         }
-        
-        // The result should contain the current profile name
-        // We need to extract it from the output
-        if (result && typeof result === 'string') {
-            // Clean up the result to get just the profile name
-            const profileName = result.trim();
-            debugLog(`[${extensionName}] Current profile: ${profileName}`);
-            return profileName;
-        } else if (result && typeof result === 'object' && result.pipe) {
-            // Handle SlashCommandClosureResult format where profile name is in the pipe property
-            debugLog(`[${extensionName}] Found SlashCommandClosureResult with pipe property:`, result.pipe);
-            const profileName = result.pipe.trim();
-            debugLog(`[${extensionName}] Current profile from pipe: ${profileName}`);
-            return profileName;
+
+        const currentProfile = profiles.find(p => p.id === selectedProfile);
+        if (!currentProfile) {
+            debugLog(`[${extensionName}] Current profile not found in profiles list`);
+            return '';
         }
-        
-        debugLog(`[${extensionName}] Could not determine current profile from result:`, result);
-        
-        // Fallback: try to get current profile from context if available
-        if (context.currentProfile || context.getCurrentProfile) {
-            debugLog(`[${extensionName}] Trying fallback current profile sources...`);
-            const fallbackProfile = context.currentProfile || context.getCurrentProfile?.() || '';
-            if (fallbackProfile) {
-                debugLog(`[${extensionName}] Using fallback current profile:`, fallbackProfile);
-                return fallbackProfile;
-            }
-        }
-        
-        return '';
+
+        debugLog(`[${extensionName}] Current profile: ${currentProfile.name}`);
+        return currentProfile.name;
     } catch (error) {
-        console.error(`[${extensionName}] Error getting current profile:`, error);
+        debugWarn(`[${extensionName}] Error getting current profile:`, error);
         return '';
     }
 }
 
 /**
- * Gets a list of all available profiles
+ * Get list of all available connection profile names
  * @returns {Promise<string[]>} Array of profile names
  */
 export async function getProfileList() {
     try {
-        const context = getContext();
-        if (!context || typeof context.executeSlashCommandsWithOptions !== 'function') {
-            debugLog(`[${extensionName}] executeSlashCommandsWithOptions not available for profile operations`);
+        // Wait for connection manager to be available
+        const isAvailable = await waitForConnectionManager();
+        if (!isAvailable) {
             return [];
         }
 
-        debugLog(`[${extensionName}] Executing /profile-list command...`);
-        
-        // Execute /profile-list command to get all profiles
-        const result = await context.executeSlashCommandsWithOptions('/profile-list', { 
-            showOutput: false,
-            displayCommand: false 
-        });
-        
-        debugLog(`[${extensionName}] /profile-list result:`, result);
-        debugLog(`[${extensionName}] Result type:`, typeof result);
-        
-        // Debug: Log all properties of the result object
-        if (result && typeof result === 'object') {
-            debugLog(`[${extensionName}] Result object properties:`, Object.keys(result));
-            debugLog(`[${extensionName}] Result object values:`, Object.fromEntries(
-                Object.entries(result).map(([key, value]) => [key, typeof value === 'string' ? value : typeof value])
-            ));
+        const context = SillyTavern.getContext();
+        const { profiles } = context.extensionSettings.connectionManager;
+        if (!profiles || !Array.isArray(profiles)) {
+            debugLog(`[${extensionName}] Profiles not available`);
+            return [];
         }
-        
-        // The result should be a JSON array of profile names
-        if (result && typeof result === 'string') {
-            try {
-                const profileList = JSON.parse(result);
-                debugLog(`[${extensionName}] Parsed profile list:`, profileList);
-                
-                if (Array.isArray(profileList)) {
-                    debugLog(`[${extensionName}] Found ${profileList.length} profiles:`, profileList);
-                    return profileList;
-                } else {
-                    debugLog(`[${extensionName}] Parsed result is not an array:`, profileList);
-                }
-            } catch (parseError) {
-                debugLog(`[${extensionName}] Error parsing profile list JSON:`, parseError);
-                debugLog(`[${extensionName}] Raw result that failed to parse:`, result);
-            }
-        } else if (result && typeof result === 'object' && result.pipe) {
-            // Handle SlashCommandClosureResult format where profiles are in the pipe property
-            debugLog(`[${extensionName}] Found SlashCommandClosureResult with pipe property:`, result.pipe);
-            try {
-                const profileList = JSON.parse(result.pipe);
-                debugLog(`[${extensionName}] Parsed profile list from pipe:`, profileList);
-                
-                if (Array.isArray(profileList)) {
-                    debugLog(`[${extensionName}] Found ${profileList.length} profiles:`, profileList);
-                    return profileList;
-                } else {
-                    debugLog(`[${extensionName}] Parsed pipe result is not an array:`, profileList);
-                }
-            } catch (parseError) {
-                debugLog(`[${extensionName}] Error parsing profile list from pipe:`, parseError);
-                debugLog(`[${extensionName}] Raw pipe content that failed to parse:`, result.pipe);
-                
-                // Try to extract profiles from the pipe content if it's not valid JSON
-                if (typeof result.pipe === 'string' && result.pipe.includes('[') && result.pipe.includes(']')) {
-                    debugLog(`[${extensionName}] Attempting to extract profiles from malformed JSON in pipe`);
-                    try {
-                        // Try to find JSON array in the pipe content
-                        const match = result.pipe.match(/\[.*\]/);
-                        if (match) {
-                            const extractedJson = match[0];
-                            const profileList = JSON.parse(extractedJson);
-                            if (Array.isArray(profileList)) {
-                                debugLog(`[${extensionName}] Successfully extracted profiles from malformed JSON:`, profileList);
-                                return profileList;
-                            }
-                        }
-                    } catch (extractError) {
-                        debugLog(`[${extensionName}] Failed to extract profiles from malformed JSON:`, extractError);
-                    }
-                }
-            }
-        } else {
-            debugLog(`[${extensionName}] Result is not a string or object with pipe property:`, result);
-        }
-        
-        debugLog(`[${extensionName}] Could not get profile list from result:`, result);
-        
-        // Fallback: try to get profiles from context if available
-        if (context.profiles || context.getProfiles) {
-            debugLog(`[${extensionName}] Trying fallback profile sources...`);
-            const fallbackProfiles = context.profiles || context.getProfiles?.() || [];
-            if (Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
-                debugLog(`[${extensionName}] Using fallback profiles:`, fallbackProfiles);
-                return fallbackProfiles;
-            }
-        }
-        
-        return [];
+
+        const profileNames = profiles.map(p => p.name);
+        debugLog(`[${extensionName}] Available profiles:`, profileNames);
+        return profileNames;
     } catch (error) {
-        console.error(`[${extensionName}] Error getting profile list:`, error);
+        debugWarn(`[${extensionName}] Error getting profile list:`, error);
         return [];
     }
 }
 
 /**
- * Switches to a specific profile
- * @param {string} profileName - The name of the profile to switch to
+ * Switch to a specific connection profile
+ * @param {string} profileName - Name of the profile to switch to
  * @returns {Promise<boolean>} True if successful, false otherwise
  */
 export async function switchToProfile(profileName) {
     try {
-        if (!profileName || profileName.trim() === '') {
-            debugLog(`[${extensionName}] No profile name provided for switch`);
+        // Wait for connection manager to be available
+        const isAvailable = await waitForConnectionManager();
+        if (!isAvailable) {
             return false;
         }
 
-        debugLog(`[${extensionName}] Attempting to switch to profile: "${profileName}"`);
-        debugLog(`[${extensionName}] Profile name type: ${typeof profileName}, length: ${profileName.length}`);
-
-        const context = getContext();
-        if (!context || typeof context.executeSlashCommandsWithOptions !== 'function') {
-            debugLog(`[${extensionName}] executeSlashCommandsWithOptions not available for profile operations`);
+        const context = SillyTavern.getContext();
+        const { profiles } = context.extensionSettings.connectionManager;
+        if (!profiles || !Array.isArray(profiles)) {
+            debugWarn(`[${extensionName}] Profiles not available`);
             return false;
         }
 
-        // Execute /profile command with profile name to switch
-        const command = `/profile ${profileName}`;
-        debugLog(`[${extensionName}] Executing command: "${command}"`);
-        
-        await context.executeSlashCommandsWithOptions(command, { 
-            showOutput: false,
-            displayCommand: false 
+        // Find the profile by name
+        const targetProfile = profiles.find(p => p.name === profileName);
+        if (!targetProfile) {
+            debugWarn(`[${extensionName}] Profile not found: ${profileName}`);
+            return false;
+        }
+
+        // Debug: Log all potential profile-related elements
+        debugLog(`[${extensionName}] Searching for profiles dropdown...`);
+        const allSelects = document.querySelectorAll('select');
+        const profileRelatedSelects = Array.from(allSelects).filter(select => {
+            const id = select.id || '';
+            const name = select.name || '';
+            const className = select.className || '';
+            return id.includes('profile') || name.includes('profile') || className.includes('profile');
         });
         
+        debugLog(`[${extensionName}] Found ${profileRelatedSelects.length} profile-related select elements:`, 
+            profileRelatedSelects.map(s => ({ id: s.id, name: s.name, className: s.className })));
+
+        // Try multiple selectors to find the profiles dropdown
+        let profilesDropdown = document.getElementById('profiles') || 
+                             document.querySelector('#profiles') ||
+                             document.querySelector('select[name="profiles"]') ||
+                             document.querySelector('.profiles-select') ||
+                             document.querySelector('[data-profile-selector]') ||
+                             document.querySelector('select[id*="profile"]') ||
+                             document.querySelector('select[name*="profile"]') ||
+                             document.querySelector('select[class*="profile"]');
+
+        if (!profilesDropdown) {
+            // Try to find by looking at the connection manager UI
+            debugLog(`[${extensionName}] Trying to find profiles dropdown in connection manager UI...`);
+            
+            // Look for elements that might be the profiles dropdown
+            const possibleDropdowns = document.querySelectorAll('select');
+            for (const dropdown of possibleDropdowns) {
+                const options = Array.from(dropdown.options);
+                const hasMatchingProfiles = options.some(option => 
+                    profiles.some(profile => profile.name === option.text || profile.id === option.value)
+                );
+                
+                if (hasMatchingProfiles) {
+                    debugLog(`[${extensionName}] Found potential profiles dropdown:`, {
+                        id: dropdown.id,
+                        name: dropdown.name,
+                        className: dropdown.className,
+                        optionsCount: options.length,
+                        sampleOptions: options.slice(0, 3).map(o => ({ text: o.text, value: o.value }))
+                    });
+                    profilesDropdown = dropdown;
+                    break;
+                }
+            }
+        }
+
+        if (!profilesDropdown) {
+            debugWarn(`[${extensionName}] Profiles dropdown not found with any selector`);
+            debugWarn(`[${extensionName}] Available select elements:`, 
+                Array.from(document.querySelectorAll('select')).map(s => ({ id: s.id, name: s.name, className: s.className })));
+            return false;
+        }
+
+        debugLog(`[${extensionName}] Found profiles dropdown:`, {
+            id: profilesDropdown.id,
+            name: profilesDropdown.name,
+            className: profilesDropdown.className,
+            optionsCount: profilesDropdown.options.length
+        });
+
+        // Find the index of the target profile
+        const profileIndex = Array.from(profilesDropdown.options).findIndex(o => o.value === targetProfile.id);
+        if (profileIndex === -1) {
+            debugWarn(`[${extensionName}] Profile not found in dropdown: ${profileName}`);
+            debugWarn(`[${extensionName}] Available dropdown options:`, 
+                Array.from(profilesDropdown.options).map(o => ({ text: o.text, value: o.value })));
+            debugWarn(`[${extensionName}] Looking for profile with ID: ${targetProfile.id}`);
+            return false;
+        }
+
+        // Switch to the profile
+        profilesDropdown.selectedIndex = profileIndex;
+        profilesDropdown.dispatchEvent(new Event('change'));
+
         debugLog(`[${extensionName}] Switched to profile: ${profileName}`);
         return true;
     } catch (error) {
-        console.error(`[${extensionName}] Error switching to profile ${profileName}:`, error);
+        debugWarn(`[${extensionName}] Error switching to profile:`, error);
         return false;
     }
 }
 
 /**
- * Switches to a profile, executes a function, then restores the original profile
- * @param {string} targetProfile - The profile to temporarily switch to
- * @param {Function} operation - The function to execute while on the target profile
- * @returns {Promise<any>} The result of the operation
+ * Switch to a specific preset using the preset manager
+ * @param {string} presetValue - The preset value (ID or name)
+ * @param {string} apiType - The API type for the current profile
+ * @returns {Promise<boolean>} True if successful, false otherwise
+ */
+export async function switchToPreset(presetValue, apiType) {
+    try {
+        if (!presetValue || !apiType) {
+            debugLog(`[${extensionName}] No preset value or API type provided for preset switch`);
+            return false;
+        }
+
+        const context = SillyTavern.getContext();
+        if (!context || !context.CONNECT_API_MAP) {
+            debugWarn(`[${extensionName}] Context or CONNECT_API_MAP not available`);
+            return false;
+        }
+
+        const apiInfo = context.CONNECT_API_MAP[apiType];
+        if (!apiInfo) {
+            debugWarn(`[${extensionName}] No API info found for type: ${apiType}`);
+            return false;
+        }
+
+        // Extract the apiID from the API info
+        let apiID;
+        if (typeof apiInfo === 'string') {
+            apiID = apiInfo;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
+            apiID = apiInfo.selected;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
+            apiID = apiInfo.apiID;
+        } else {
+            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            return false;
+        }
+
+        const presetManager = context.getPresetManager(apiID);
+        if (!presetManager || typeof presetManager.selectPreset !== 'function') {
+            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiID}`);
+            return false;
+        }
+
+        // Try to select the preset
+        const result = presetManager.selectPreset(presetValue);
+        debugLog(`[${extensionName}] Switched to preset: ${presetValue} for API type: ${apiType} (${apiID})`);
+        return result !== false;
+    } catch (error) {
+        debugWarn(`[${extensionName}] Error switching to preset:`, error);
+        return false;
+    }
+}
+
+/**
+ * Temporarily switch to a profile, execute an operation, then restore the original profile
+ * @param {string} targetProfile - Profile to temporarily switch to
+ * @param {Function} operation - Async function to execute while on the target profile
+ * @returns {Promise<any>} Result of the operation
  */
 export async function withProfile(targetProfile, operation) {
-    if (!targetProfile || targetProfile.trim() === '') {
-        debugLog(`[${extensionName}] No target profile provided, executing operation without profile switch`);
-        return await operation();
-    }
-
+    const originalProfile = await getCurrentProfile();
+    
     try {
-        // Get current profile before switching
-        const originalProfile = await getCurrentProfile();
-        debugLog(`[${extensionName}] Original profile: ${originalProfile}, switching to: ${targetProfile}`);
-
         // Switch to target profile
         const switchSuccess = await switchToProfile(targetProfile);
         if (!switchSuccess) {
-            debugLog(`[${extensionName}] Failed to switch to profile ${targetProfile}, executing operation on current profile`);
-            return await operation();
+            throw new Error(`Failed to switch to profile: ${targetProfile}`);
         }
+
+        // Wait for profile to settle
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Execute the operation
         const result = await operation();
 
-        // Restore original profile if it was different
+        return result;
+    } finally {
+        // Always restore the original profile
         if (originalProfile && originalProfile !== targetProfile) {
-            debugLog(`[${extensionName}] Restoring original profile: ${originalProfile}`);
             await switchToProfile(originalProfile);
         }
-
-        return result;
-    } catch (error) {
-        console.error(`[${extensionName}] Error in withProfile operation:`, error);
-        
-        // Try to restore original profile even if operation failed
-        try {
-            const originalProfile = await getCurrentProfile();
-            if (originalProfile && originalProfile !== targetProfile) {
-                debugLog(`[${extensionName}] Attempting to restore original profile after error: ${originalProfile}`);
-                await switchToProfile(originalProfile);
-            }
-        } catch (restoreError) {
-            console.error(`[${extensionName}] Failed to restore original profile after error:`, restoreError);
-        }
-        
-        throw error;
     }
 }
 
 /**
- * Gets the API type for a specific profile without switching to it
- * @param {string} profileName - The name of the profile to check
- * @returns {Promise<string|null>} The API type (e.g., "openai", "textgenerationwebui") or null if not found
+ * Get the API type of a specific profile
+ * @param {string} profileName - Name of the profile
+ * @returns {Promise<string>} The API type (e.g., "featherless", "openai") or empty string if not found
  */
 export async function getProfileApiType(profileName) {
     try {
-        if (!profileName || profileName.trim() === '') {
-            debugLog(`[${extensionName}] No profile name provided for API type check`);
-            return null;
+        // Wait for connection manager to be available
+        const isAvailable = await waitForConnectionManager();
+        if (!isAvailable) {
+            return '';
         }
 
-        debugLog(`[${extensionName}] Getting API type for profile: "${profileName}"`);
-        
-        const context = getContext();
-        if (!context || typeof context.executeSlashCommandsWithOptions !== 'function') {
-            debugLog(`[${extensionName}] executeSlashCommandsWithOptions not available for profile API type check`);
-            return null;
+        const context = SillyTavern.getContext();
+        const { profiles } = context.extensionSettings.connectionManager;
+        if (!profiles || !Array.isArray(profiles)) {
+            debugWarn(`[${extensionName}] Profiles not available`);
+            return '';
         }
 
-        // Execute /profile-get command to get profile details
-        const command = `/profile-get ${profileName}`;
-        debugLog(`[${extensionName}] Executing command: "${command}"`);
-        
-        const result = await context.executeSlashCommandsWithOptions(command, { 
-            showOutput: false,
-            displayCommand: false 
-        });
-        
-        debugLog(`[${extensionName}] /profile-get result:`, result);
-        
-        // Parse the result to extract the API type
-        let profileData = null;
-        if (result && typeof result === 'string') {
-            try {
-                profileData = JSON.parse(result);
-            } catch (parseError) {
-                debugLog(`[${extensionName}] Error parsing profile-get result:`, parseError);
-            }
-        } else if (result && typeof result === 'object' && result.pipe) {
-            try {
-                profileData = JSON.parse(result.pipe);
-            } catch (parseError) {
-                debugLog(`[${extensionName}] Error parsing profile-get pipe result:`, parseError);
-            }
+        const profile = profiles.find(p => p.name === profileName);
+        if (!profile) {
+            debugWarn(`[${extensionName}] Profile not found: ${profileName}`);
+            return '';
         }
-        
-        if (profileData && profileData.api) {
-            debugLog(`[${extensionName}] Profile "${profileName}" uses API type: "${profileData.api}"`);
-            return profileData.api;
-        } else {
-            debugLog(`[${extensionName}] Could not determine API type for profile "${profileName}"`);
-            return null;
-        }
+
+        const apiType = profile.api || '';
+        debugLog(`[${extensionName}] Profile ${profileName} API type: ${apiType}`);
+        return apiType;
     } catch (error) {
-        console.error(`[${extensionName}] Error getting API type for profile ${profileName}:`, error);
-        return null;
+        debugWarn(`[${extensionName}] Error getting profile API type:`, error);
+        return '';
     }
 }
 
 /**
- * Gets presets for a specific API type without switching profiles
- * @param {string} apiType - The API type (e.g., "featherless", "custom", "openai")
- * @returns {Promise<Object|null>} The preset list object or null if not available
+ * Get presets for a specific API type
+ * @param {string} apiType - The API type (e.g., "featherless", "openai")
+ * @returns {Promise<Array>} Array of preset objects
  */
 export async function getPresetsForApiType(apiType) {
     try {
-        if (!apiType || apiType.trim() === '') {
-            debugLog(`[${extensionName}] No API type provided for preset retrieval`);
-            return null;
+        const context = SillyTavern.getContext();
+        if (!context || !context.CONNECT_API_MAP) {
+            debugWarn(`[${extensionName}] Context or CONNECT_API_MAP not available`);
+            return [];
         }
 
-        debugLog(`[${extensionName}] Getting presets for API type: "${apiType}"`);
-        
-        const context = getContext();
-        if (!context || typeof context.getPresetManager !== 'function') {
-            debugLog(`[${extensionName}] getPresetManager not available`);
-            return null;
+        const apiInfo = context.CONNECT_API_MAP[apiType];
+        if (!apiInfo) {
+            debugWarn(`[${extensionName}] No API info found for type: ${apiType}`);
+            return [];
         }
 
-        // Get the CONNECT_API_MAP to find the correct apiID for this API type
-        const connectApiMap = context.CONNECT_API_MAP;
-        if (!connectApiMap) {
-            debugLog(`[${extensionName}] CONNECT_API_MAP not available`);
-            return null;
+        // Extract the apiID from the API info
+        let apiID;
+        if (typeof apiInfo === 'string') {
+            apiID = apiInfo;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
+            apiID = apiInfo.selected;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
+            apiID = apiInfo.apiID;
+        } else {
+            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            return [];
         }
 
-        // Find the API type in the map and get its selected apiID
-        const apiInfo = connectApiMap[apiType];
-        if (!apiInfo || !apiInfo.selected) {
-            debugLog(`[${extensionName}] No API info found for type "${apiType}" in CONNECT_API_MAP`);
-            return null;
-        }
-
-        const apiID = apiInfo.selected;
-        debugLog(`[${extensionName}] API type "${apiType}" maps to apiID "${apiID}"`);
-
-        // Get the preset manager for the specific apiID
         const presetManager = context.getPresetManager(apiID);
-        if (!presetManager) {
-            debugLog(`[${extensionName}] No preset manager found for apiID: "${apiID}"`);
-            return null;
+        if (!presetManager || typeof presetManager.getPresetList !== 'function') {
+            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiID}`);
+            return [];
         }
 
-        // Get the preset list
         const presetList = presetManager.getPresetList();
-        debugLog(`[${extensionName}] Retrieved ${presetList?.preset_names?.length || 0} presets for apiID "${apiID}" (API type: "${apiType}")`);
-        
-        return presetList;
+        debugLog(`[${extensionName}] Presets for ${apiType} (${apiID}):`, presetList);
+        return presetList || [];
     } catch (error) {
-        console.error(`[${extensionName}] Error getting presets for API type ${apiType}:`, error);
-        return null;
+        debugWarn(`[${extensionName}] Error getting presets for API type:`, error);
+        return [];
     }
 }
 
 /**
- * Gets the API type mapping from SillyTavern's CONNECT_API_MAP
- * @returns {Object|null} The CONNECT_API_MAP object or null if not available
+ * Get the CONNECT_API_MAP from SillyTavern context
+ * @returns {Object} The CONNECT_API_MAP object
  */
 export function getConnectApiMap() {
     try {
-        const context = getContext();
-        if (context && context.CONNECT_API_MAP) {
-            debugLog(`[${extensionName}] Retrieved CONNECT_API_MAP:`, context.CONNECT_API_MAP);
-            return context.CONNECT_API_MAP;
-        } else {
-            debugLog(`[${extensionName}] CONNECT_API_MAP not available in context`);
-            return null;
-        }
+        const context = SillyTavern.getContext();
+        return context?.CONNECT_API_MAP || {};
     } catch (error) {
-        console.error(`[${extensionName}] Error getting CONNECT_API_MAP:`, error);
-        return null;
+        debugWarn(`[${extensionName}] Error getting CONNECT_API_MAP:`, error);
+        return {};
     }
 }
