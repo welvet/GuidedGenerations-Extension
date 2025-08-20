@@ -1,0 +1,20 @@
+[33m07ff1e0[m[33m ([m[1;36mHEAD -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m)[m refactor: Replace STScript with direct SillyTavern API for profile/preset switching
+[33m66cf1ce[m feat: Implement comprehensive profile and preset switching system
+[33mde5febc[m feat: implement conditional debug logging system
+[33m5af0e3f[m Fix tracker preset switching: use presetUtils.js for proper preset handling and restore original preset after completion
+[33m1a72a60[m Reorganize tracker popup buttons: Setup/Sync in top row, Save/Run/Close in bottom row. Update button styles for better UX
+[33mab4b265[m Update tracker popup: new defaults, simplified explanations, and technical clarifications
+[33m4232ddf[m Add Tracker functionality with chat-specific settings and auto-trigger support
+[33mfa0cbfa[m Improve preset switching: add shared waitForPresetChange function and await restore operations to prevent race conditions
+[33m348af50[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m Remove discord-reacts prompt from funPrompts.txt
+[33m10a6d77[m Remove unused index.js file from persistentGuides directory
+[33m5c6f6f3[m Bump version to 1.5.7 - Fixed manual guide editing and fun prompts role configuration
+[33me608ef6[m Fix: Fun prompts now use configured injection role instead of hardcoded 'system' - Added injectionRole variable to use extension_settings[extensionName].injectionEndRole setting
+[33m50e91a4[m Fix: Manual guide editing now properly updates live session prompts - Changed setExtensionPrompt parameter from 'key' to 'guideName' to use guide name without prefix instead of full prefixed key
+[33m21ec101[m Version 1.5.6: Fix race condition in preset switching on first page load
+[33m1e2351c[m Fix: Add delay after preset switching to prevent generation interference
+[33m37840a0[m Fix preset switching for text completion mode - version 1.5.5
+[33m0bf4842[m Fix corrections tool preset switching - Use unified presetUtils.js utility and remove undefined variables
+[33m0821e8c[m Fix spellchecker preset switching and update version to 1.5.4
+[33m979a52b[m Fix preset switching in all impersonation scripts - Use unified presetUtils.js utility and consistent getContext() pattern
+[33m5a9d936[m Bump version to 1.5.3

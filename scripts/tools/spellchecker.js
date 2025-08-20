@@ -1,9 +1,7 @@
 /**
  * @file Contains the logic for the Spellcheck tool.
  */
-import { getContext, extension_settings } from '../../../../extensions.js';
-import { extensionName, debugLog } from '../index.js';
-import { handleProfileAndPresetSwitching } from '../utils/presetUtils.js';
+import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching } from '../persistentGuides/guideExports.js';
 
 const spellchecker = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -19,7 +17,7 @@ const spellchecker = async () => {
     if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
         try {
             // Get current profile before any switching
-            const { getCurrentProfile } = await import('../utils/profileUtils.js');
+            const { getCurrentProfile } = await import('../persistentGuides/guideExports.js');
             originalProfile = await getCurrentProfile();
             debugLog(`[Spellchecker] Captured original profile before switching: "${originalProfile}"`);
         } catch (error) {
@@ -42,7 +40,7 @@ const spellchecker = async () => {
     const filledPrompt = promptTemplate.replace('{{input}}', currentInputText);
 
     // Build STScript without preset switching
-    const stscriptCommand = `/gen ${filledPrompt} |`;
+    const stscriptCommand = `/genraw ${filledPrompt} |`;
     const fullScript = `// Spellchecker guide|\n${stscriptCommand}`;
 
     try {
@@ -56,9 +54,22 @@ const spellchecker = async () => {
             debugLog('[Spellchecker] Profile and preset switch complete, about to execute STScript...');
             
             // Execute the command and wait for it to complete
-            await context.executeSlashCommandsWithOptions(fullScript); 
+            const result = await context.executeSlashCommandsWithOptions(fullScript, {
+                showOutput: false,
+                handleExecutionErrors: true
+            });
             
             debugLog('[Spellchecker] STScript execution complete, about to restore profile...');
+            
+            // After completion, paste the corrected result back into the input textarea
+            if (result && result.pipe != null && result.pipe !== '') {
+                debugLog('[Spellchecker] Got corrected result from /genraw, pasting into textarea:', result.pipe);
+                textarea.value = result.pipe;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                debugLog('[Spellchecker] Corrected result pasted into textarea successfully');
+            } else {
+                debugLog('[Spellchecker] No result from /genraw command, textarea unchanged');
+            }
             
             // After completion, restore original profile and preset using utility restore function
             await restore();

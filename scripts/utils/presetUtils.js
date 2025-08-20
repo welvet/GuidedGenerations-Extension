@@ -1,4 +1,4 @@
-import { debugLog, debugWarn } from '../../index.js';
+import { debugLog, debugWarn } from '../persistentGuides/guideExports.js'; // Import from central hub
 import { withProfile, getCurrentProfile, switchToProfile, switchToPreset } from './profileUtils.js';
 
 const extensionName = 'Guided Generations';

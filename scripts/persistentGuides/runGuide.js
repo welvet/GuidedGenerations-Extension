@@ -1,7 +1,4 @@
-import { getContext, extension_settings } from '../../../../../extensions.js';
-import { extensionName } from '../../index.js';
-import { handlePresetSwitching } from '../utils/presetUtils.js';
-import { debugLog } from '../../index.js';
+import { getContext, extension_settings, extensionName, handlePresetSwitching, debugLog } from './guideExports.js'; // Import from central hub
 
 /**
  * Generic runner for Persistent Guides STScript commands.
@@ -63,8 +60,6 @@ ${finalCommand}`;
         debugLog(`${extensionName}: Switching to preset "${presetValue}" and waiting for completion...`);
         await switchPreset();
         debugLog(`${extensionName}: Preset switch completed successfully`);
-    } else {
-        switchPreset();
     }
 
     // Execute STScript via SillyTavern context

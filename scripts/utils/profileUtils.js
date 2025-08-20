@@ -1,4 +1,4 @@
-import { debugLog, debugWarn } from '../../index.js';
+import { debugLog, debugWarn } from '../persistentGuides/guideExports.js'; // Import from central hub
 
 const extensionName = 'Guided Generations';
 

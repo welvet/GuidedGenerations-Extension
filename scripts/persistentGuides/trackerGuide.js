@@ -3,10 +3,8 @@
  * @description Opens a popup for creating and configuring trackers to monitor specific aspects of your story or characters.
  */
 
-import { getContext } from '../../../../../extensions.js';
-import { extensionName } from '../../index.js';
+import { getContext, extensionName, debugLog } from './guideExports.js'; // Import from central hub
 import { executeTracker } from './trackerLogic.js';
-import { debugLog } from '../../index.js';
 
 export default async function trackerGuide() {
 	debugLog('[TrackerGuide] Button clicked');

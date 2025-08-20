@@ -148,7 +148,7 @@ export const defaultSettings = {
     promptSituational: '[OOC: Answer me out of Character! Don\'t continue the RP.  Analyze the chat history and provide a concise summary of: 1. Current location and setting (indoors/outdoors, time of day, weather if relevant) 2. Present characters and their current activities 3. Relevant objects, items, or environmental details that could influence interactions 4. Recent events or topics of conversation (last 10-20 messages) Keep the overview factual and neutral without speculation. Format in clear paragraphs.] ',
     promptRules: '[OOC: Answer me out of Character! Don\'t continue the RP.  Create a list of explicit rules that {{char}} has learned and follows from the story and their character description. Only include rules explicitly established in chat history or character info. Format as a numbered list.] ',
     promptCorrections: '[OOC: Answer me out of Character! Don\'t continue the RP.  Do not continue the story do not wrote in character, instead write {{char}}\'s last response (msgtorework) again but change it to reflect the following: {{input}}. Don\'t make any other changes besides this.]',
-    promptSpellchecker: '[OOC: Answer me out of Character! Don\'t continue the RP.  Without any intro or outro correct the grammar, punctuation, and improve the paragraph\'s flow of: {{input}}',
+            promptSpellchecker: 'Without any intro or outro correct the grammar, punctuation and improve the paragraph\'s flow without adding anything else of: {{input}}',
     promptImpersonate1st: 'Write in first Person perspective from {{user}}. {{input}}',
     promptImpersonate2nd: 'Write in second Person perspective from {{user}}, using you/yours for {{user}}. {{input}}',
     promptImpersonate3rd: 'Write in third Person perspective from {{user}} using third-person pronouns for {{user}}. {{input}}',
@@ -725,8 +725,8 @@ function updateExtensionButtons() {
         editIntrosMenuItem.innerHTML = '<i class="fa-solid fa-user-edit fa-fw"></i><span data-i18n="Edit Intros">Edit Intros</span>';
         editIntrosMenuItem.title = "Opens a popup to edit or regenerate character introductions based on various criteria.";
         editIntrosMenuItem.addEventListener('click', async (event) => {
-            const { default: editIntros } = await import('./scripts/tools/editIntros.js');
-            await editIntros();
+            const editIntros = await import('./scripts/tools/editIntros.js');
+            await editIntros.default();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
         });
@@ -738,10 +738,27 @@ function updateExtensionButtons() {
         correctionsMenuItem.innerHTML = '<i class="fa-solid fa-file-alt fa-fw"></i><span data-i18n="Corrections">Corrections</span>';
         correctionsMenuItem.title = "Instructs the AI to rewrite its last message, incorporating the corrections or changes you provide in the input field.";
         correctionsMenuItem.addEventListener('click', async (event) => {
-            const { default: corrections } = await import('./scripts/tools/corrections.js');
-            await corrections();
-            ggToolsMenu.classList.remove('shown');
-            event.stopPropagation();
+            console.log('[GuidedGenerations] Corrections menu item clicked, starting import...');
+            console.log('[GuidedGenerations] Current location:', window.location.href);
+            console.log('[GuidedGenerations] Current script src:', document.currentScript?.src || 'unknown');
+            console.log('[GuidedGenerations] Import path:', './scripts/persistentGuides/guideExports.js');
+            try {
+                console.log('[GuidedGenerations] About to import from central hub:', './scripts/persistentGuides/guideExports.js');
+                const { corrections } = await import('./scripts/persistentGuides/guideExports.js');
+                console.log('[GuidedGenerations] Successfully imported corrections function:', corrections);
+                await corrections();
+                console.log('[GuidedGenerations] Corrections function executed successfully');
+                ggToolsMenu.classList.remove('shown');
+                event.stopPropagation();
+            } catch (error) {
+                console.error('[GuidedGenerations] Failed to import or execute corrections:', error);
+                console.error('[GuidedGenerations] Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause
+                });
+            }
         });
 
         // 3. Spellchecker
@@ -751,10 +768,24 @@ function updateExtensionButtons() {
         spellcheckerMenuItem.innerHTML = '<i class="fa-solid fa-spell-check fa-fw"></i><span data-i18n="Spellchecker">Spellchecker</span>';
         spellcheckerMenuItem.title = "Checks and corrects the grammar, punctuation, and flow of the text currently in your input field.";
         spellcheckerMenuItem.addEventListener('click', async (event) => {
-            const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
-            await spellchecker();
-            ggToolsMenu.classList.remove('shown');
-            event.stopPropagation();
+            console.log('[GuidedGenerations] Spellchecker menu item clicked, starting import...');
+            try {
+                console.log('[GuidedGenerations] About to import from central hub:', './scripts/persistentGuides/guideExports.js');
+                const { spellchecker } = await import('./scripts/persistentGuides/guideExports.js');
+                console.log('[GuidedGenerations] Successfully imported spellchecker function:', spellchecker);
+                await spellchecker();
+                console.log('[GuidedGenerations] Spellchecker function executed successfully');
+                ggToolsMenu.classList.remove('shown');
+                event.stopPropagation();
+            } catch (error) {
+                console.error('[GuidedGenerations] Failed to import or execute spellchecker:', error);
+                console.error('[GuidedGenerations] Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause
+                });
+            }
         });
 
         // 4. Clear Input
@@ -763,8 +794,8 @@ function updateExtensionButtons() {
         clearInputMenuItem.className = 'interactable';
         clearInputMenuItem.innerHTML = '<i class="fa-solid fa-trash fa-fw"></i><span data-i18n="Clear Input">Clear Input</span>';
         clearInputMenuItem.addEventListener('click', async (event) => {
-            const { default: clearInput } = await import('./scripts/tools/clearInput.js');
-            await clearInput();
+            const clearInput = await import('./scripts/tools/clearInput.js');
+            await clearInput.default();
             ggToolsMenu.classList.remove('shown');
             event.stopPropagation();
         });
@@ -1033,8 +1064,8 @@ function updateExtensionButtons() {
     // Edit Intros button
     if (settings.showEditIntrosButton) {
         const editIntrosButton = createActionButton('gg_edit_intros_button', 'Edit Intros', 'fa-solid fa-user-edit', async () => {
-            const { default: editIntros } = await import('./scripts/tools/editIntros.js');
-            await editIntros();
+            const editIntros = await import('./scripts/tools/editIntros.js');
+            await editIntros.default();
         });
         regularButtons.push(editIntrosButton);
     }
@@ -1042,8 +1073,22 @@ function updateExtensionButtons() {
     // Corrections button
     if (settings.showCorrectionsButton) {
         const correctionsButton = createActionButton('gg_corrections_button', 'Corrections', 'fa-solid fa-file-alt', async () => {
-            const { default: corrections } = await import('./scripts/tools/corrections.js');
-            await corrections();
+            console.log('[GuidedGenerations] Corrections action button clicked, starting import...');
+            try {
+                console.log('[GuidedGenerations] Action button: About to import from central hub:', './scripts/persistentGuides/guideExports.js');
+                const { corrections } = await import('./scripts/persistentGuides/guideExports.js');
+                console.log('[GuidedGenerations] Action button: Successfully imported corrections function:', corrections);
+                await corrections();
+                console.log('[GuidedGenerations] Action button: Corrections function executed successfully');
+            } catch (error) {
+                console.error('[GuidedGenerations] Action button: Failed to import or execute corrections:', error);
+                console.error('[GuidedGenerations] Action button: Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause
+                });
+            }
         });
         regularButtons.push(correctionsButton);
     }
@@ -1051,8 +1096,22 @@ function updateExtensionButtons() {
     // Spellchecker button
     if (settings.showSpellcheckerButton) {
         const spellcheckerButton = createActionButton('gg_spellchecker_button', 'Spellchecker', 'fa-solid fa-spell-check', async () => {
-            const { default: spellchecker } = await import('./scripts/tools/spellchecker.js');
-            await spellchecker();
+            console.log('[GuidedGenerations] Spellchecker action button clicked, starting import...');
+            try {
+                console.log('[GuidedGenerations] Action button: About to import from central hub:', './scripts/persistentGuides/guideExports.js');
+                const { spellchecker } = await import('./scripts/persistentGuides/guideExports.js');
+                console.log('[GuidedGenerations] Action button: Successfully imported spellchecker function:', spellchecker);
+                await spellchecker();
+                console.log('[GuidedGenerations] Action button: Spellchecker function executed successfully');
+            } catch (error) {
+                console.error('[GuidedGenerations] Action button: Failed to import or execute spellchecker:', error);
+                console.error('[GuidedGenerations] Action button: Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause
+                });
+            }
         });
         regularButtons.push(spellcheckerButton);
     }
@@ -1060,8 +1119,8 @@ function updateExtensionButtons() {
     // Clear Input button
     if (settings.showClearInputButton) {
         const clearInputButton = createActionButton('gg_clear_input_button', 'Clear Input', 'fa-solid fa-trash', async () => {
-            const { default: clearInput } = await import('./scripts/tools/clearInput.js');
-            await clearInput();
+            const clearInput = await import('./scripts/tools/clearInput.js');
+            await clearInput.default();
         });
         regularButtons.push(clearInputButton);
     }

@@ -1,7 +1,6 @@
 // scripts/settingsPanel.js
 
-import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners, defaultSettings, debugLog, debugWarn } from '../index.js';
-import { renderExtensionTemplateAsync } from '../../../../extensions.js';
+import { extensionName, loadSettings, updateSettingsUI, addSettingsEventListeners, defaultSettings, debugLog, debugWarn, renderExtensionTemplateAsync, debugProfileSystem } from './persistentGuides/guideExports.js'; // Import from central hub
 
 /**
  * Loads and renders the settings HTML for the extension.
@@ -99,7 +98,7 @@ export async function loadSettingsPanel() {
                 if (debugButton) {
                     debugButton.addEventListener('click', async () => {
                         try {
-                            const { debugProfileSystem } = await import('../index.js');
+                            const { debugProfileSystem } = await import('./persistentGuides/guideExports.js');
                             await debugProfileSystem();
                         } catch (error) {
                             console.error(`[${extensionName}] Error importing debugProfileSystem:`, error);

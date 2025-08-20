@@ -1,6 +1,6 @@
 // scripts/simpleSend.js
 
-import { setPreviousImpersonateInput, debugLog } from '../index.js'; // Import shared state function and logger
+import { setPreviousImpersonateInput, debugLog } from './persistentGuides/guideExports.js'; // Import from central hub
 
 // State variable specific to simpleSend to prevent rapid clicks
 let isSending = false; 

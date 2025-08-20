@@ -2,9 +2,8 @@
  * @file Contains the logic for the Custom Auto Guide option in the Persistent Guides menu.
  */
 
-// Import necessary items from SillyTavern's extension system
-import { getContext, extension_settings } from '../../../../../extensions.js'; 
-import { extensionName } from '../../index.js'; // Import extensionName from index.js
+// Import necessary items from central hub
+import { getContext, extension_settings, extensionName } from './guideExports.js'; // Import from central hub
 import { runGuideScript } from './runGuide.js';
 
 /**

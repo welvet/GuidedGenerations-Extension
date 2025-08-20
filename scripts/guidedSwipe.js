@@ -1,7 +1,6 @@
 // scripts/guidedSwipe.js
 
-import { getContext, extension_settings } from '../../../../extensions.js'; // Import getContext and extension_settings
-import { setPreviousImpersonateInput, getPreviousImpersonateInput, debugLog } from '../index.js'; // Import shared state functions
+import { getContext, extension_settings, debugLog, setPreviousImpersonateInput, getPreviousImpersonateInput } from './persistentGuides/guideExports.js'; // Import from central hub
 
 // Helper function for delays
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));

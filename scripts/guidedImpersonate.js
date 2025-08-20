@@ -1,8 +1,5 @@
 // scripts/guidedImpersonate.js
-import { getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult, debugLog } from '../index.js'; // Import shared state functions
-import { getContext, extension_settings } from '../../../../extensions.js';
-import { extensionName } from '../index.js';
-import { handleProfileAndPresetSwitching } from './utils/presetUtils.js';
+import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from './persistentGuides/guideExports.js'; // Import from central hub
 
 const guidedImpersonate = async () => {
     const textarea = document.getElementById('send_textarea');

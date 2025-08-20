@@ -7,7 +7,7 @@
  * This will eventually update character information based on recent interactions.
  * @returns {Promise<string|null>} The result from the pipe, or null on error.
  */
-import { debugLog } from '../../index.js';
+import { debugLog } from './guideExports.js'; // Import from central hub
 
 const updateCharacter = async () => { // Make async
 

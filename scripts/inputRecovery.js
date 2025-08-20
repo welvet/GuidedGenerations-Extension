@@ -1,5 +1,5 @@
 // scripts/inputRecovery.js
-import { getPreviousImpersonateInput, debugLog } from '../index.js'; // Import the shared state getter and debug logger
+import { getPreviousImpersonateInput, debugLog } from './persistentGuides/guideExports.js'; // Import from central hub
 
 const recoverInput = () => {
 	debugLog('[InputRecovery] Button clicked');

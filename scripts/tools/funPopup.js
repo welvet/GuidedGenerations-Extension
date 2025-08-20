@@ -2,9 +2,7 @@
  * Fun Popup - Handles UI for fun prompts and interactions
  */
 
-import { getContext, extension_settings } from '../../../../extensions.js';
-import { extensionName, debugLog } from '../index.js';
-import { handleProfileAndPresetSwitching } from '../utils/presetUtils.js';
+import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching } from '../persistentGuides/guideExports.js'; // Import from central hub
 
 // Map to store fun prompts loaded from file
 let FUN_PROMPTS = {};

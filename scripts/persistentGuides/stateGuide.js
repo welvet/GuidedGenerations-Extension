@@ -2,10 +2,8 @@
  * @file Contains the logic for the State option in the Persistent Guides menu.
  */
 
-// Import necessary items from SillyTavern's extension system
-// Adjust the path based on your actual file structure if needed
-import { getContext, extension_settings } from '../../../../../extensions.js'; 
-import { extensionName } from '../../index.js'; // Import extensionName from index.js
+// Import necessary items from central hub
+import { getContext, extension_settings, extensionName } from './guideExports.js'; // Import from central hub
 import { runGuideScript } from './runGuide.js';
 
 /**

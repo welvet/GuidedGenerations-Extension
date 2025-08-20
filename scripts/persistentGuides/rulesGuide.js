@@ -1,8 +1,7 @@
 /**
  * @file Contains the logic for the Rules Guide option in the Persistent Guides menu.
  */
-import { extensionName } from '../../index.js'; // Import from two levels up
-import { extension_settings } from '../../../../../extensions.js';
+import { extensionName, extension_settings } from './guideExports.js'; // Import from central hub
 import { runGuideScript } from './runGuide.js';
 
 /**
