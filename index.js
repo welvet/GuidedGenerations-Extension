@@ -849,11 +849,26 @@ function updateExtensionButtons() {
         separator2.className = 'pg-separator';
         ggToolsMenu.appendChild(separator2);
         
+        // Add Help menu item
+        const helpMenuItem = document.createElement('a');
+        helpMenuItem.href = '#';
+        helpMenuItem.className = 'interactable';
+        helpMenuItem.innerHTML = '<i class="fa-solid fa-question-circle fa-fw"></i><span data-i18n="Help">Help</span>';
+        helpMenuItem.title = 'Opens the extension wiki for documentation and help.';
+        helpMenuItem.addEventListener('click', (event) => {
+            // Open the GitHub wiki in a new tab/window
+            const wikiUrl = 'https://github.com/Samueras/GuidedGenerations-Extension/wiki';
+            window.open(wikiUrl, '_blank');
+            ggToolsMenu.classList.remove('shown');
+            event.stopPropagation();
+        });
+
         // Add new items after the separator
         ggToolsMenu.appendChild(editIntrosMenuItem);
         ggToolsMenu.appendChild(correctionsMenuItem);
         ggToolsMenu.appendChild(spellcheckerMenuItem);
         ggToolsMenu.appendChild(clearInputMenuItem);
+        ggToolsMenu.appendChild(helpMenuItem);
 
         // Add Update Character item
         /*const updateCharacterMenuItem = document.createElement('a');
@@ -954,7 +969,7 @@ function updateExtensionButtons() {
             { name: 'Show Guides', icon: 'fa-eye', path: './scripts/persistentGuides/showGuides.js', description: "Displays the content of currently active persistent guides." },
             { name: 'Edit Guides', icon: 'fa-edit', path: './scripts/persistentGuides/editGuides.js', description: "Opens a popup to create, edit, or delete custom persistent guides and their prompts." },
             { name: 'Flush Guides', icon: 'fa-trash', path: './scripts/persistentGuides/flushGuides.js', description: "Clears all injected content from persistent guides in the current chat." },
-            { name: 'Tracker', icon: 'fa-chart-line', path: './scripts/persistentGuides/trackerGuide.js', description: "Create and configure trackers to monitor specific aspects of your story or characters." }
+            { name: 'Stat Tracker', icon: 'fa-chart-line', path: './scripts/persistentGuides/trackerGuide.js', description: "Create and configure stat trackers to monitor specific aspects of your story or characters." }
         ];
 
         // Load the content guides in sequence

@@ -89,13 +89,13 @@ export default async function trackerGuide() {
 				</div>
 				<div class="gg-popup-footer">
 					<div style="display: flex; gap: 10px; margin-bottom: 10px;">
-						<button class="gg-button gg-button-primary" id="trackerSetupButton">Setup Tracker</button>
-						<button class="gg-button gg-button-primary" id="trackerSyncButton">Sync Tracker with Stat Tracker Note</button>
+						<button class="gg-button gg-button-primary" id="trackerSetupButton">Setup Stat Tracker</button>
+						<button class="gg-button gg-button-primary" id="trackerSyncButton">Sync Stat Tracker with Note</button>
 					</div>
 					<small style="color: var(--SmartThemeBodyColor); opacity: 0.8; margin-bottom: 10px; display: block;">Stat Tracker notes are automatically created when the tracker runs, showing the latest tracker information in the chat.</small>
 					<div style="display: flex; gap: 10px;">
 						<button class="gg-button gg-button-primary" id="trackerSaveButton">Save</button>
-						<button class="gg-button gg-button-secondary" id="trackerRunButton">Run Tracker</button>
+						<button class="gg-button gg-button-secondary" id="trackerRunButton">Run Stat Tracker</button>
 						<button class="gg-button gg-button-secondary" id="trackerCloseButton">Close</button>
 					</div>
 				</div>

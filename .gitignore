@@ -18,6 +18,9 @@ Thumbs.db
 # Local references / External code copies
 References/
 
+# Wiki folder (separate repository)
+Wiki/
+
 # Release notes file
 RELEASE_NOTES.md
 # Ignore windsufr rules file

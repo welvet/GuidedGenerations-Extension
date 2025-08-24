@@ -165,13 +165,10 @@
                 </div>
                 <hr>
                 <h4>Preset Usage</h4>
-                <small class="setting_item_description">Assign specific System Prompts (Presets) to different Guided Generation actions. When a preset is selected, it will be temporarily activated just before the guide runs, then deactivated. Use the 'GGSystemPrompt' button to quickly fill the field with the default guidance preset.</small>
+                                <small class="setting_item_description">Assign specific System Prompts (Presets) to different Guided Generation actions. When a preset is selected, it will be temporarily activated just before the guide runs, then deactivated. Use the 'GGSystemPrompt' button to quickly fill the field with the default guidance preset.</small>
                 
-                <!-- Debug Profile System Button -->
+                <!-- Profile System Controls -->
                 <div class="setting_item" style="margin-bottom: 20px;">
-                    <button id="debugProfileSystem" type="button" class="btn btn-primary" style="margin-right: 10px;">
-                        Debug Profile System
-                    </button>
                     <button id="refreshProfileDropdowns" type="button" class="btn btn-secondary" style="margin-right: 10px;">
                         Refresh Profile Dropdowns
                     </button>
@@ -420,14 +417,14 @@
                 <div class="setting_item">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                         <div style="flex: 1;">
-                            <label for="profileTrackerDetermine" style="margin-bottom: 5px; display: block;">Tracker: Determine Changes - Profile:</label>
+                            <label for="profileTrackerDetermine" style="margin-bottom: 5px; display: block;">Stat Tracker: Determine Changes - Profile:</label>
                             <select id="profileTrackerDetermine" name="profileTrackerDetermine" class="gg-setting-input text_pole select_compact">
                                 <option value="">None</option>
                                 <!-- Profile options will be populated by the extension -->
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label for="presetTrackerDetermine" style="margin-bottom: 5px; display: block;">Tracker: Determine Changes - Preset:</label>
+                            <label for="presetTrackerDetermine" style="margin-bottom: 5px; display: block;">Stat Tracker: Determine Changes - Preset:</label>
                             <select id="presetTrackerDetermine" name="presetTrackerDetermine" class="gg-setting-input text_pole select_compact">
                                 <!-- Preset options will be populated by the extension -->
                             </select>
@@ -437,14 +434,14 @@
                 <div class="setting_item">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                         <div style="flex: 1;">
-                            <label for="profileTrackerUpdate" style="margin-bottom: 5px; display: block;">Tracker: Update with Changes - Profile:</label>
+                            <label for="profileTrackerUpdate" style="margin-bottom: 5px; display: block;">Stat Tracker: Update with Changes - Profile:</label>
                             <select id="profileTrackerUpdate" name="profileTrackerUpdate" class="gg-setting-input text_pole select_compact">
                                 <option value="">None</option>
                                 <!-- Profile options will be populated by the extension -->
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label for="presetTrackerUpdate" style="margin-bottom: 5px; display: block;">Tracker: Update with Changes - Preset:</label>
+                            <label for="presetTrackerUpdate" style="margin-bottom: 5px; display: block;">Stat Tracker: Update with Changes - Preset:</label>
                             <select id="presetTrackerUpdate" name="presetTrackerUpdate" class="gg-setting-input text_pole select_compact">
                                 <!-- Preset options will be populated by the extension -->
                             </select>
