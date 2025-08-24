@@ -33,10 +33,19 @@ export async function loadSettingsPanel() {
             // Remove any manual clear buttons to avoid duplicates
             container.querySelectorAll('.gg-clear-button').forEach(btn => btn.remove());
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 loadSettings();
                 updateSettingsUI();
                 addSettingsEventListeners();
+
+                // Initialize event listeners for profile and preset switching
+                try {
+                    const { initializeEventListeners } = await import('./persistentGuides/guideExports.js');
+                    initializeEventListeners();
+                    debugLog(`[${extensionName}] Event listeners initialized for profile/preset switching in settings panel`);
+                } catch (error) {
+                    debugWarn(`[${extensionName}] Could not initialize event listeners in settings panel:`, error);
+                }
 
                 // Setup preset and clear buttons with native event handlers
                 const presetButtons = container.querySelectorAll('.gg-preset-button');

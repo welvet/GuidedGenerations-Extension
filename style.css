@@ -512,3 +512,49 @@
 .gg-button-secondary:hover {
     background-color: var(--SmartThemeHover);
 }
+
+/* Situational Tracker Styles */
+.situational-tracker-details {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 5px;
+    background-color: var(--SmartThemeBg);
+    transition: all 0.2s ease;
+}
+
+.situational-tracker-details:hover {
+    border-color: var(--SmartThemeAccentColor);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.situational-tracker-details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--SmartThemeBodyColor);
+    user-select: none;
+    padding: 5px 0;
+    transition: color 0.2s ease;
+}
+
+.situational-tracker-details summary:hover {
+    color: var(--SmartThemeAccentColor);
+}
+
+.situational-tracker-details summary::-webkit-details-marker {
+    color: var(--SmartThemeAccentColor);
+    margin-right: 8px;
+}
+
+.situational-tracker-details > div {
+    margin-top: 10px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--SmartThemeBodyColor);
+    line-height: 1.4;
+    padding: 10px;
+    background-color: var(--SmartThemeChatTintColor);
+    border-radius: 3px;
+    border-left: 3px solid var(--SmartThemeAccentColor);
+}

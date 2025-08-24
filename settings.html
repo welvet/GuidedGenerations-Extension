@@ -111,6 +111,15 @@
                         When enabled, shows detailed debug information in the browser console. Useful for troubleshooting but can clutter the console during normal use.
                     </small>
                 </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <input type="checkbox" id="gg_persistentGuidesInChatlog" name="persistentGuidesInChatlog" class="gg-setting-input">
+                        <label for="gg_persistentGuidesInChatlog" style="margin-left: 8px;">Persistent Guides in Chatlog</label>
+                    </div>
+                    <small class="setting_item_description">
+                        When enabled, Persistent Guides will be visible in the Chatlog but will not be sent to the LLM. Only the invisible injections are sent to the LLM.
+                    </small>
+                </div>
                 <hr>
                 <h4>Auto-Triggers (Persistent Guides)</h4> <!-- Heading for Auto-Triggers -->
                 <small class="setting_item_description">
@@ -411,15 +420,32 @@
                 <div class="setting_item">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                         <div style="flex: 1;">
-                            <label for="profileTracker" style="margin-bottom: 5px; display: block;">Tracker Profile:</label>
-                            <select id="profileTracker" name="profileTracker" class="gg-setting-input text_pole select_compact">
+                            <label for="profileTrackerDetermine" style="margin-bottom: 5px; display: block;">Tracker: Determine Changes - Profile:</label>
+                            <select id="profileTrackerDetermine" name="profileTrackerDetermine" class="gg-setting-input text_pole select_compact">
                                 <option value="">None</option>
                                 <!-- Profile options will be populated by the extension -->
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label for="presetTracker" style="margin-bottom: 5px; display: block;">Tracker Preset:</label>
-                            <select id="presetTracker" name="presetTracker" class="gg-setting-input text_pole select_compact">
+                            <label for="presetTrackerDetermine" style="margin-bottom: 5px; display: block;">Tracker: Determine Changes - Preset:</label>
+                            <select id="presetTrackerDetermine" name="presetTrackerDetermine" class="gg-setting-input text_pole select_compact">
+                                <!-- Preset options will be populated by the extension -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label for="profileTrackerUpdate" style="margin-bottom: 5px; display: block;">Tracker: Update with Changes - Profile:</label>
+                            <select id="profileTrackerUpdate" name="profileTrackerUpdate" class="gg-setting-input text_pole select_compact">
+                                <option value="">None</option>
+                                <!-- Profile options will be populated by the extension -->
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="presetTrackerUpdate" style="margin-bottom: 5px; display: block;">Tracker: Update with Changes - Preset:</label>
+                            <select id="presetTrackerUpdate" name="presetTrackerUpdate" class="gg-setting-input text_pole select_compact">
                                 <!-- Preset options will be populated by the extension -->
                             </select>
                         </div>

@@ -3,7 +3,7 @@
  * @description Handles the automatic execution of trackers based on chat metadata configuration.
  */
 
-import { getContext, extensionName, debugLog, handlePresetSwitching } from './guideExports.js'; // Import from central hub
+import { getContext, extensionName, debugLog, handleSwitching } from './guideExports.js'; // Import from central hub
 
 /**
  * Executes the tracker logic automatically when triggered
@@ -37,20 +37,20 @@ export async function executeTracker(isAuto = false) {
         if (globalSettings?.presetTracker && globalSettings.presetTracker !== '') {
             debugLog('Switching to tracker preset:', globalSettings.presetTracker);
             try {
-                presetHandler = handlePresetSwitching(globalSettings.presetTracker);
+                presetHandler = handleSwitching(null, globalSettings.presetTracker);
                 await presetHandler.switch();
                 debugLog('Successfully switched to tracker preset');
             } catch (error) {
-                console.error('[GuidedGenerations] Error switching to tracker preset:', error);
+                debugLog('Error switching to tracker preset:', error);
             }
         } else {
             debugLog('No preset to switch to - presetTracker:', globalSettings?.presetTracker);
         }
 
-        // Check if the last message is a comment - if so, skip tracker execution
+        // Check if the last message is a Stat Tracker note - if so, skip tracker execution
         const lastMessage = context.chat[context.chat.length - 1];
-        if (lastMessage?.extra?.type === 'comment') {
-            debugLog('Last message is a comment, skipping tracker execution (likely deleted/broken generation)');
+        if (lastMessage?.extra?.type === 'stattracker') {
+            debugLog('Last message is a Stat Tracker note, skipping tracker execution (likely deleted/broken generation)');
             return;
         }
 
@@ -137,7 +137,7 @@ export async function executeTracker(isAuto = false) {
 
         // Half second delay after the second tracker call
         debugLog('Waiting 500ms after second tracker call...');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 700));
 
         // Step 3: Update the tracker injection
         if (trackerUpdate && trackerUpdate.trim()) {
@@ -152,11 +152,8 @@ export async function executeTracker(isAuto = false) {
         }
 
         // Step 4: Add a comment with the tracker update
-        const commentCommand = `/comment ${trackerUpdate}`;
-        await context.executeSlashCommandsWithOptions(commentCommand, { 
-            showOutput: false, 
-            handleExecutionErrors: true 
-        });
+        // Try using the standard comment command first, then fall back to custom creation
+        await createTrackerNote(trackerUpdate, 'Stat Tracker', 'stattracker');
 
         // Restore the original preset if we switched to a tracker preset
         if (presetHandler) {
@@ -195,5 +192,56 @@ export async function checkAndExecuteTracker() {
         }
     } catch (error) {
         console.error('[GuidedGenerations] Error checking tracker auto-trigger:', error);
+    }
+}
+
+/**
+ * Creates a custom tracker note in the chat
+ * Uses the exact same pattern as sendCommentMessage for compatibility
+ * @param {string} trackerUpdate - The tracker update content to display
+ * @param {string} trackerName - The name to display for the tracker note
+ * @param {string} trackerType - The type identifier for the tracker
+ * @returns {Promise<void>}
+ */
+export async function createTrackerNote(trackerUpdate, trackerName, trackerType) {
+    try {
+        const context = getContext();
+        if (!context || !context.chat) {
+            console.error('[GuidedGenerations] Cannot create tracker note: context or chat not available');
+            return;
+        }
+
+        debugLog(`[TrackerLogic] Creating ${trackerName} note...`);
+        
+        // Create the message object exactly like sendCommentMessage
+        const message = {
+            name: trackerName,
+            is_user: false,
+            is_system: true,
+            send_date: Date.now(),
+            mes: trackerUpdate,
+            force_avatar: null,
+            extra: {
+                type: trackerType, // Custom type for tracker notes
+                gen_id: Date.now(),
+                isSmallSys: false,
+                api: 'manual',
+                model: 'tracker system',
+            },
+        };
+
+        // Add the message to the end of the chat (push version like sendCommentMessage)
+        context.chat.push(message);
+        debugLog('[TrackerLogic] Message added to chat array. Chat length:', context.chat.length);
+        
+        // Follow the exact same pattern as sendCommentMessage
+        await context.eventSource.emit('MESSAGE_SENT', (context.chat.length - 1));
+        await context.addOneMessage(message);
+        await context.eventSource.emit('USER_MESSAGE_RENDERED', (context.chat.length - 1));
+        await context.saveChat();
+        
+        debugLog(`[TrackerLogic] ${trackerName} note created successfully using sendCommentMessage pattern`);
+    } catch (error) {
+        console.error(`[GuidedGenerations] Error creating ${trackerName} note:`, error);
     }
 }

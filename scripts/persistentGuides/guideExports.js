@@ -79,8 +79,7 @@ const defaultSettings = {
 };
 
 // Utility functions
-import { handleProfileAndPresetSwitching, handlePresetSwitching } from '../utils/presetUtils.js';
-import { getProfileApiType, getPresetsForApiType, getCurrentProfile } from '../utils/profileUtils.js';
+import { handleSwitching, getProfileApiType, getPresetsForApiType, getCurrentProfile, getProfileList, switchToProfile, switchToPreset, withProfile, getConnectApiMap, initializeEventListeners } from '../utils/presetUtils.js';
 
 // Guide functions
 import situationalGuide from './situationalGuide.js';
@@ -95,7 +94,7 @@ import showGuides from './showGuides.js';
 import flushGuides from './flushGuides.js';
 import funGuide from './funGuide.js';
 import trackerGuide from './trackerGuide.js';
-import { executeTracker, checkAndExecuteTracker } from './trackerLogic.js';
+import { executeTracker, checkAndExecuteTracker, createTrackerNote } from './trackerLogic.js';
 import { runGuideScript } from './runGuide.js';
 import { updateCharacter } from './updateCharacter.js';
 
@@ -118,65 +117,57 @@ import { loadSettingsPanel } from '../settingsPanel.js';
 
 // Export everything
 export {
-    // External dependencies
+    // Context and settings
     getContext,
     extension_settings,
-    renderExtensionTemplateAsync,
+    extensionName,
+    debugLog,
+    debugWarn,
+    
+    // SillyTavern dependencies
     chat,
     eventSource,
     event_types,
     saveChatConditional,
     addOneMessage,
-    
-    // Core extension
-    extensionName,
-    debugLog,
-    debugWarn,
-    
-    // Shared state functions
-    setPreviousImpersonateInput,
-    getPreviousImpersonateInput,
-    setLastImpersonateResult,
-    getLastImpersonateResult,
+    renderExtensionTemplateAsync,
     
     // Utility functions
-    isGroupChat,
-    loadSettings,
-    updateSettingsUI,
-    addSettingsEventListeners,
-    debugProfileSystem,
-    defaultSettings,
-    
-    // Profile and preset utilities
-    handleProfileAndPresetSwitching,
-    handlePresetSwitching,
+    handleSwitching,
     getProfileApiType,
     getPresetsForApiType,
     getCurrentProfile,
+    getProfileList,
+    switchToProfile,
+    switchToPreset,
+    withProfile,
+    getConnectApiMap,
+    initializeEventListeners,
     
     // Guides
-    situationalGuide,
-    thinkingGuide,
+    runGuideScript,
     clothesGuide,
     stateGuide,
+    thinkingGuide,
+    situationalGuide,
     rulesGuide,
     customGuide,
     customAutoGuide,
-    editGuides,
-    showGuides,
-    flushGuides,
-    funGuide,
     trackerGuide,
     executeTracker,
     checkAndExecuteTracker,
-    runGuideScript,
+    createTrackerNote,
+    funGuide,
+    flushGuides,
+    showGuides,
+    editGuides,
     updateCharacter,
     
     // Tools
-    corrections,
-    spellchecker,
-    editIntros,
     clearInput,
+    corrections,
+    editIntros,
+    spellchecker,
     
     // Main script functions
     guidedSwipe,
@@ -191,5 +182,17 @@ export {
     guidedImpersonate3rd,
     simpleSend,
     recoverInput,
-    loadSettingsPanel
+    loadSettingsPanel,
+    
+    // Settings and other
+    loadSettings,
+    updateSettingsUI,
+    addSettingsEventListeners,
+    debugProfileSystem,
+    defaultSettings,
+    isGroupChat,
+    setPreviousImpersonateInput,
+    getPreviousImpersonateInput,
+    setLastImpersonateResult,
+    getLastImpersonateResult,
 };

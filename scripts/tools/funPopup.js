@@ -2,7 +2,7 @@
  * Fun Popup - Handles UI for fun prompts and interactions
  */
 
-import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching } from '../persistentGuides/guideExports.js'; // Import from central hub
+import { getContext, extension_settings, extensionName, debugLog, handleSwitching } from '../persistentGuides/guideExports.js'; // Import from central hub
 
 // Map to store fun prompts loaded from file
 let FUN_PROMPTS = {};
@@ -170,14 +170,14 @@ export class FunPopup {
         let originalProfile = '';
         try {
             // Get current profile before any switching
-            const { getCurrentProfile } = await import('../utils/profileUtils.js');
+            const { getCurrentProfile } = await import('../persistentGuides/guideExports.js');
             originalProfile = await getCurrentProfile();
             debugLog(`[FunPopup] Captured original profile before switching: "${originalProfile}"`);
         } catch (error) {
             debugLog(`[FunPopup] Could not get original profile:`, error);
         }
         
-        const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
+        const { switch: switchProfileAndPreset, restore } = await handleSwitching(profileValue, presetValue, originalProfile);
 
         // Get the current input from the textarea
         const textarea = document.getElementById('send_textarea');

@@ -90,8 +90,9 @@ export default async function trackerGuide() {
 				<div class="gg-popup-footer">
 					<div style="display: flex; gap: 10px; margin-bottom: 10px;">
 						<button class="gg-button gg-button-primary" id="trackerSetupButton">Setup Tracker</button>
-						<button class="gg-button gg-button-primary" id="trackerSyncButton">Sync Tracker with Comment</button>
+						<button class="gg-button gg-button-primary" id="trackerSyncButton">Sync Tracker with Stat Tracker Note</button>
 					</div>
+					<small style="color: var(--SmartThemeBodyColor); opacity: 0.8; margin-bottom: 10px; display: block;">Stat Tracker notes are automatically created when the tracker runs, showing the latest tracker information in the chat.</small>
 					<div style="display: flex; gap: 10px;">
 						<button class="gg-button gg-button-primary" id="trackerSaveButton">Save</button>
 						<button class="gg-button gg-button-secondary" id="trackerRunButton">Run Tracker</button>
@@ -115,9 +116,44 @@ export default async function trackerGuide() {
 		const guidePromptTextarea = popup.querySelector('#trackerGuidePrompt');
 		const trackerPromptTextarea = popup.querySelector('#trackerTrackerPrompt');
 		
+		// Flag to prevent multiple close operations
+		let isPopupClosed = false;
+		// Flag to prevent multiple tracker executions
+		let isTrackerRunning = false;
+		
 		const closePopup = () => {
-			popup.style.display = 'none';
-			document.body.removeChild(popup);
+			// Prevent multiple close operations
+			if (isPopupClosed) {
+				return;
+			}
+			
+			isPopupClosed = true;
+			
+			// Clean up any remaining event listeners
+			try {
+				popup.removeEventListener('click', handleOutsideClick);
+			} catch (error) {
+				debugLog('[TrackerGuide] Error removing event listener:', error);
+			}
+			
+			// Check if popup still exists in the DOM before trying to remove it
+			if (popup && popup.parentNode && document.body.contains(popup)) {
+				try {
+					popup.style.display = 'none';
+					popup.parentNode.removeChild(popup);
+					debugLog('[TrackerGuide] Popup closed successfully');
+				} catch (error) {
+					debugLog('[TrackerGuide] Error closing popup:', error);
+					// If removal fails, just hide it
+					popup.style.display = 'none';
+				}
+			} else {
+				// Popup already removed or not in DOM, just hide it
+				if (popup) {
+					popup.style.display = 'none';
+				}
+				debugLog('[TrackerGuide] Popup already removed from DOM, just hiding');
+			}
 		};
 		
 		const saveTrackerConfig = async () => {
@@ -139,8 +175,16 @@ export default async function trackerGuide() {
 			// Don't close popup after saving - let user continue configuring
 		};
 		
-		closeButton.addEventListener('click', closePopup);
-		closeButton2.addEventListener('click', closePopup);
+		closeButton.addEventListener('click', () => {
+			if (!isPopupClosed) {
+				closePopup();
+			}
+		});
+		closeButton2.addEventListener('click', () => {
+			if (!isPopupClosed) {
+				closePopup();
+			}
+		});
 		saveButton.addEventListener('click', saveTrackerConfig);
 		setupButton.addEventListener('click', async () => {
 			const initialFormat = initialFormatTextarea.value;
@@ -159,48 +203,69 @@ export default async function trackerGuide() {
 		
 		syncButton.addEventListener('click', async () => {
 			try {
-				// Find the last comment in the chat
-				let lastComment = null;
-				debugLog('[TrackerGuide] Searching for comments in chat...');
+				// Find the last Stat Tracker note in the chat
+				let lastStatTracker = null;
+				debugLog('[TrackerGuide] Searching for Stat Tracker notes in chat...');
 				
 				for (let i = context.chat.length - 1; i >= 0; i--) {
 					const message = context.chat[i];
 					debugLog(`[TrackerGuide] Message ${i}: name="${message.name}", is_system=${message.is_system}, extra=`, message.extra);
 					
-					if (message.extra && message.extra.type === 'comment') {
-						lastComment = message;
-						debugLog('[TrackerGuide] Found comment message:', message);
+					if (message.extra && message.extra.type === 'stattracker') {
+						lastStatTracker = message;
+						debugLog('[TrackerGuide] Found Stat Tracker note:', message);
 						break;
 					}
 				}
 				
-				if (lastComment && lastComment.mes) {
-					// Update the tracker injection with the comment content
-					const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastComment.mes}]`;
+				if (lastStatTracker && lastStatTracker.mes) {
+					// Update the tracker injection with the Stat Tracker content
+					const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastStatTracker.mes}]`;
 					await context.executeSlashCommandsWithOptions(injectionCommand, { 
 						showOutput: false, 
 						handleExecutionErrors: true 
 					});
-					debugLog('[TrackerGuide] Tracker synced with last comment:', lastComment.mes);
+					debugLog('[TrackerGuide] Tracker synced with last Stat Tracker note:', lastStatTracker.mes);
 				} else {
-					debugLog('[TrackerGuide] No comment found to sync with.');
+					debugLog('[TrackerGuide] No Stat Tracker note found to sync with.');
 				}
 			} catch (error) {
-				console.error('[GuidedGenerations] Error syncing tracker with comment:', error);
+				console.error('[GuidedGenerations] Error syncing tracker with Stat Tracker note:', error);
 			}
 		});
 		
 		runButton.addEventListener('click', async () => {
-			await executeTracker(false);
-			closePopup(); // Close popup after running tracker
+			// Prevent multiple tracker executions
+			if (isTrackerRunning) {
+				debugLog('[TrackerGuide] Tracker already running, ignoring click');
+				return;
+			}
+			
+			isTrackerRunning = true;
+			runButton.disabled = true;
+			runButton.textContent = 'Running...';
+			
+			try {
+				// Close popup immediately before running tracker
+				closePopup();
+				// Execute tracker after popup is closed
+				await executeTracker(false);
+			} catch (error) {
+				console.error('[TrackerGuide] Error running tracker:', error);
+			} finally {
+				// Reset button state (though popup is already closed)
+				isTrackerRunning = false;
+			}
 		});
 		
 		// Close on outside click
-		popup.addEventListener('click', (e) => {
-			if (e.target === popup) {
+		const handleOutsideClick = (e) => {
+			if (e.target === popup && !isPopupClosed) {
 				closePopup();
 			}
-		});
+		};
+		
+		popup.addEventListener('click', handleOutsideClick);
 		
 		// Add to body
 		document.body.appendChild(popup);

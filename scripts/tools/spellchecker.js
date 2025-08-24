@@ -1,7 +1,7 @@
 /**
  * @file Contains the logic for the Spellcheck tool.
  */
-import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching } from '../persistentGuides/guideExports.js';
+import { getContext, extension_settings, extensionName, debugLog, handleSwitching } from '../persistentGuides/guideExports.js';
 
 const spellchecker = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -33,7 +33,7 @@ const spellchecker = async () => {
     
     debugLog(`[Spellchecker] Using profile: ${profileValue || 'current'}, preset: ${presetValue || 'none'}`);
     
-    const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
+    const { switch: switchProfileAndPreset, restore } = await handleSwitching(profileValue, presetValue, originalProfile);
 
     // Use user-defined spellchecker prompt override
     const promptTemplate = extension_settings[extensionName]?.promptSpellchecker ?? '';

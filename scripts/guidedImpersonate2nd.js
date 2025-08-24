@@ -1,5 +1,5 @@
 // scripts/guidedImpersonate2nd.js
-import { getContext, extension_settings, extensionName, debugLog, handleProfileAndPresetSwitching, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from './persistentGuides/guideExports.js'; // Import from central hub
+import { getContext, extension_settings, extensionName, debugLog, handleSwitching, getPreviousImpersonateInput, setPreviousImpersonateInput, getLastImpersonateResult, setLastImpersonateResult } from './persistentGuides/guideExports.js'; // Import from central hub
 
 const guidedImpersonate2nd = async () => {
     const textarea = document.getElementById('send_textarea');
@@ -26,7 +26,7 @@ const guidedImpersonate2nd = async () => {
     if (context && typeof context.executeSlashCommandsWithOptions === 'function') {
         try {
             // Get current profile before any switching
-            const { getCurrentProfile } = await import('./utils/profileUtils.js');
+            const { getCurrentProfile } = await import('./persistentGuides/guideExports.js');
             originalProfile = await getCurrentProfile();
             debugLog(`[Impersonate-2nd] Captured original profile before switching: "${originalProfile}"`);
         } catch (error) {
@@ -49,7 +49,7 @@ const guidedImpersonate2nd = async () => {
     
     debugLog(`[Impersonate-2nd] Using profile: ${profileValue || 'current'}, preset: ${presetValue || 'none'}`);
     
-    const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, presetValue, originalProfile);
+    const { switch: switchProfileAndPreset, restore } = await handleSwitching(profileValue, presetValue, originalProfile);
 
     // Use user-defined impersonate prompt override
     const promptTemplate = extension_settings[extensionName]?.promptImpersonate2nd ?? '';

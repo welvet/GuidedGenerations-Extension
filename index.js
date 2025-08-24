@@ -20,7 +20,7 @@ import { getContext, loadExtensionSettings, extension_settings, renderExtensionT
 import { getPresetManager } from '../../../../scripts/preset-manager.js';
 import { loadSettingsPanel } from './scripts/settingsPanel.js';
 import { showVersionNotification } from './scripts/ui/versionNotificationPopup.js';
-import { getProfileList } from './scripts/utils/profileUtils.js';
+import { getProfileList } from './scripts/persistentGuides/guideExports.js';
 
 // Import auto-triggerable guides
 import thinkingGuide from './scripts/persistentGuides/thinkingGuide.js';
@@ -93,6 +93,7 @@ export const defaultSettings = {
     showRevertButton: false, // Default off for Revert to Original button
     integrateQrBar: true, // Default on: Toggle for QR bar integration
     debugMode: false, // Default off: Toggle for debug logging
+    persistentGuidesInChatlog: true, // Default on: Show persistent guides in chatlog
     injectionEndRole: 'system', // NEW SETTING: Default role for non-chat injections
     // Profile and Preset settings for each guide
     profileClothes: '', // Profile for Clothes Guide
@@ -138,9 +139,13 @@ export const defaultSettings = {
     profileFun: '', // Profile for Fun Prompts
     presetFun: '', // Default preset for Fun Prompts
     profileFunApiType: '', // API type for Fun Prompts profile
-    profileTracker: '', // Profile for Tracker functionality
-    presetTracker: '', // Default preset for Tracker functionality
-    profileTrackerApiType: '', // API type for Tracker functionality profile
+    // Separate tracker settings for the two calls
+    profileTrackerDetermine: '', // Profile for Tracker: Determine Changes
+    presetTrackerDetermine: '', // Preset for Tracker: Determine Changes
+    profileTrackerDetermineApiType: '', // API type for Tracker: Determine Changes
+    profileTrackerUpdate: '', // Profile for Tracker: Update with Changes
+    presetTrackerUpdate: '', // Preset for Tracker: Update with Changes
+    profileTrackerUpdateApiType: '', // API type for Tracker: Update with Changes
     // Guide prompt overrides
     promptClothes: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering where we are currently in the story, write me a list entailing the clothes and look, what they are currently wearing of all participating characters, including {{user}}, that are present in the current scene. Don\'t mention people or clothing pieces no longer relevant to the ongoing scene.] ',
     promptState: '[OOC: Answer me out of Character! Don\'t continue the RP.  Considering the last response, write me a list entailing what state and position of all participating characters, including {{user}}, that are present in the current scene. Don\'t describe their clothes or how they are dressed. Don\'t mention people no longer relevant to the ongoing scene.] ',
@@ -239,7 +244,7 @@ function migrateProfileSettings() {
         'presetClothes', 'presetState', 'presetThinking', 'presetSituational', 'presetRules',
         'presetCustom', 'presetCorrections', 'presetSpellchecker', 'presetEditIntros',
         'presetImpersonate1st', 'presetImpersonate2nd', 'presetImpersonate3rd',
-        'presetCustomAuto', 'presetFun', 'presetTracker'
+        'presetCustomAuto', 'presetFun'
     ];
     
     presetKeys.forEach(presetKey => {
@@ -296,7 +301,7 @@ async function updateSettingsUI() {
             const profileKeys = ['profileClothes','profileState','profileThinking','profileSituational','profileRules',
              'profileCustom','profileCorrections','profileSpellchecker','profileEditIntros',
              'profileImpersonate1st','profileImpersonate2nd','profileImpersonate3rd',
-             'profileCustomAuto','profileFun','profileTracker'
+             'profileCustomAuto','profileFun','profileTrackerDetermine','profileTrackerUpdate'
             ];
             
             profileKeys.forEach(key => {
@@ -332,7 +337,7 @@ async function updateSettingsUI() {
         ['presetClothes','presetState','presetThinking','presetSituational','presetRules',
          'presetCustom','presetCorrections','presetSpellchecker','presetEditIntros',
          'presetImpersonate1st','presetImpersonate2nd','presetImpersonate3rd',
-         'presetCustomAuto','presetFun','presetTracker'
+         'presetCustomAuto','presetFun','presetTrackerDetermine','presetTrackerUpdate'
         ].forEach(async (key) => {
             const select = document.getElementById(key);
             if (select) {
@@ -438,7 +443,7 @@ const handleSettingsChangeDelegated = async (event) => {
                 const selectedProfile = event.target.value;
                 if (selectedProfile && selectedProfile.trim() !== '') {
                     // Get and store the API type for this profile
-                    const { getProfileApiType } = await import('./scripts/utils/profileUtils.js');
+                    const { getProfileApiType } = await import('./scripts/persistentGuides/guideExports.js');
                     const apiType = await getProfileApiType(selectedProfile);
                     
                     if (apiType) {
@@ -543,7 +548,7 @@ async function handleProfileChangeForPresets(selectedProfile, presetDropdown) {
         }
         
         // Get the API type for the selected profile without switching to it
-        const { getProfileApiType, getPresetsForApiType } = await import('./scripts/utils/profileUtils.js');
+        const { getProfileApiType, getPresetsForApiType } = await import('./scripts/persistentGuides/guideExports.js');
         const apiType = await getProfileApiType(selectedProfile);
         
         if (!apiType) {
@@ -1306,9 +1311,19 @@ function setupQRMutationObserver() {
 }
 
 // Initial setup function
-function setup() {
+async function setup() {
     // Load extension settings
     loadSettings();
+    
+    // Initialize event listeners for profile and preset switching
+    try {
+        const { initializeEventListeners } = await import('./scripts/utils/presetUtils.js');
+        initializeEventListeners();
+        console.log(`${extensionName}: Event listeners initialized for profile/preset switching`);
+    } catch (error) {
+        console.warn(`${extensionName}: Could not initialize event listeners:`, error);
+    }
+    
     // Initial UI update - executes after settings are verified loaded
     updateExtensionButtons(); // Initial button creation/update
     // Start the QR Bar integration
@@ -1467,15 +1482,30 @@ $(document).ready(async function () {
         context.eventTypes.GENERATION_ENDED,
         context.eventTypes.GENERATION_STOPPED,
         context.eventTypes.GENERATION_AFTER_COMMANDS,
+        context.eventTypes.CONNECTION_PROFILE_LOADED,
+        context.eventTypes.PRESET_CHANGED,
     ];
 
     console.log(`${extensionName}: Registering SillyTavern event listeners for persistent guide counter updates.`);
     for (const eventName of eventsToUpdateCounter) {
         if (eventName && typeof eventName === 'string') { // Ensure eventName is a valid string
-            context.eventSource.makeLast(eventName, () => {
+            context.eventSource.makeLast(eventName, (...args) => {
                 console.log(`${extensionName}: SillyTavern Event '${eventName}' received. Queuing debounced update for persistent guide counter.`);
                 if (updatePersistentGuideCounterDebounced) {
                     updatePersistentGuideCounterDebounced();
+                }
+                
+                // Handle profile and preset changes for the switching system
+                if (eventName === context.eventTypes.CONNECTION_PROFILE_LOADED) {
+                    const profileName = args[0];
+                    console.log(`${extensionName}: Profile change detected: "${profileName}"`);
+                    // Emit a custom event that presetUtils can listen for
+                    window.dispatchEvent(new CustomEvent('gg-profile-changed', { detail: { profileName } }));
+                } else if (eventName === context.eventTypes.PRESET_CHANGED) {
+                    const presetInfo = args[0];
+                    console.log(`${extensionName}: Preset change detected:`, presetInfo);
+                    // Emit a custom event that presetUtils can listen for
+                    window.dispatchEvent(new CustomEvent('gg-preset-changed', { detail: { presetInfo } }));
                 }
             });
         } else {
@@ -1765,7 +1795,7 @@ async function populatePresetDropdown(presetDropdown) {
             debugLog(`[${extensionName}] Profile "${selectedProfile}" already selected for ${guideName}, using its presets`);
             
             // Get the API type for the selected profile
-            const { getProfileApiType, getPresetsForApiType } = await import('./scripts/utils/profileUtils.js');
+            const { getProfileApiType, getPresetsForApiType } = await import('./scripts/persistentGuides/guideExports.js');
             const apiType = await getProfileApiType(selectedProfile);
             
             if (apiType) {

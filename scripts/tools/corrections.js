@@ -1,7 +1,7 @@
 /**
  * @file Contains the logic for the Corrections tool.
  */
-import { getContext, extension_settings, extensionName, debugLog, setPreviousImpersonateInput, generateNewSwipe, handleProfileAndPresetSwitching } from '../persistentGuides/guideExports.js';
+import { getContext, extension_settings, extensionName, debugLog, setPreviousImpersonateInput, generateNewSwipe, handleSwitching } from '../persistentGuides/guideExports.js';
 
 // Helper function for delays (copied from guidedSwipe.js)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -51,7 +51,7 @@ export default async function corrections() {
     }
 
     // Handle profile and preset switching using unified utility
-    const { switch: switchProfileAndPreset, restore } = await handleProfileAndPresetSwitching(profileValue, targetPreset, originalProfile);
+    const { switch: switchProfileAndPreset, restore } = await handleSwitching(profileValue, targetPreset, originalProfile);
 
     // --- Part 1: Execute STscript for Injections --- 
     const instructionInjection = isRaw ? filledPrompt : `[${filledPrompt}]`;
