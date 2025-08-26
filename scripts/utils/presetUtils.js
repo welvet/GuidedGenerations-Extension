@@ -1,6 +1,4 @@
-import { debugLog, debugWarn } from '../persistentGuides/guideExports.js'; // Import from central hub
-
-const extensionName = 'Guided Generations';
+import { debugLog, debugWarn, extension_settings, extensionName } from '../persistentGuides/guideExports.js'; // Import from central hub
 
 // Event listener management for profile and preset switching
 let eventListenersInitialized = false;
@@ -219,8 +217,9 @@ async function waitForConnectionManager(maxAttempts = 10, delayMs = 200) {
         }
         
         if (attempt < maxAttempts) {
-            debugLog(`[${extensionName}] Connection manager not available, attempt ${attempt}/${maxAttempts}, waiting ${delayMs}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delayMs));
+            const presetTimeout = extension_settings[extensionName]?.presetSwitchTimeout ?? 200;
+            debugLog(`[${extensionName}] Connection manager not available, attempt ${attempt}/${maxAttempts}, waiting ${presetTimeout}ms...`);
+            await new Promise(resolve => setTimeout(resolve, presetTimeout));
         }
     }
     
@@ -582,8 +581,9 @@ export async function withProfile(targetProfile, operation) {
         }
         
         // Safety delay after profile switch
-        debugLog(`[${extensionName}] Waiting 500ms safety delay after profile switch...`);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const profileTimeout = extension_settings[extensionName]?.profileSwitchTimeout ?? 500;
+        debugLog(`[${extensionName}] Waiting ${profileTimeout}ms safety delay after profile switch...`);
+        await new Promise(resolve => setTimeout(resolve, profileTimeout));
 
         // Execute the operation
         const result = await operation();
@@ -606,8 +606,9 @@ export async function withProfile(targetProfile, operation) {
             }
             
             // Safety delay after profile restore
-            debugLog(`[${extensionName}] Waiting 500ms safety delay after profile restore...`);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const profileTimeout = extension_settings[extensionName]?.profileSwitchTimeout ?? 500;
+            debugLog(`[${extensionName}] Waiting ${profileTimeout}ms safety delay after profile restore...`);
+            await new Promise(resolve => setTimeout(resolve, profileTimeout));
         }
     }
 }
@@ -703,8 +704,9 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 }
                 
                 // Safety delay after profile switch
-                debugLog(`[${extensionName}] Waiting 500ms safety delay after profile switch...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
+                const profileTimeout = extension_settings[extensionName]?.profileSwitchTimeout ?? 500;
+                debugLog(`[${extensionName}] Waiting ${profileTimeout}ms safety delay after profile switch...`);
+                await new Promise(resolve => setTimeout(resolve, profileTimeout));
                 
                 // Update currentProfile to reflect the new state for restoration
                 currentProfile = targetProfile;
@@ -713,8 +715,9 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 // NOW capture the current preset after profile switch to get the actual preset
                 // that SillyTavern automatically set when switching profiles
                 // Add a small delay to ensure preset manager is ready
-                debugLog(`[${extensionName}] Waiting 200ms for preset manager to be ready after profile switch...`);
-                await new Promise(resolve => setTimeout(resolve, 200));
+                const presetTimeout = extension_settings[extensionName]?.presetSwitchTimeout ?? 200;
+                debugLog(`[${extensionName}] Waiting ${presetTimeout}ms for preset manager to be ready after profile switch...`);
+                await new Promise(resolve => setTimeout(resolve, presetTimeout));
                 
                 debugLog(`[${extensionName}] Capturing current preset after profile switch...`);
                 const context = SillyTavern.getContext();
@@ -888,8 +891,9 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 }
                 
                 // Safety delay after preset switch
-                debugLog(`[${extensionName}] Waiting 500ms safety delay after preset switch...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
+                const presetTimeout = extension_settings[extensionName]?.presetSwitchTimeout ?? 200;
+                debugLog(`[${extensionName}] Waiting ${presetTimeout}ms safety delay after preset switch...`);
+                await new Promise(resolve => setTimeout(resolve, presetTimeout));
                 
                 // Update currentPreset to reflect the new state for restoration
                 currentPreset = targetPreset;
@@ -962,8 +966,9 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                         }
                         
                         // Safety delay after preset restore
-                        debugLog(`[${extensionName}] Waiting 500ms safety delay after preset restore...`);
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        const presetTimeout = extension_settings[extensionName]?.presetSwitchTimeout ?? 200;
+                        debugLog(`[${extensionName}] Waiting ${presetTimeout}ms safety delay after preset restore...`);
+                        await new Promise(resolve => setTimeout(resolve, presetTimeout));
                         
                         debugLog(`[${extensionName}] ✅ Successfully restored preset to: "${presetToRestore}"`);
                         restoreActions.push(`preset to "${presetToRestore}"`);
@@ -993,8 +998,9 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 }
                 
                 // Safety delay after profile restore
-                debugLog(`[${extensionName}] Waiting 500ms safety delay after profile restore...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
+                const profileTimeout = extension_settings[extensionName]?.profileSwitchTimeout ?? 500;
+                debugLog(`[${extensionName}] Waiting ${profileTimeout}ms safety delay after profile restore...`);
+                await new Promise(resolve => setTimeout(resolve, profileTimeout));
                 
                 debugLog(`[${extensionName}] ✅ Successfully restored profile to: "${profileToRestore}"`);
                 restoreActions.push(`profile to "${profileToRestore}"`);

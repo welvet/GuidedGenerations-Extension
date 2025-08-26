@@ -513,48 +513,101 @@
     background-color: var(--SmartThemeHover);
 }
 
-/* Situational Tracker Styles */
-.situational-tracker-details {
-    margin: 10px 0;
-    padding: 10px;
+/* Tracker Styles - Uniform for all tracker types */
+/* Target both original and SillyTavern's prefixed versions */
+.situational-tracker-details,
+.custom-situational-tracker-details {
+    margin: 0;
+    padding: 0 15px 0 15px;
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    background-color: var(--SmartThemeBg);
-    transition: all 0.2s ease;
+    border-radius: 8px;
+    background-color: var(--SmartThemeBlurTintColor);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--SmartThemeShadowColor);
 }
 
-.situational-tracker-details:hover {
+.situational-tracker-details:hover,
+.custom-situational-tracker-details:hover {
     border-color: var(--SmartThemeAccentColor);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px var(--SmartThemeShadowColor);
+    transform: translateY(-1px);
 }
 
-.situational-tracker-details summary {
+.situational-tracker-details summary,
+.custom-situational-tracker-details summary {
     cursor: pointer;
     font-weight: bold;
     color: var(--SmartThemeBodyColor);
     user-select: none;
-    padding: 5px 0;
-    transition: color 0.2s ease;
+    padding: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
 }
 
-.situational-tracker-details summary:hover {
+.situational-tracker-details summary:hover,
+.custom-situational-tracker-details summary:hover {
     color: var(--SmartThemeAccentColor);
+    text-shadow: 0 0 8px var(--SmartThemeAccentColor);
 }
 
-.situational-tracker-details summary::-webkit-details-marker {
+.situational-tracker-details summary::-webkit-details-marker,
+.custom-situational-tracker-details summary::-webkit-details-marker {
     color: var(--SmartThemeAccentColor);
-    margin-right: 8px;
+    margin-right: 10px;
+    transition: transform 0.2s ease;
 }
 
-.situational-tracker-details > div {
-    margin-top: 10px;
-    white-space: pre-wrap;
-    font-family: monospace;
-    font-size: 0.9em;
+/* Enhanced triangle styling for better visibility */
+.situational-tracker-details[open] summary::-webkit-details-marker,
+.custom-situational-tracker-details[open] summary::-webkit-details-marker {
+    transform: rotate(90deg);
+}
+
+/* Fallback for browsers that don't support webkit-details-marker */
+.situational-tracker-details summary::before,
+.custom-situational-tracker-details summary::before {
+    content: '▶';
+    color: var(--SmartThemeAccentColor);
+    margin-right: 10px;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.situational-tracker-details[open] summary::before,
+.custom-situational-tracker-details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.situational-tracker-details > div,
+.custom-situational-tracker-details > div {
+    margin-top: 0;
     color: var(--SmartThemeBodyColor);
-    line-height: 1.4;
-    padding: 10px;
+    line-height: 1.5;
+    padding: 0 15px 0 15px;
     background-color: var(--SmartThemeChatTintColor);
-    border-radius: 3px;
-    border-left: 3px solid var(--SmartThemeAccentColor);
+    border-radius: 6px;
+    border-left: 4px solid var(--SmartThemeAccentColor);
+    box-shadow: inset 0 1px 3px var(--SmartThemeShadowColor);
+}
+
+/* Simple spacing between multiple trackers */
+.situational-tracker-details + .situational-tracker-details,
+.custom-situational-tracker-details + .custom-situational-tracker-details {
+    margin-top: 8px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    .situational-tracker-details,
+    .custom-situational-tracker-details {
+        margin: 10px 0;
+        padding: 12px;
+    }
+    
+    .situational-tracker-details > div,
+    .custom-situational-tracker-details > div {
+        padding: 12px;
+        font-size: 0.85em;
+    }
 }

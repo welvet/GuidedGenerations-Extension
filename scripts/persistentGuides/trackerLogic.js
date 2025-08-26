@@ -214,12 +214,26 @@ export async function createTrackerNote(trackerUpdate, trackerName, trackerType)
         debugLog(`[TrackerLogic] Creating ${trackerName} note...`);
         
         // Create the message object exactly like sendCommentMessage
+        let messageContent = trackerUpdate;
+        
+        // Add HTML structure for stat trackers to match the CSS styling
+        if (trackerType === 'stattracker') {
+            messageContent = `<details class="situational-tracker-details" data-tracker-type="stattracker">
+    <summary>
+        📊 ${trackerName} - Click to expand
+    </summary>
+    <div>
+        ${trackerUpdate}
+    </div>
+</details>`;
+        }
+        
         const message = {
             name: trackerName,
             is_user: false,
             is_system: true,
             send_date: Date.now(),
-            mes: trackerUpdate,
+            mes: messageContent,
             force_avatar: null,
             extra: {
                 type: trackerType, // Custom type for tracker notes

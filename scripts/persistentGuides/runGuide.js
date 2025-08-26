@@ -128,11 +128,11 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
                         // Append to existing message - add as a new collapsible section
                         const separator = '\n\n---\n\n';
                         const guideName = guideId.charAt(0).toUpperCase() + guideId.slice(1);
-                        const newCollapsibleSection = `<details class="situational-tracker-details" style="margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-    <summary style="cursor: pointer; font-weight: bold; color: #333; user-select: none;">
+                        const newCollapsibleSection = `<details class="situational-tracker-details" data-tracker-type="situationaltracker">
+    <summary>
         📊 ${guideName} Guide - Click to expand
     </summary>
-    <div style="margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 0.9em;">
+    <div>
         ${guideContent}
     </div>
 </details>`;
@@ -157,11 +157,11 @@ export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '
                         const content = `${guideName} Guide:\n${guideContent}`;
                         
                         // Create collapsible message with collapsed state by default
-                        const collapsibleContent = `<details class="situational-tracker-details" style="margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-    <summary style="cursor: pointer; font-weight: bold; color: #333; user-select: none;">
+                        const collapsibleContent = `<details class="situational-tracker-details" data-tracker-type="situationaltracker">
+    <summary>
         📊 ${guideName} Guide - Click to expand
     </summary>
-    <div style="margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 0.9em;">
+    <div>
         ${content}
     </div>
 </details>`;
