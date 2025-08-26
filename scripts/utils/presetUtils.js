@@ -150,6 +150,46 @@ async function waitForProfileChangeByPolling(expectedProfile, timeoutMs = 5000, 
 }
 
 /**
+ * Extract the API ID from an API type using the CONNECT_API_MAP
+ * @param {string} apiType - The API type (e.g., "generic", "openai", "featherless")
+ * @returns {string|null} The API ID or null if not found
+ */
+export function extractApiIdFromApiType(apiType) {
+    try {
+        const context = SillyTavern.getContext();
+        if (!context?.CONNECT_API_MAP) {
+            debugWarn(`[${extensionName}] CONNECT_API_MAP not available for API type: ${apiType}`);
+            return null;
+        }
+
+        const apiInfo = context.CONNECT_API_MAP[apiType];
+        if (!apiInfo) {
+            debugWarn(`[${extensionName}] No API info found for type: ${apiType}`);
+            return null;
+        }
+
+        // Extract the apiID from the API info
+        let apiID;
+        if (typeof apiInfo === 'string') {
+            apiID = apiInfo;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
+            apiID = apiInfo.selected;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
+            apiID = apiInfo.apiID;
+        } else {
+            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            return null;
+        }
+
+        debugLog(`[${extensionName}] Extracted API ID "${apiID}" from API type "${apiType}"`);
+        return apiID;
+    } catch (error) {
+        debugWarn(`[${extensionName}] Error extracting API ID from API type ${apiType}:`, error);
+        return null;
+    }
+}
+
+/**
  * Wait for a preset change by polling (fallback when events don't work)
  * @param {string} expectedPreset - The preset we're waiting for
  * @param {string} apiType - The API type to check
@@ -169,9 +209,16 @@ async function waitForPresetChangeByPolling(expectedPreset, apiType, timeoutMs =
                     return;
                 }
                 
-                const presetManager = context.getPresetManager(apiType);
+                // Extract the API ID from the API type before calling getPresetManager
+                const apiID = extractApiIdFromApiType(apiType);
+                if (!apiID) {
+                    reject(new Error(`Could not extract API ID from API type: ${apiType}`));
+                    return;
+                }
+                
+                const presetManager = context.getPresetManager(apiID);
                 if (!presetManager?.getSelectedPreset) {
-                    reject(new Error(`Preset manager not available for API type: ${apiType}`));
+                    reject(new Error(`Preset manager not available for API ID: ${apiID} (from API type: ${apiType})`));
                     return;
                 }
                 
@@ -962,7 +1009,7 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                         } catch (error) {
                             debugLog(`[${extensionName}] Preset restore event timeout, falling back to short polling:`, error.message);
                             // Fall back to short polling - wait for preset to actually change
-                            await waitForPresetChangeByPolling(presetToRestore, 5000, 100);
+                            await waitForPresetChangeByPolling(presetToRestore, apiType, 5000, 100);
                         }
                         
                         // Safety delay after preset restore

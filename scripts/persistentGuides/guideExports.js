@@ -79,7 +79,7 @@ const defaultSettings = {
 };
 
 // Utility functions
-import { handleSwitching, getProfileApiType, getPresetsForApiType, getCurrentProfile, getProfileList, switchToProfile, switchToPreset, withProfile, getConnectApiMap, initializeEventListeners } from '../utils/presetUtils.js';
+import { handleSwitching, getProfileApiType, getPresetsForApiType, getCurrentProfile, getProfileList, switchToProfile, switchToPreset, withProfile, getConnectApiMap, initializeEventListeners, extractApiIdFromApiType } from '../utils/presetUtils.js';
 
 // Guide functions
 import situationalGuide from './situationalGuide.js';
@@ -143,6 +143,7 @@ export {
     withProfile,
     getConnectApiMap,
     initializeEventListeners,
+    extractApiIdFromApiType,
     
     // Guides
     runGuideScript,
