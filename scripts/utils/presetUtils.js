@@ -168,21 +168,21 @@ export function extractApiIdFromApiType(apiType) {
             return null;
         }
 
-        // Extract the apiID from the API info
-        let apiID;
+        // Extract the apiId from the API info
+        let apiId;
         if (typeof apiInfo === 'string') {
-            apiID = apiInfo;
+            apiId = apiInfo;
         } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
-            apiID = apiInfo.selected;
-        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
-            apiID = apiInfo.apiID;
+            apiId = apiInfo.selected;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiId) {
+            apiId = apiInfo.apiId;
         } else {
-            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            debugWarn(`[${extensionName}] Could not extract apiId from API info:`, apiInfo);
             return null;
         }
 
-        debugLog(`[${extensionName}] Extracted API ID "${apiID}" from API type "${apiType}"`);
-        return apiID;
+        debugLog(`[${extensionName}] Extracted API ID "${apiId}" from API type "${apiType}"`);
+        return apiId;
     } catch (error) {
         debugWarn(`[${extensionName}] Error extracting API ID from API type ${apiType}:`, error);
         return null;
@@ -210,20 +210,45 @@ async function waitForPresetChangeByPolling(expectedPreset, apiType, timeoutMs =
                 }
                 
                 // Extract the API ID from the API type before calling getPresetManager
-                const apiID = extractApiIdFromApiType(apiType);
-                if (!apiID) {
+                const apiId = extractApiIdFromApiType(apiType);
+                if (!apiId) {
                     reject(new Error(`Could not extract API ID from API type: ${apiType}`));
                     return;
                 }
                 
-                const presetManager = context.getPresetManager(apiID);
+                const presetManager = context.getPresetManager(apiId);
                 if (!presetManager?.getSelectedPreset) {
-                    reject(new Error(`Preset manager not available for API ID: ${apiID} (from API type: ${apiType})`));
+                    reject(new Error(`Preset manager not available for API ID: ${apiId} (from API type: ${apiType})`));
                     return;
                 }
                 
                 const currentPreset = presetManager.getSelectedPreset();
-                const currentPresetName = currentPreset?.name || currentPreset?.id || '';
+                debugLog(`[${extensionName}] === PRESET NAME EXTRACTION DEBUG ===`);
+                debugLog(`[${extensionName}] Raw currentPreset value:`, currentPreset);
+                debugLog(`[${extensionName}] CurrentPreset type: ${typeof currentPreset}`);
+                debugLog(`[${extensionName}] CurrentPreset is object: ${currentPreset && typeof currentPreset === 'object'}`);
+                debugLog(`[${extensionName}] CurrentPreset is null/undefined: ${currentPreset === null || currentPreset === undefined}`);
+                
+                // Enhanced preset name extraction with detailed logging
+                let currentPresetName = '';
+                if (currentPreset && typeof currentPreset === 'object') {
+                    debugLog(`[${extensionName}] Preset is object, available keys: ${Object.keys(currentPreset).join(', ')}`);
+                    currentPresetName = currentPreset.name || currentPreset.id || currentPreset.title || currentPreset.label || '';
+                    debugLog(`[${extensionName}] Extracted name from object: "${currentPresetName}" (using name/id/title/label)`);
+                } else if (typeof currentPreset === 'string') {
+                    currentPresetName = currentPreset;
+                    debugLog(`[${extensionName}] Preset is string, using directly: "${currentPresetName}"`);
+                } else if (currentPreset !== null && currentPreset !== undefined) {
+                    currentPresetName = currentPreset.toString();
+                    debugLog(`[${extensionName}] Preset is primitive, converted to string: "${currentPresetName}"`);
+                } else {
+                    currentPresetName = '';
+                    debugLog(`[${extensionName}] Preset is null/undefined, setting to empty string`);
+                }
+                
+                debugLog(`[${extensionName}] Final currentPresetName: "${currentPresetName}"`);
+                debugLog(`[${extensionName}] Expected preset: "${expectedPreset}"`);
+                debugLog(`[${extensionName}] === END PRESET NAME EXTRACTION DEBUG ===`);
                 
                 if (currentPresetName === expectedPreset || currentPresetName.includes(expectedPreset)) {
                     debugLog(`[${extensionName}] Preset change confirmed by polling: "${currentPresetName}"`);
@@ -472,28 +497,66 @@ export async function switchToPreset(presetValue, apiType) {
             return false;
         }
 
-        // Extract the apiID from the API info
-        let apiID;
+        // Extract the apiId from the API info
+        debugLog(`[${extensionName}] === API ID EXTRACTION DEBUG ===`);
+        debugLog(`[${extensionName}] Raw apiInfo value:`, apiInfo);
+        debugLog(`[${extensionName}] ApiInfo type: ${typeof apiInfo}`);
+        debugLog(`[${extensionName}] ApiInfo is object: ${apiInfo && typeof apiInfo === 'object'}`);
+        
+        let apiId;
         if (typeof apiInfo === 'string') {
-            apiID = apiInfo;
+            apiId = apiInfo;
+            debugLog(`[${extensionName}] ApiInfo is string, using directly: "${apiId}"`);
         } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
-            apiID = apiInfo.selected;
-        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
-            apiID = apiInfo.apiID;
+            apiId = apiInfo.selected;
+            debugLog(`[${extensionName}] ApiInfo is object with selected property: "${apiId}"`);
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiId) {
+            apiId = apiInfo.apiId;
+            debugLog(`[${extensionName}] ApiInfo is object with apiId property: "${apiId}"`);
         } else {
-            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            debugLog(`[${extensionName}] ApiInfo object keys: ${apiInfo && typeof apiInfo === 'object' ? Object.keys(apiInfo).join(', ') : 'N/A'}`);
+            debugWarn(`[${extensionName}] Could not extract apiId from API info:`, apiInfo);
             return false;
         }
+        
+        debugLog(`[${extensionName}] Final extracted apiId: "${apiId}"`);
+        debugLog(`[${extensionName}] === END API ID EXTRACTION DEBUG ===`);
 
-        const presetManager = context.getPresetManager(apiID);
+        debugLog(`[${extensionName}] === PRESET MANAGER RETRIEVAL DEBUG ===`);
+        debugLog(`[${extensionName}] Getting preset manager for apiId: "${apiId}"`);
+        
+        const presetManager = context.getPresetManager(apiId);
+        debugLog(`[${extensionName}] Preset manager retrieved: ${!!presetManager}`);
+        
+        if (presetManager) {
+            debugLog(`[${extensionName}] Preset manager type: ${typeof presetManager}`);
+            debugLog(`[${extensionName}] Preset manager constructor: ${presetManager.constructor?.name || 'unknown'}`);
+            debugLog(`[${extensionName}] Preset manager has selectPreset method: ${typeof presetManager.selectPreset === 'function'}`);
+            debugLog(`[${extensionName}] Preset manager methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(presetManager)).filter(name => typeof presetManager[name] === 'function').join(', ')}`);
+            debugLog(`[${extensionName}] Preset manager own properties: ${Object.keys(presetManager).join(', ')}`);
+        }
+        
         if (!presetManager || typeof presetManager.selectPreset !== 'function') {
-            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiID}`);
+            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiId}`);
+            debugLog(`[${extensionName}] === END PRESET MANAGER RETRIEVAL DEBUG ===`);
             return false;
         }
+        
+        debugLog(`[${extensionName}] === END PRESET MANAGER RETRIEVAL DEBUG ===`);
 
         // Try to select the preset
+        debugLog(`[${extensionName}] === PRESET SELECTION DEBUG ===`);
+        debugLog(`[${extensionName}] Attempting to select preset: "${presetValue}"`);
+        debugLog(`[${extensionName}] Using preset manager for apiId: "${apiId}"`);
+        debugLog(`[${extensionName}] Preset manager selectPreset method: ${typeof presetManager.selectPreset}`);
+        
         const result = presetManager.selectPreset(presetValue);
-        debugLog(`[${extensionName}] Switched to preset: ${presetValue} for API type: ${apiType} (${apiID})`);
+        debugLog(`[${extensionName}] Preset selection result:`, result);
+        debugLog(`[${extensionName}] Result type: ${typeof result}`);
+        debugLog(`[${extensionName}] Result is false: ${result === false}`);
+        debugLog(`[${extensionName}] === END PRESET SELECTION DEBUG ===`);
+        
+        debugLog(`[${extensionName}] Switched to preset: ${presetValue} for API type: ${apiType} (${apiId})`);
         return result !== false;
     } catch (error) {
         debugWarn(`[${extensionName}] Error switching to preset:`, error);
@@ -555,27 +618,27 @@ export async function getPresetsForApiType(apiType) {
             return [];
         }
 
-        // Extract the apiID from the API info
-        let apiID;
+        // Extract the apiId from the API info
+        let apiId;
         if (typeof apiInfo === 'string') {
-            apiID = apiInfo;
+            apiId = apiInfo;
         } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.selected) {
-            apiID = apiInfo.selected;
-        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiID) {
-            apiID = apiInfo.apiID;
+            apiId = apiInfo.selected;
+        } else if (apiInfo && typeof apiInfo === 'object' && apiInfo.apiId) {
+            apiId = apiInfo.apiId;
         } else {
-            debugWarn(`[${extensionName}] Could not extract apiID from API info:`, apiInfo);
+            debugWarn(`[${extensionName}] Could not extract apiId from API info:`, apiInfo);
             return [];
         }
 
-        const presetManager = context.getPresetManager(apiID);
+        const presetManager = context.getPresetManager(apiId);
         if (!presetManager || typeof presetManager.getPresetList !== 'function') {
-            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiID}`);
+            debugWarn(`[${extensionName}] Preset manager not available for API ID: ${apiId}`);
             return [];
         }
 
         const presetList = presetManager.getPresetList();
-        debugLog(`[${extensionName}] Presets for ${apiType} (${apiID}):`, presetList);
+        debugLog(`[${extensionName}] Presets for ${apiType} (${apiId}):`, presetList);
         return presetList || [];
     } catch (error) {
         debugWarn(`[${extensionName}] Error getting presets for API type:`, error);
@@ -776,9 +839,15 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                         const presetManager = context.getPresetManager();
                         debugLog(`[${extensionName}] Default preset manager: ${!!presetManager}, has getSelectedPreset: ${!!presetManager?.getSelectedPreset}`);
                         
-                        // Log what API ID type this preset manager represents
+                        // ENHANCED DEBUGGING: Log all preset manager properties
                         if (presetManager) {
-                            debugLog(`[${extensionName}] Default preset manager API ID: ${presetManager.apiID || 'unknown'}`);
+                            debugLog(`[${extensionName}] === PRESET MANAGER PROPERTIES ===`);
+                            debugLog(`[${extensionName}] Preset manager type: ${typeof presetManager}`);
+                            debugLog(`[${extensionName}] Preset manager constructor: ${presetManager.constructor?.name || 'unknown'}`);
+                            debugLog(`[${extensionName}] Preset manager API ID: ${presetManager.apiId || 'unknown'}`);
+                            debugLog(`[${extensionName}] Preset manager methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(presetManager)).filter(name => typeof presetManager[name] === 'function').join(', ')}`);
+                            debugLog(`[${extensionName}] Preset manager own properties: ${Object.keys(presetManager).join(', ')}`);
+                            debugLog(`[${extensionName}] === END PRESET MANAGER PROPERTIES ===`);
                         }
                         
                         if (presetManager?.getSelectedPreset) {
@@ -845,9 +914,15 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                             const presetManager = context.getPresetManager();
                             debugLog(`[${extensionName}] Default preset manager: ${!!presetManager}, has getSelectedPreset: ${!!presetManager?.getSelectedPreset}`);
                             
-                            // Log what API ID type this preset manager represents
+                            // ENHANCED DEBUGGING: Log all preset manager properties
                             if (presetManager) {
-                                debugLog(`[${extensionName}] Default preset manager API ID: ${presetManager.apiID || 'unknown'}`);
+                                debugLog(`[${extensionName}] === PRESET MANAGER PROPERTIES (NO PROFILE CHANGE) ===`);
+                                debugLog(`[${extensionName}] Preset manager type: ${typeof presetManager}`);
+                                debugLog(`[${extensionName}] Preset manager constructor: ${presetManager.constructor?.name || 'unknown'}`);
+                                debugLog(`[${extensionName}] Preset manager API ID: ${presetManager.apiId || 'unknown'}`);
+                                debugLog(`[${extensionName}] Preset manager methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(presetManager)).filter(name => typeof presetManager[name] === 'function').join(', ')}`);
+                                debugLog(`[${extensionName}] Preset manager own properties: ${Object.keys(presetManager).join(', ')}`);
+                                debugLog(`[${extensionName}] === END PRESET MANAGER PROPERTIES (NO PROFILE CHANGE) ===`);
                             }
                             
                             if (presetManager?.getSelectedPreset) {
