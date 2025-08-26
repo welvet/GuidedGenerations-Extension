@@ -605,7 +605,7 @@ function populatePresetDropdownWithList(presetSelect, presetList) {
             // Text Completion format: preset_names is an array of names
             presetNames.forEach((name, index) => {
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = name;
                 option.textContent = name;
                 presetSelect.appendChild(option);
             });
