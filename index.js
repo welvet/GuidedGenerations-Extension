@@ -1491,7 +1491,6 @@ $(document).ready(async function () {
         context.eventTypes.CHAT_CHANGED,
         context.eventTypes.CHARACTER_MESSAGE_RENDERED,
         context.eventTypes.USER_MESSAGE_RENDERED,
-        context.eventTypes.GROUP_MEMBER_DRAFTED,
         context.eventTypes.WORLD_INFO_ACTIVATED,
         context.eventTypes.GENERATION_STARTED,
         context.eventTypes.GENERATION_ENDED,
@@ -1573,11 +1572,39 @@ $(document).ready(async function () {
         }
     }, 2000);
 
+    // ENHANCED DEBUGGING: Track event listener registration
+    console.log(`[AUTOTRIGGER-DEBUG] Registering GENERATION_AFTER_COMMANDS event listener at:`, {
+        timestamp: new Date().toISOString(),
+        stackTrace: new Error().stack,
+        eventSource: eventSource,
+        eventSourceType: typeof eventSource
+    });
+
+    // ENHANCED DEBUGGING: Check if event listener already exists
+    if (eventSource && typeof eventSource.listenerCount === 'function') {
+        try {
+            const currentListeners = eventSource.listenerCount('GENERATION_AFTER_COMMANDS');
+            console.log(`[AUTOTRIGGER-DEBUG] Current GENERATION_AFTER_COMMANDS listeners before registration: ${currentListeners}`);
+        } catch (error) {
+            console.log(`[AUTOTRIGGER-DEBUG] Could not check listener count:`, error);
+        }
+    }
+
     // Listen for the GENERATION_AFTER_COMMANDS event
     eventSource.on('GENERATION_AFTER_COMMANDS', async (type, generateArgsObject, dryRun) => {
+        
+        // ENHANCED DEBUGGING: Log every event received
+        console.log(`[AUTOTRIGGER-DEBUG] GENERATION_AFTER_COMMANDS event received:`, {
+            type: type,
+            typeType: typeof type,
+            dryRun: dryRun,
+            generateArgsObject: generateArgsObject,
+            timestamp: new Date().toISOString(),
+            stackTrace: new Error().stack
+        });
 
         // Condition for auto-triggering guides
-        if ((type === 'normal' || typeof type === 'undefined') && !dryRun) {
+        if ((type === 'normal' || typeof type === 'undefined') && !dryRun && !generateArgsObject?.signal) {
             const settings = extension_settings[extensionName];
             
             // Check if any of the 4 auto-guides are active
@@ -1596,6 +1623,18 @@ $(document).ready(async function () {
             if (!hasActiveAutoGuides && !hasActiveTracker) {
                 return;
             }
+
+            // ENHANCED DEBUGGING: Log detailed execution info
+            console.log(`[AUTOTRIGGER-DEBUG] Autotrigger execution starting:`, {
+                hasActiveAutoGuides: hasActiveAutoGuides,
+                hasActiveTracker: hasActiveTracker,
+                autoTriggerThinking: settings?.autoTriggerThinking,
+                autoTriggerState: settings?.autoTriggerState,
+                autoTriggerClothes: settings?.autoTriggerClothes,
+                enableAutoCustomAutoGuide: settings?.enableAutoCustomAutoGuide,
+                timestamp: new Date().toISOString(),
+                executionId: Math.random().toString(36).substr(2, 9)
+            });
 
             // Log what's triggering the auto-execution
             if (hasActiveTracker && !hasActiveAutoGuides) {
@@ -1637,15 +1676,19 @@ $(document).ready(async function () {
 
             if (settings) {
                 if (settings.autoTriggerThinking) {
+                    console.log(`[AUTOTRIGGER-DEBUG] Executing thinkingGuide with executionId: ${Math.random().toString(36).substr(2, 9)}`);
                     await thinkingGuide(true); // Pass isAuto=true
                 }
                 if (settings.autoTriggerState) {
+                    console.log(`[AUTOTRIGGER-DEBUG] Executing stateGuide with executionId: ${Math.random().toString(36).substr(2, 9)}`);
                     await stateGuide(true); // Pass isAuto=true
                 }
                 if (settings.autoTriggerClothes) {
+                    console.log(`[AUTOTRIGGER-DEBUG] Executing clothesGuide with executionId: ${Math.random().toString(36).substr(2, 9)}`);
                     await clothesGuide(true); // Pass isAuto=true
                 }
                 if (settings.enableAutoCustomAutoGuide) {
+                    console.log(`[AUTOTRIGGER-DEBUG] Executing customAutoGuide with executionId: ${Math.random().toString(36).substr(2, 9)}`);
                     await customAutoGuide(true); // Pass isAuto=true
                 }
             } else {
@@ -1654,6 +1697,8 @@ $(document).ready(async function () {
 
             // Execute tracker if enabled (tracker is always chat-specific, no global setting needed)
             await checkAndExecuteTracker();
+
+            console.log(`[AUTOTRIGGER-DEBUG] Autotrigger execution completed successfully at: ${new Date().toISOString()}`);
 
             // Re-insert the 'instruct' injection if it was saved
             // Re-insert the 'instruct' injection if it was saved

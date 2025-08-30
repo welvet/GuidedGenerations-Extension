@@ -31,7 +31,7 @@ const EDIT_INTROS_OPTIONS = {
 };
 
 import { generateNewSwipe } from '../guidedSwipe.js';
-import { extensionName, getContext, extension_settings } from '../persistentGuides/guideExports.js'; // Import from central hub
+import { extensionName, getContext, extension_settings, handleSwitching, debugLog } from '../persistentGuides/guideExports.js'; // Import from central hub
 
 // Class to handle the popup functionality
 export class EditIntrosPopup {
@@ -397,45 +397,33 @@ export class EditIntrosPopup {
         const introPresetSettingKey = 'presetEditIntros';
         const presetValue = extension_settings[extensionName]?.[introPresetSettingKey] ?? '';
         
-        let originalPresetId = null;
-        let targetPresetId = null;
-        
-        if (presetValue) {
-            try {
-                const presetManager = getContext()?.getPresetManager?.();
-                if (presetManager) {
-                    const availablePresets = presetManager.getPresetList();
-                    
-                    // Check if it's a valid ID
-                    const validPresetIds = availablePresets.map(p => p.id);
-                    if (validPresetIds.includes(presetValue)) {
-                        targetPresetId = presetValue;
-                    } else {
-                        // Check if it's a legacy name that matches a preset
-                        const matchingPreset = availablePresets.find(p => p.name === presetValue);
-                        if (matchingPreset) {
-                            targetPresetId = matchingPreset.id;
-                        } else {
-                            console.warn(`${extensionName}: Preset '${presetValue}' not found in available presets. Skipping preset switch.`);
-                        }
-                    }
-                    
-                    if (targetPresetId) {
-                        originalPresetId = presetManager.getSelectedPreset();
-                        if (targetPresetId !== originalPresetId) {
-                            presetManager.selectPreset(targetPresetId);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error(`${extensionName}: Error switching preset for edit intros:`, error);
-            }
+        // Get the switch and restore functions from the utility (same as runGuide.js)
+        let originalProfile = null;
+        try {
+            // Get current profile before any switching
+            const { getCurrentProfile } = await import('../persistentGuides/guideExports.js');
+            originalProfile = await getCurrentProfile();
+            debugLog(`[EditIntros] Captured original profile before switching: "${originalProfile}"`);
+        } catch (error) {
+            debugLog(`[EditIntros] Could not get original profile:`, error);
         }
+
+        const presetHandler = await handleSwitching(originalProfile, presetValue, originalProfile);
+        const { switch: switchPreset, restore } = presetHandler;
 
         // --- Execute Script (Updated logic) ---
         try {
             const context = getContext();
-            // Execute the script without preset switching (handled by PresetManager)
+            
+            // Switch to the target preset before executing the script (same as runGuide.js)
+            if (presetValue) {
+                // Wait for preset switching to complete using the utility function
+                debugLog(`[EditIntros] Switching to preset "${presetValue}" and waiting for completion...`);
+                await switchPreset();
+                debugLog(`[EditIntros] Preset switch completed successfully`);
+            }
+            
+            // Execute the script with the new preset
             await context.executeSlashCommandsWithOptions(scriptPart1, { showOutput: false });
             const swipeSuccess = await generateNewSwipe();
             if (swipeSuccess) {
@@ -446,32 +434,23 @@ export class EditIntrosPopup {
                 console.error('[GuidedGenerations] Failed to generate new swipe.');
             }
             
-            // Restore original preset if we switched
-            if (originalPresetId !== null && targetPresetId) {
-                try {
-                    const presetManager = context.getPresetManager?.();
-                    if (presetManager) {
-                        const currentPreset = presetManager.getSelectedPreset();
-                        if (currentPreset === targetPresetId) {
-                            presetManager.selectPreset(originalPresetId);
-                        }
-                    }
-                } catch (restoreError) {
-                    console.error(`${extensionName}: Error restoring original preset:`, restoreError);
-                }
+            // Restore original profile/preset if we switched (same as runGuide.js)
+            if (presetValue) {
+                debugLog(`[EditIntros] Restoring original profile/preset...`);
+                await restore();
+                debugLog(`[EditIntros] Profile/preset restore completed`);
             }
         } catch (error) {
             console.error('[GuidedGenerations] Error executing Edit Intros script:', error);
             
-            // Restore original preset on error
-            if (originalPresetId !== null && targetPresetId) {
+            // Restore original profile/preset on error (same as runGuide.js)
+            if (presetValue) {
                 try {
-                    const presetManager = getContext()?.getPresetManager?.();
-                    if (presetManager) {
-                        presetManager.selectPreset(originalPresetId);
-                    }
+                    debugLog(`[EditIntros] Restoring original profile/preset on error...`);
+                    await restore();
+                    debugLog(`[EditIntros] Profile/preset restore completed on error`);
                 } catch (restoreError) {
-                    console.error(`${extensionName}: Error restoring original preset on error:`, restoreError);
+                    console.error(`${extensionName}: Error restoring original profile/preset on error:`, restoreError);
                 }
             }
         }

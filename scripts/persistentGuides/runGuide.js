@@ -15,6 +15,15 @@ import { getContext, extension_settings, extensionName, handleSwitching, debugLo
  * @returns {Promise<string|null>} Returns pipe output or null on failure.
  */
 export async function runGuideScript({ guideId, genAs = '', genCommandSuffix = '', finalCommand = '', isAuto = false, previousInjectionAction = 'none', raw = false, skipSituationalTracker = false }) {
+    // ENHANCED DEBUGGING: Track when runGuideScript is called
+    console.log(`[AUTOTRIGGER-DEBUG] runGuideScript called with:`, {
+        guideId: guideId,
+        isAuto: isAuto,
+        timestamp: new Date().toISOString(),
+        executionId: Math.random().toString(36).substr(2, 9),
+        stackTrace: new Error().stack
+    });
+
     // Determine user-defined preset and profile for this guide
     const presetKey = `preset${guideId.charAt(0).toUpperCase()}${guideId.slice(1)}`;
     const profileKey = `profile${guideId.charAt(0).toUpperCase()}${guideId.slice(1)}`;
