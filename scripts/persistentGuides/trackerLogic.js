@@ -34,17 +34,21 @@ export async function executeTracker(isAuto = false) {
         debugLog('Debug - extensionSettings[extensionName]:', globalSettings);
         
         let presetHandler = null;
-        if (globalSettings?.presetTracker && globalSettings.presetTracker !== '') {
-            debugLog('Switching to tracker preset:', globalSettings.presetTracker);
+        // Check for tracker profiles and presets - use presetTrackerDetermine and profileTrackerDetermine for the first call
+        const trackerDetermineProfile = globalSettings?.profileTrackerDetermine;
+        const trackerDeterminePreset = globalSettings?.presetTrackerDetermine;
+        if (trackerDetermineProfile || trackerDeterminePreset) {
+            debugLog('Switching to tracker determine profile:', trackerDetermineProfile, 'preset:', trackerDeterminePreset);
             try {
-                presetHandler = handleSwitching(null, globalSettings.presetTracker);
-                await presetHandler.switch();
-                debugLog('Successfully switched to tracker preset');
+                presetHandler = await handleSwitching(trackerDetermineProfile || null, trackerDeterminePreset || null);
+                const { switch: switchPreset, restore } = presetHandler;
+                await switchPreset();
+                debugLog('Successfully switched to tracker determine profile/preset');
             } catch (error) {
-                debugLog('Error switching to tracker preset:', error);
+                debugLog('Error switching to tracker determine profile/preset:', error);
             }
         } else {
-            debugLog('No preset to switch to - presetTracker:', globalSettings?.presetTracker);
+            debugLog('No profile or preset to switch to - profileTrackerDetermine:', globalSettings?.profileTrackerDetermine, 'presetTrackerDetermine:', globalSettings?.presetTrackerDetermine);
         }
 
         // Check if the last message is a Stat Tracker note - if so, skip tracker execution
@@ -97,6 +101,24 @@ export async function executeTracker(isAuto = false) {
         // Half second delay between the two tracker calls
         debugLog('Waiting 500ms before second tracker call...');
         await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Switch to tracker update profile and preset for the second call
+        let updatePresetHandler = null;
+        const trackerUpdateProfile = globalSettings?.profileTrackerUpdate;
+        const trackerUpdatePreset = globalSettings?.presetTrackerUpdate;
+        if (trackerUpdateProfile || trackerUpdatePreset) {
+            debugLog('Switching to tracker update profile:', trackerUpdateProfile, 'preset:', trackerUpdatePreset);
+            try {
+                updatePresetHandler = await handleSwitching(trackerUpdateProfile || null, trackerUpdatePreset || null);
+                const { switch: switchPreset, restore } = updatePresetHandler;
+                await switchPreset();
+                debugLog('Successfully switched to tracker update profile/preset');
+            } catch (error) {
+                debugLog('Error switching to tracker update profile/preset:', error);
+            }
+        } else {
+            debugLog('No profile or preset to switch to - profileTrackerUpdate:', globalSettings?.profileTrackerUpdate, 'presetTrackerUpdate:', globalSettings?.presetTrackerUpdate);
+        }
 
         // Step 2: Get current tracker content to include in context
         let currentTrackerContent = '';
@@ -153,16 +175,28 @@ export async function executeTracker(isAuto = false) {
 
         // Step 4: Add a comment with the tracker update
         // Try using the standard comment command first, then fall back to custom creation
-        await createTrackerNote(trackerUpdate, 'Stat Tracker', 'stattracker');
+        await createTrackerNote(trackerUpdate, 'Stat Tracker', 'stattracker', guideContent);
 
-        // Restore the original preset if we switched to a tracker preset
-        if (presetHandler) {
-            debugLog('Restoring original preset...');
+        // Restore the original presets if we switched to tracker presets
+        if (updatePresetHandler) {
+            debugLog('Restoring original preset from tracker update...');
             try {
-                await presetHandler.restore();
-                debugLog('Successfully restored original preset');
+                const { restore } = updatePresetHandler;
+                await restore();
+                debugLog('Successfully restored original preset from tracker update');
             } catch (error) {
-                console.error('[GuidedGenerations] Error restoring original preset:', error);
+                console.error('[GuidedGenerations] Error restoring original preset from tracker update:', error);
+            }
+        }
+        
+        if (presetHandler) {
+            debugLog('Restoring original preset from tracker determine...');
+            try {
+                const { restore } = presetHandler;
+                await restore();
+                debugLog('Successfully restored original preset from tracker determine');
+            } catch (error) {
+                console.error('[GuidedGenerations] Error restoring original preset from tracker determine:', error);
             }
         }
 
@@ -201,9 +235,10 @@ export async function checkAndExecuteTracker() {
  * @param {string} trackerUpdate - The tracker update content to display
  * @param {string} trackerName - The name to display for the tracker note
  * @param {string} trackerType - The type identifier for the tracker
+ * @param {string} guideContent - The guide content that determined the changes (optional)
  * @returns {Promise<void>}
  */
-export async function createTrackerNote(trackerUpdate, trackerName, trackerType) {
+export async function createTrackerNote(trackerUpdate, trackerName, trackerType, guideContent = null) {
     try {
         const context = getContext();
         if (!context || !context.chat) {
@@ -218,14 +253,30 @@ export async function createTrackerNote(trackerUpdate, trackerName, trackerType)
         
         // Add HTML structure for stat trackers to match the CSS styling
         if (trackerType === 'stattracker') {
-            messageContent = `<details class="situational-tracker-details" data-tracker-type="stattracker">
+            // If we have guide content, include it in a separate details tag before the tracker update
+            let detailsContent = '';
+            
+            if (guideContent) {
+                detailsContent += `<details class="situational-tracker-details" data-tracker-type="guide-analysis">
+    <summary>
+        🔍 Analysis - Click to expand
+    </summary>
+    <div>
+${guideContent}
+    </div>
+</details>`;
+            }
+            
+            detailsContent += `<details class="situational-tracker-details" data-tracker-type="stattracker">
     <summary>
         📊 ${trackerName} - Click to expand
     </summary>
     <div>
-        ${trackerUpdate}
+${trackerUpdate}
     </div>
 </details>`;
+            
+            messageContent = detailsContent;
         }
         
         const message = {

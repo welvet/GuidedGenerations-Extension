@@ -6,6 +6,48 @@
 import { getContext, extensionName, debugLog } from './guideExports.js'; // Import from central hub
 import { executeTracker } from './trackerLogic.js';
 
+/**
+ * Extracts clean tracker content from a Stat Tracker message
+ * Removes HTML structure, details tags, and summary elements
+ * @param {string} messageContent - The full message content with HTML
+ * @returns {string} - Clean tracker content only
+ */
+function extractCleanTrackerContent(messageContent) {
+    if (!messageContent) {
+        return '';
+    }
+    
+    try {
+        // Create a temporary DOM element to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = messageContent;
+        
+        // Find the Stat Tracker details section
+        const statTrackerDetails = tempDiv.querySelector('details[data-tracker-type="stattracker"]');
+        if (!statTrackerDetails) {
+            debugLog('[TrackerGuide] No Stat Tracker details section found in message');
+            return '';
+        }
+        
+        // Find the content div within the details
+        const contentDiv = statTrackerDetails.querySelector('div');
+        if (!contentDiv) {
+            debugLog('[TrackerGuide] No content div found in Stat Tracker details');
+            return '';
+        }
+        
+        // Get the inner HTML content, which preserves formatting tags like <strong> but removes structural tags
+        const cleanContent = contentDiv.innerHTML || '';
+        
+        debugLog('[TrackerGuide] Extracted clean tracker content:', cleanContent);
+        return cleanContent.trim();
+        
+    } catch (error) {
+        debugLog('[TrackerGuide] Error extracting clean tracker content:', error);
+        return '';
+    }
+}
+
 export default async function trackerGuide() {
 	debugLog('[TrackerGuide] Button clicked');
 	
@@ -219,13 +261,20 @@ export default async function trackerGuide() {
 				}
 				
 				if (lastStatTracker && lastStatTracker.mes) {
-					// Update the tracker injection with the Stat Tracker content
-					const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${lastStatTracker.mes}]`;
-					await context.executeSlashCommandsWithOptions(injectionCommand, { 
-						showOutput: false, 
-						handleExecutionErrors: true 
-					});
-					debugLog('[TrackerGuide] Tracker synced with last Stat Tracker note:', lastStatTracker.mes);
+					// Extract clean tracker content from the Stat Tracker message
+					const cleanTrackerContent = extractCleanTrackerContent(lastStatTracker.mes);
+					
+					if (cleanTrackerContent) {
+						// Update the tracker injection with the clean tracker content
+						const injectionCommand = `/inject id=tracker position=chat scan=true depth=1 role=system [Tracker Information ${cleanTrackerContent}]`;
+						await context.executeSlashCommandsWithOptions(injectionCommand, { 
+							showOutput: false, 
+							handleExecutionErrors: true 
+						});
+						debugLog('[TrackerGuide] Tracker synced with clean content from Stat Tracker note:', cleanTrackerContent);
+					} else {
+						debugLog('[TrackerGuide] Could not extract clean tracker content from Stat Tracker note');
+					}
 				} else {
 					debugLog('[TrackerGuide] No Stat Tracker note found to sync with.');
 				}
