@@ -175,7 +175,7 @@ export async function executeTracker(isAuto = false) {
 
         // Step 4: Add a comment with the tracker update
         // Try using the standard comment command first, then fall back to custom creation
-        await createTrackerNote(trackerUpdate, 'Stat Tracker', 'stattracker');
+        await createTrackerNote(trackerUpdate, 'Stat Tracker', 'stattracker', guideContent);
 
         // Restore the original presets if we switched to tracker presets
         if (updatePresetHandler) {
@@ -235,9 +235,10 @@ export async function checkAndExecuteTracker() {
  * @param {string} trackerUpdate - The tracker update content to display
  * @param {string} trackerName - The name to display for the tracker note
  * @param {string} trackerType - The type identifier for the tracker
+ * @param {string} guideContent - The guide content that determined the changes (optional)
  * @returns {Promise<void>}
  */
-export async function createTrackerNote(trackerUpdate, trackerName, trackerType) {
+export async function createTrackerNote(trackerUpdate, trackerName, trackerType, guideContent = null) {
     try {
         const context = getContext();
         if (!context || !context.chat) {
@@ -252,14 +253,30 @@ export async function createTrackerNote(trackerUpdate, trackerName, trackerType)
         
         // Add HTML structure for stat trackers to match the CSS styling
         if (trackerType === 'stattracker') {
-            messageContent = `<details class="situational-tracker-details" data-tracker-type="stattracker">
+            // If we have guide content, include it in a separate details tag before the tracker update
+            let detailsContent = '';
+            
+            if (guideContent) {
+                detailsContent += `<details class="situational-tracker-details" data-tracker-type="guide-analysis">
+    <summary>
+        🔍 Analysis - Click to expand
+    </summary>
+    <div>
+${guideContent}
+    </div>
+</details>`;
+            }
+            
+            detailsContent += `<details class="situational-tracker-details" data-tracker-type="stattracker">
     <summary>
         📊 ${trackerName} - Click to expand
     </summary>
     <div>
-        ${trackerUpdate}
+${trackerUpdate}
     </div>
 </details>`;
+            
+            messageContent = detailsContent;
         }
         
         const message = {
