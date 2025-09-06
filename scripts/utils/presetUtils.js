@@ -985,7 +985,8 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 // Determine which profile to use for preset switching
                 const profileForPreset = targetProfile || currentProfile;
                 if (!profileForPreset) {
-                    throw new Error('No profile available for preset switching');
+                    debugWarn(`[${extensionName}] No profile available for preset switching - skipping preset switch and continuing with current settings`);
+                    return; // Skip preset switching but continue execution
                 }
                 
                 debugLog(`[${extensionName}] Using profile "${profileForPreset}" for preset switching`);
@@ -993,12 +994,14 @@ export async function handleSwitching(profileValue = null, presetValue = null, o
                 // Get the API type for the profile
                 const apiType = await getProfileApiType(profileForPreset);
                 if (!apiType) {
-                    throw new Error(`Could not determine API type for profile: ${profileForPreset}`);
+                    debugWarn(`[${extensionName}] Could not determine API type for profile: ${profileForPreset} - skipping preset switch and continuing with current settings`);
+                    return; // Skip preset switching but continue execution
                 }
                 
                 const presetSwitchSuccess = await switchToPreset(targetPreset, apiType);
-                    if (!presetSwitchSuccess) {
-                    throw new Error(`Failed to switch to preset: ${targetPreset}`);
+                if (!presetSwitchSuccess) {
+                    debugWarn(`[${extensionName}] Failed to switch to preset: ${targetPreset} - skipping preset switch and continuing with current settings`);
+                    return; // Skip preset switching but continue execution
                 }
                 
                 // Try event-based waiting first, fall back to short polling if events timeout
