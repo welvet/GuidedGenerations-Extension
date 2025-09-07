@@ -297,8 +297,8 @@ export default async function trackerGuide() {
 			try {
 				// Close popup immediately before running tracker
 				closePopup();
-				// Execute tracker after popup is closed
-				await executeTracker(false);
+				// Execute tracker after popup is closed with force=true to override enabled check
+				await executeTracker(false, true);
 			} catch (error) {
 				console.error('[TrackerGuide] Error running tracker:', error);
 			} finally {

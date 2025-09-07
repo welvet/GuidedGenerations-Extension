@@ -8,9 +8,10 @@ import { getContext, extensionName, debugLog, handleSwitching } from './guideExp
 /**
  * Executes the tracker logic automatically when triggered
  * @param {boolean} isAuto - Whether this is being auto-triggered
+ * @param {boolean} force - Whether to force execution even if tracker is disabled (for manual execution)
  * @returns {Promise<void>}
  */
-export async function executeTracker(isAuto = false) {
+export async function executeTracker(isAuto = false, force = false) {
     try {
         const context = getContext();
         if (!context) {
@@ -20,9 +21,11 @@ export async function executeTracker(isAuto = false) {
 
         // Get tracker configuration from chat metadata
         const trackerConfig = context.chatMetadata?.[`${extensionName}_trackers`];
-        if (!trackerConfig || !trackerConfig.enabled) {
-            debugLog('Tracker not enabled or not configured');
-            return;
+        if (!trackerConfig || (!trackerConfig.enabled && !force)) {
+            debugLog('Tracker not enabled or not configured' + (force ? ' (but forcing execution)' : ''));
+            if (!force) {
+                return;
+            }
         }
 
         debugLog('Executing tracker with config:', trackerConfig);
