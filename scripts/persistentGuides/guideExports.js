@@ -51,7 +51,7 @@ function isGroupChat() {
 }
 
 // Settings management functions - imported from index.js
-import { loadSettings, updateSettingsUI, addSettingsEventListeners, debugProfileSystem } from '../../index.js';
+import { loadSettings, updateSettingsUI, addSettingsEventListeners, debugProfileSystem, getDebugMessages, clearDebugMessages, getDebugMessagesAsText } from '../../index.js';
 
 // Default settings object
 const defaultSettings = {
@@ -196,4 +196,9 @@ export {
     getPreviousImpersonateInput,
     setLastImpersonateResult,
     getLastImpersonateResult,
+    
+    // Debug logging functions
+    getDebugMessages,
+    clearDebugMessages,
+    getDebugMessagesAsText,
 };

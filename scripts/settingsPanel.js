@@ -127,6 +127,102 @@ export async function loadSettingsPanel() {
                     });
                 }
 
+                // Setup debug logging buttons
+                const copyDebugLogsButton = container.querySelector('#gg_copyDebugLogs');
+                if (copyDebugLogsButton) {
+                    copyDebugLogsButton.addEventListener('click', async () => {
+                        try {
+                            const { getDebugMessagesAsText } = await import('./persistentGuides/guideExports.js');
+                            const debugText = getDebugMessagesAsText();
+                            
+                            if (debugText.trim() === '') {
+                                alert('No debug messages available. Enable debug logging and perform some actions to generate debug messages.');
+                                return;
+                            }
+                            
+                            // Try modern clipboard API first
+                            if (navigator.clipboard && window.isSecureContext) {
+                                await navigator.clipboard.writeText(debugText);
+                                alert('Debug logs copied to clipboard!');
+                            } else {
+                                // Fallback for older browsers or non-secure contexts
+                                const textArea = document.createElement('textarea');
+                                textArea.value = debugText;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                textArea.style.top = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.focus();
+                                textArea.select();
+                                
+                                try {
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {
+                                        alert('Debug logs copied to clipboard!');
+                                    } else {
+                                        throw new Error('Copy command failed');
+                                    }
+                                } catch (err) {
+                                    throw new Error('Copy command failed: ' + err.message);
+                                } finally {
+                                    document.body.removeChild(textArea);
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`[${extensionName}] Error copying debug logs:`, error);
+                            alert('Failed to copy debug logs. Check console for details. Error: ' + error.message);
+                        }
+                    });
+                }
+
+                const downloadDebugLogsButton = container.querySelector('#gg_downloadDebugLogs');
+                if (downloadDebugLogsButton) {
+                    downloadDebugLogsButton.addEventListener('click', async () => {
+                        try {
+                            const { getDebugMessagesAsText } = await import('./persistentGuides/guideExports.js');
+                            const debugText = getDebugMessagesAsText();
+                            
+                            if (debugText.trim() === '') {
+                                alert('No debug messages available. Enable debug logging and perform some actions to generate debug messages.');
+                                return;
+                            }
+                            
+                            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                            const filename = `guided-generations-debug-${timestamp}.txt`;
+                            
+                            const blob = new Blob([debugText], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            
+                            alert(`Debug logs downloaded as ${filename}`);
+                        } catch (error) {
+                            console.error(`[${extensionName}] Error downloading debug logs:`, error);
+                            alert('Failed to download debug logs. Check console for details.');
+                        }
+                    });
+                }
+
+                const clearDebugLogsButton = container.querySelector('#gg_clearDebugLogs');
+                if (clearDebugLogsButton) {
+                    clearDebugLogsButton.addEventListener('click', async () => {
+                        try {
+                            const { clearDebugMessages } = await import('./persistentGuides/guideExports.js');
+                            clearDebugMessages();
+                            alert('Debug logs cleared!');
+                        } catch (error) {
+                            console.error(`[${extensionName}] Error clearing debug logs:`, error);
+                            alert('Failed to clear debug logs. Check console for details.');
+                        }
+                    });
+                }
+
                 // Static Raw checkboxes are defined in settings.html; dynamic insertion removed
 
                 // Set width on preset text inputs

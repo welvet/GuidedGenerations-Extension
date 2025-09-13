@@ -108,8 +108,19 @@
                         <label for="gg_debugMode" style="margin-left: 8px;">Enable Debug Logging</label>
                     </div>
                     <small class="setting_item_description">
-                        When enabled, shows detailed debug information in the browser console. Useful for troubleshooting but can clutter the console during normal use.
+                        When enabled, shows detailed debug information in the browser console and captures it for mobile access. Useful for troubleshooting but can clutter the console during normal use. Debug messages are automatically captured and can be copied or downloaded.
                     </small>
+                    <div style="margin-top: 8px; display: flex; gap: 8px;">
+                        <button type="button" id="gg_copyDebugLogs" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">
+                            <i class="fa-solid fa-copy"></i> Copy Debug Logs
+                        </button>
+                        <button type="button" id="gg_downloadDebugLogs" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">
+                            <i class="fa-solid fa-download"></i> Download as TXT
+                        </button>
+                        <button type="button" id="gg_clearDebugLogs" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">
+                            <i class="fa-solid fa-trash"></i> Clear Logs
+                        </button>
+                    </div>
                 </div>
                 <div class="setting_item">
                     <div style="display: flex; align-items: center; margin-bottom: 5px;">

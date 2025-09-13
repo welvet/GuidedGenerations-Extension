@@ -51,12 +51,47 @@ export const extensionName = "GuidedGenerations-Extension"; // Use the simple na
 
 let isSending = false;
 
+// Debug message capture array - only populated when debug mode is enabled
+let debugMessages = [];
+
+/**
+ * Captures debug messages when debug mode is enabled
+ * @param {string} level - The log level (log, warn, error)
+ * @param {...any} args - Arguments to log
+ */
+function captureDebugMessage(level, ...args) {
+    if (extension_settings[extensionName]?.debugMode) {
+        const timestamp = new Date().toISOString();
+        const message = {
+            timestamp,
+            level,
+            args: args.map(arg => {
+                if (typeof arg === 'object' && arg !== null) {
+                    try {
+                        return JSON.stringify(arg, null, 2);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            })
+        };
+        debugMessages.push(message);
+        
+        // Keep only the last 1000 messages to prevent memory issues
+        if (debugMessages.length > 1000) {
+            debugMessages = debugMessages.slice(-1000);
+        }
+    }
+}
+
 /**
  * Conditional logging utility that only logs when debug mode is enabled
  * @param {...any} args - Arguments to log (same as console.log)
  */
 export function debugLog(...args) {
     if (extension_settings[extensionName]?.debugMode) {
+        captureDebugMessage('log', ...args);
         console.log(`[${extensionName}][DEBUG]`, ...args);
     }
 }
@@ -67,8 +102,35 @@ export function debugLog(...args) {
  */
 export function debugWarn(...args) {
     if (extension_settings[extensionName]?.debugMode) {
+        captureDebugMessage('warn', ...args);
         console.warn(`[${extensionName}][DEBUG]`, ...args);
     }
+}
+
+/**
+ * Gets all captured debug messages
+ * @returns {Array} Array of debug message objects
+ */
+export function getDebugMessages() {
+    return [...debugMessages]; // Return a copy to prevent external modification
+}
+
+/**
+ * Clears all captured debug messages
+ */
+export function clearDebugMessages() {
+    debugMessages = [];
+}
+
+/**
+ * Gets debug messages as formatted text
+ * @returns {string} Formatted debug messages
+ */
+export function getDebugMessagesAsText() {
+    return debugMessages.map(msg => {
+        const level = msg.level.toUpperCase().padEnd(5);
+        return `[${msg.timestamp}] ${level} ${msg.args.join(' ')}`;
+    }).join('\n');
 } 
 // Removed storedInput as recovery now uses stscript global vars
 
@@ -1460,6 +1522,9 @@ let updatePersistentGuideCounterDebounced;
 // Run setup after page load
 $(document).ready(async function () {
     const context = getContext(); // Get the context here
+
+    // Clear debug messages on page refresh to prevent memory buildup
+    clearDebugMessages();
 
     setup(); // Initial setup of settings, UI elements etc.
 
