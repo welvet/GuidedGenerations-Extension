@@ -30,6 +30,14 @@ export async function executeTracker(isAuto = false, force = false) {
 
         debugLog('Executing tracker with config:', trackerConfig);
 
+        // Check if the last message is a Stat Tracker note - if so, skip tracker execution
+        // This check must happen BEFORE any profile switching to avoid switching profiles unnecessarily
+        const lastMessage = context.chat[context.chat.length - 1];
+        if (lastMessage?.extra?.type === 'stattracker') {
+            debugLog('Last message is a Stat Tracker note, skipping tracker execution (likely deleted/broken generation)');
+            return;
+        }
+
         // Check if we need to switch to the tracker preset
         const globalSettings = context.extensionSettings?.[extensionName];
         debugLog('Debug - extensionName:', extensionName);
@@ -52,13 +60,6 @@ export async function executeTracker(isAuto = false, force = false) {
             }
         } else {
             debugLog('No profile or preset to switch to - profileTrackerDetermine:', globalSettings?.profileTrackerDetermine, 'presetTrackerDetermine:', globalSettings?.presetTrackerDetermine);
-        }
-
-        // Check if the last message is a Stat Tracker note - if so, skip tracker execution
-        const lastMessage = context.chat[context.chat.length - 1];
-        if (lastMessage?.extra?.type === 'stattracker') {
-            debugLog('Last message is a Stat Tracker note, skipping tracker execution (likely deleted/broken generation)');
-            return;
         }
 
         // Step 1: Generate guide content using the first prompt
@@ -187,6 +188,10 @@ export async function executeTracker(isAuto = false, force = false) {
                 const { restore } = updatePresetHandler;
                 await restore();
                 debugLog('Successfully restored original preset from tracker update');
+                
+                // Add additional safety delay after restoration to ensure profile switching is completely settled
+                debugLog('Waiting additional 500ms after tracker update restoration to ensure profile stability...');
+                await new Promise(resolve => setTimeout(resolve, 500));
             } catch (error) {
                 console.error('[GuidedGenerations] Error restoring original preset from tracker update:', error);
             }
@@ -198,12 +203,16 @@ export async function executeTracker(isAuto = false, force = false) {
                 const { restore } = presetHandler;
                 await restore();
                 debugLog('Successfully restored original preset from tracker determine');
+                
+                // Add additional safety delay after restoration to ensure profile switching is completely settled
+                debugLog('Waiting additional 500ms after tracker determine restoration to ensure profile stability...');
+                await new Promise(resolve => setTimeout(resolve, 500));
             } catch (error) {
                 console.error('[GuidedGenerations] Error restoring original preset from tracker determine:', error);
             }
         }
 
-        debugLog('Tracker execution completed successfully');
+        debugLog('Tracker execution completed successfully - all profile restorations finished');
 
     } catch (error) {
         console.error('[GuidedGenerations] Error executing tracker:', error);

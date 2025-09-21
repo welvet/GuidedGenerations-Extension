@@ -62,9 +62,38 @@ let debugMessages = [];
 function captureDebugMessage(level, ...args) {
     if (extension_settings[extensionName]?.debugMode) {
         const timestamp = new Date().toISOString();
+        
+        // Get stack trace information
+        const stack = new Error().stack;
+        let fileInfo = 'Unknown';
+        let lineInfo = 'Unknown';
+        
+        if (stack) {
+            // Parse stack trace to find the calling function
+            const stackLines = stack.split('\n');
+            // Look for the first line that's not from this file or the debug functions
+            for (let i = 1; i < stackLines.length; i++) {
+                const line = stackLines[i];
+                if (line && !line.includes('captureDebugMessage') && !line.includes('debugLog') && !line.includes('debugWarn')) {
+                    // Extract file and line info from stack trace
+                    const match = line.match(/\((.+):(\d+):(\d+)\)/) || line.match(/at (.+):(\d+):(\d+)/);
+                    if (match) {
+                        const fullPath = match[1];
+                        // Extract just the filename from the full path
+                        const fileName = fullPath.split('/').pop() || fullPath.split('\\').pop() || fullPath;
+                        fileInfo = fileName;
+                        lineInfo = match[2];
+                        break;
+                    }
+                }
+            }
+        }
+        
         const message = {
             timestamp,
             level,
+            file: fileInfo,
+            line: lineInfo,
             args: args.map(arg => {
                 if (typeof arg === 'object' && arg !== null) {
                     try {
@@ -108,6 +137,17 @@ export function debugWarn(...args) {
 }
 
 /**
+ * Conditional error utility that only logs when debug mode is enabled
+ * @param {...any} args - Arguments to log (same as console.error)
+ */
+export function debugError(...args) {
+    if (extension_settings[extensionName]?.debugMode) {
+        captureDebugMessage('error', ...args);
+        console.error(`[${extensionName}][DEBUG]`, ...args);
+    }
+}
+
+/**
  * Gets all captured debug messages
  * @returns {Array} Array of debug message objects
  */
@@ -129,7 +169,8 @@ export function clearDebugMessages() {
 export function getDebugMessagesAsText() {
     return debugMessages.map(msg => {
         const level = msg.level.toUpperCase().padEnd(5);
-        return `[${msg.timestamp}] ${level} ${msg.args.join(' ')}`;
+        const fileLine = `${msg.file}:${msg.line}`.padEnd(20);
+        return `[${msg.timestamp}] ${level} [${fileLine}] ${msg.args.join(' ')}`;
     }).join('\n');
 } 
 // Removed storedInput as recovery now uses stscript global vars

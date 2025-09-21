@@ -51,7 +51,7 @@ function isGroupChat() {
 }
 
 // Settings management functions - imported from index.js
-import { loadSettings, updateSettingsUI, addSettingsEventListeners, debugProfileSystem, getDebugMessages, clearDebugMessages, getDebugMessagesAsText } from '../../index.js';
+import { loadSettings, updateSettingsUI, addSettingsEventListeners, debugProfileSystem, getDebugMessages, clearDebugMessages, getDebugMessagesAsText, debugError } from '../../index.js';
 
 // Default settings object
 const defaultSettings = {
@@ -123,6 +123,7 @@ export {
     extensionName,
     debugLog,
     debugWarn,
+    debugError,
     
     // SillyTavern dependencies
     chat,
