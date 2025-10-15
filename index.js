@@ -27,6 +27,7 @@ import thinkingGuide from './scripts/persistentGuides/thinkingGuide.js';
 import stateGuide from './scripts/persistentGuides/stateGuide.js';
 import clothesGuide from './scripts/persistentGuides/clothesGuide.js';
 import { checkAndExecuteTracker } from './scripts/persistentGuides/trackerLogic.js';
+import flushGuides from './scripts/persistentGuides/flushGuides.js';
 
 // --- Shared State for Impersonation Input Recovery ---
 let previousImpersonateInput = ''; // Input before the last impersonation
@@ -194,6 +195,7 @@ export const defaultSettings = {
     showClearInputButton: false,
     showUndoButton: false, // Default off for Undo Last Addition button
     showRevertButton: false, // Default off for Revert to Original button
+    showAutoThinkButton: false, // Default on for Auto Think button
     integrateQrBar: true, // Default on: Toggle for QR bar integration
     debugMode: false, // Default off: Toggle for debug logging
     persistentGuidesInChatlog: true, // Default on: Show persistent guides in chatlog
@@ -1024,7 +1026,7 @@ function updateExtensionButtons() {
         });
     } 
     // Add menu button to the menu buttons container
-    menuButtonsContainer.appendChild(ggMenuButton);
+    // menuButtonsContainer.appendChild(ggMenuButton);
 
     // --- Create Persistent Guides Menu Button --- 
     let pgMenuButton = document.getElementById('pg_menu_button');
@@ -1057,14 +1059,14 @@ function updateExtensionButtons() {
 
         // Define the order and details for content guides
         const contentGuides = [
-            { name: 'Situational', icon: 'fa-location-dot', path: './scripts/persistentGuides/situationalGuide.js', description: "Provides a summary of the current location, present characters, relevant objects, and recent events." },
+            // { name: 'Situational', icon: 'fa-location-dot', path: './scripts/persistentGuides/situationalGuide.js', description: "Provides a summary of the current location, present characters, relevant objects, and recent events." },
             { name: 'Thinking', icon: 'fa-brain', path: './scripts/persistentGuides/thinkingGuide.js', description: "Reveals the inner thoughts and motivations of characters in the current scene." },
-            { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js', description: "Generates a description of what each character in the current scene is wearing." },
-            { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js', description: "Describes the current physical state, position, and actions of characters in the scene." },
-            { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js', description: "Lists explicit rules or established facts that characters have learned or follow in the story." },
-            { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js', description: "Runs a specific, user-defined custom guide script." },
-            { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js', description: "Runs a user-defined custom guide automatically based on triggers or conditions." },
-            { name: 'Fun', icon: 'fa-gamepad', path: './scripts/persistentGuides/funGuide.js', description: "Opens a popup with various fun prompts and interactions." }
+            // { name: 'Clothes', icon: 'fa-shirt', path: './scripts/persistentGuides/clothesGuide.js', description: "Generates a description of what each character in the current scene is wearing." },
+            // { name: 'State', icon: 'fa-face-smile', path: './scripts/persistentGuides/stateGuide.js', description: "Describes the current physical state, position, and actions of characters in the scene." },
+            // { name: 'Rules', icon: 'fa-list-ol', path: './scripts/persistentGuides/rulesGuide.js', description: "Lists explicit rules or established facts that characters have learned or follow in the story." },
+            // { name: 'Custom', icon: 'fa-pen-to-square', path: './scripts/persistentGuides/customGuide.js', description: "Runs a specific, user-defined custom guide script." },
+            // { name: 'Custom Auto', icon: 'fa-robot', path: './scripts/persistentGuides/customAutoGuide.js', description: "Runs a user-defined custom guide automatically based on triggers or conditions." },
+            // { name: 'Fun', icon: 'fa-gamepad', path: './scripts/persistentGuides/funGuide.js', description: "Opens a popup with various fun prompts and interactions." }
         ];
 
         // Define the order and details for tool guides
@@ -1264,6 +1266,51 @@ function updateExtensionButtons() {
     if (settings.showImpersonate3rdPerson) {
         const btn3 = createActionButton('gg_impersonate_button_3rd', 'Guided Impersonate (3rd Person)', 'fa-solid fa-users', guidedImpersonate3rd);
         regularButtons.push(btn3);
+    }
+    
+    // Add Auto-Think Toggle button
+    if (settings.showAutoThinkButton) {
+        const autoThinkToggleButton = createActionButton(
+            'gg_auto_think_toggle_button',
+            'Toggle Auto-Thinking', // Title will be updated dynamically
+            'fa-solid fa-wand-sparkles', // Icon for the button
+            async (event) => { // The action function is now async
+                const settings = extension_settings[extensionName];
+                const context = getContext();
+                if (settings && context) {
+                    // Toggle the setting
+                    settings.autoTriggerThinking = !settings.autoTriggerThinking;
+                    saveSettingsDebounced(); // Save the change
+                    
+                    // Update the button's appearance
+                    const button = event.currentTarget;
+                    if (settings.autoTriggerThinking) {
+                        button.classList.add('active');
+                        button.title = 'Auto-Thinking: ON';
+                        // Trigger the guide immediately
+                        await thinkingGuide(true);
+                    } else {
+                        button.classList.remove('active');
+                        button.title = 'Auto-Thinking: OFF';
+                        // Flush only the 'thinking' guide
+                        await context.executeSlashCommandsWithOptions('/flushinject thinking', {
+                            showOutput: false,
+                            displayCommand: false
+                        });
+                    }
+                }
+            }
+        );
+
+        // Set initial state based on settings
+        if (settings.autoTriggerThinking) {
+            autoThinkToggleButton.classList.add('active');
+            autoThinkToggleButton.title = 'Auto-Thinking: ON';
+        } else {
+            autoThinkToggleButton.title = 'Auto-Thinking: OFF';
+        }
+
+        regularButtons.push(autoThinkToggleButton);
     }
 
     // Add Guided Swipe Button

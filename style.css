@@ -83,6 +83,14 @@
     color: var(--SmartThemeUi); /* Adjust text color on hover if needed */
 }
 
+/* Style for the active/toggled on state */
+.gg-action-button.active {
+    background-color: var(--SmartThemeAccentColor, var(--accent-color));
+    color: white;
+    border-color: var(--SmartThemeAccentColor, var(--accent-color));
+}
+
+
 /* Specific styles for the Menu Button */
 .gg-menu-button {
     position: relative; /* Needed for dropdown menu positioning */
